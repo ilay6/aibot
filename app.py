@@ -1,6 +1,6 @@
 import os
 import json
-import base64
+import time
 import sqlite3
 import httpx
 from datetime import datetime
@@ -90,14 +90,9 @@ async def чат_stream(данные: ЗапросЧат):
 @app.post("/api/image")
 async def картинка(данные: ЗапросКартинки):
     текст = quote(данные.запрос, safe='')
-    url = f"https://image.pollinations.ai/prompt/{текст}?width=512&height=512&nologo=true"
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-    async with httpx.AsyncClient(timeout=90, follow_redirects=True) as http:
-        resp = await http.get(url, headers=headers)
-    if resp.status_code != 200 or "image" not in resp.headers.get("content-type", ""):
-        return {"error": "Ошибка генерации"}
-    img_b64 = base64.b64encode(resp.content).decode()
-    return {"url": f"data:image/jpeg;base64,{img_b64}"}
+    seed = int(time.time())
+    url = f"https://image.pollinations.ai/prompt/{текст}?width=512&height=512&nologo=true&seed={seed}"
+    return {"url": url}
 
 @app.post("/api/track")
 async def track(data: TrackData):
