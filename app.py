@@ -6,7 +6,7 @@ import httpx
 from datetime import datetime
 from urllib.parse import quote
 from fastapi import FastAPI, Header
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -145,5 +145,9 @@ async def admin_stats(x_admin_secret: str = Header(None)):
         "users": [{"tg_id": u[0], "username": u[1] or "", "first_name": u[2] or "", "joined": u[3], "messages": u[4]} for u in users],
         "recent_messages": [{"name": m[0] or "?", "username": m[1] or "", "text": m[2], "ts": m[3]} for m in recent]
     }
+
+@app.get("/")
+async def index():
+    return FileResponse("static/index.html", headers={"Cache-Control": "no-store, no-cache, must-revalidate"})
 
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
