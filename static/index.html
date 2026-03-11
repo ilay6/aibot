@@ -96,6 +96,7 @@
   }
 
   .header, .tabs, .panel { position: relative; z-index: 1; }
+  .main-wrap { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
 
   /* ── HEADER ── */
   .header {
@@ -157,6 +158,67 @@
   }
   .fullscreen-btn:hover { border-color: var(--accent); color: var(--accent); transform: scale(1.08); }
   .fullscreen-btn:active { transform: scale(0.93); }
+
+  /* ── WIDE MODE (fullscreen) ── */
+  body { transition: background 0.5s cubic-bezier(0.16,1,0.3,1), color 0.5s cubic-bezier(0.16,1,0.3,1); }
+
+  body.wide-mode .sidebar {
+    transform: translateX(0);
+    position: relative; z-index: 1;
+    border-right: 1px solid var(--border);
+    box-shadow: none;
+    width: 280px; flex-shrink: 0;
+  }
+  body.wide-mode .sidebar-overlay { display: none; }
+  body.wide-mode .menu-btn { display: none; }
+
+  body.wide-mode .main-wrap {
+    flex: 1; display: flex; flex-direction: column; overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
+  }
+
+  body.wide-mode .header {
+    justify-content: center; gap: 16px; padding: 10px 20px;
+  }
+  body.wide-mode .header-left { flex: 1; }
+  body.wide-mode .header-center-fs {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+  }
+  body.wide-mode .header-right { flex: 1; justify-content: flex-end; }
+
+  .header-center-fs { display: none; }
+  .header-center-fs .header-user-avatar-big {
+    width: 36px; height: 36px; border-radius: 50%;
+    overflow: hidden; background: var(--bg3); border: 2px solid var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: var(--accent);
+    box-shadow: 0 0 12px var(--accent-glow);
+    transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), box-shadow 0.4s;
+  }
+  .header-center-fs .header-user-avatar-big img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .header-center-fs .header-user-name-fs {
+    font-size: 11px; color: var(--text2); font-weight: 600;
+    max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+
+  /* smooth body layout transition */
+  body.wide-mode {
+    flex-direction: row;
+  }
+  body.wide-mode .sidebar {
+    animation: slideInSidebar 0.45s cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+  @keyframes slideInSidebar {
+    from { width: 0; opacity: 0; }
+    to   { width: 280px; opacity: 1; }
+  }
+  body.wide-mode .main-wrap {
+    animation: expandMain 0.4s cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+  @keyframes expandMain {
+    from { opacity: 0.9; transform: scale(0.98); }
+    to   { opacity: 1; transform: scale(1); }
+  }
 
   /* Theme toggle */
   .theme-btn {
@@ -926,6 +988,7 @@
 <!-- WAVE CANVAS BACKGROUND -->
 <canvas id="bg-canvas" class="bg-canvas"></canvas>
 
+<div class="main-wrap" id="main-wrap">
 <!-- HEADER -->
 <div class="header">
   <div class="header-left">
@@ -940,6 +1003,7 @@
       <div class="header-sub"><div class="online-dot"></div> AI · Онлайн</div>
     </div>
   </div>
+  <div class="header-center-fs" id="header-center-fs"></div>
   <div class="header-right">
     <div class="header-user-avatar" id="header-avatar"></div>
     <button class="fullscreen-btn" id="fullscreen-btn" onclick="переключитьПолныйЭкран()" title="Полный экран">
@@ -1068,37 +1132,45 @@
     </div>
   </div>
 </div>
+</div><!-- /main-wrap -->
 
 <script>
   const tg = window.Telegram?.WebApp;
   if (tg) { tg.expand(); }
 
-  // ── FULLSCREEN ──
+  // ── FULLSCREEN / WIDE MODE ──
   let _isFullscreen = false;
+
+  function применитьРежимЭкрана(full) {
+    _isFullscreen = full;
+    document.body.classList.toggle('wide-mode', full);
+    document.getElementById('fs-icon-expand').style.display = full ? 'none' : '';
+    document.getElementById('fs-icon-shrink').style.display = full ? '' : 'none';
+    // Close sidebar overlay in wide mode (it becomes inline)
+    if (full) {
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('sidebar-overlay').classList.remove('show');
+    }
+  }
+
   function переключитьПолныйЭкран() {
+    const goFull = !_isFullscreen;
     if (tg && tg.requestFullscreen) {
-      // Telegram WebApp Bot API 8.0+
-      if (!_isFullscreen) { tg.requestFullscreen(); } else { tg.exitFullscreen(); }
-    } else if (tg && tg.expand) {
-      tg.expand();
-    } else {
-      // Browser fallback
-      if (!document.fullscreenElement) {
+      if (goFull) tg.requestFullscreen(); else tg.exitFullscreen();
+    } else if (!tg) {
+      if (goFull) {
         (document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen)?.call(document.documentElement);
       } else {
         (document.exitFullscreen || document.webkitExitFullscreen)?.call(document);
       }
+    } else if (tg && tg.expand) {
+      tg.expand();
     }
-    _isFullscreen = !_isFullscreen;
-    document.getElementById('fs-icon-expand').style.display = _isFullscreen ? 'none' : '';
-    document.getElementById('fs-icon-shrink').style.display = _isFullscreen ? '' : 'none';
+    применитьРежимЭкрана(goFull);
   }
-  // Listen for browser fullscreen change
-  document.addEventListener('fullscreenchange', () => {
-    _isFullscreen = !!document.fullscreenElement;
-    document.getElementById('fs-icon-expand').style.display = _isFullscreen ? 'none' : '';
-    document.getElementById('fs-icon-shrink').style.display = _isFullscreen ? '' : 'none';
-  });
+
+  // Sync with browser fullscreen events
+  document.addEventListener('fullscreenchange', () => применитьРежимЭкрана(!!document.fullscreenElement));
 
   const ADMIN_ID = 739848745;
   const ADMIN_SECRET = "aibot_secret";
@@ -1698,15 +1770,29 @@
 
   // ── USER AVATAR IN HEADER ──
   (function initHeaderUser() {
-    const el = document.getElementById('header-avatar');
-    if (!el) return;
     const user = tg?.initDataUnsafe?.user;
-    if (!user) { el.style.display = 'none'; return; }
-    const photoUrl = user.photo_url || '';
-    const ini = ((user.first_name?.[0]||'')+(user.last_name?.[0]||'')).toUpperCase()||'?';
-    el.innerHTML = photoUrl
+    const photoUrl = user?.photo_url || '';
+    const name = user?.first_name || user?.username || '';
+    const ini = ((user?.first_name?.[0]||'')+(user?.last_name?.[0]||'')).toUpperCase()||'?';
+    const avatarHTML = photoUrl
       ? `<img src="${photoUrl}" onerror="this.parentElement.innerHTML='${ini}'">`
       : ini;
+
+    // Small avatar in header-right
+    const el = document.getElementById('header-avatar');
+    if (el) {
+      if (!user) { el.style.display = 'none'; }
+      else { el.innerHTML = avatarHTML; }
+    }
+
+    // Big avatar for wide mode center
+    const center = document.getElementById('header-center-fs');
+    if (center && user) {
+      center.innerHTML = `
+        <div class="header-user-avatar-big">${avatarHTML}</div>
+        <div class="header-user-name-fs">${name}</div>
+      `;
+    }
   })();
 
   // ── IMAGE ATTACHMENT ──
