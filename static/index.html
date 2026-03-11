@@ -1460,9 +1460,13 @@
     msgs.scrollTop = msgs.scrollHeight;
 
     история.push({ role: 'user', content: текст });
-    добавитьПечать();
+
+    const tgAlert = (msg) => { try { window.Telegram?.WebApp?.showAlert(msg); } catch(e) {} };
 
     try {
+      добавитьПечать();
+      tgAlert('fetch начат, модель: ' + getModel());
+
       const resp = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1470,6 +1474,7 @@
       });
 
       document.getElementById('печать')?.remove();
+      tgAlert('fetch статус: ' + resp.status);
 
       if (!resp.ok) {
         история.pop();
@@ -1489,6 +1494,7 @@
     } catch (err) {
       document.getElementById('печать')?.remove();
       история.pop();
+      tgAlert('Ошибка catch: ' + (err?.message || String(err)));
       показатьОшибкуВЧате('Ошибка: ' + (err?.message || String(err)));
     }
 
