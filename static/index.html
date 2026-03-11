@@ -1461,20 +1461,26 @@
 
     история.push({ role: 'user', content: текст });
 
-    const tgAlert = (msg) => { try { window.Telegram?.WebApp?.showAlert(msg); } catch(e) {} };
+    // показываем тайпинг
+    const типингDiv = document.createElement('div');
+    типингDiv.className = 'msg bot';
+    типингDiv.innerHTML = `<div class="avatar">${botIcon}</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+    msgs.appendChild(типингDiv);
+    msgs.scrollTop = msgs.scrollHeight;
 
     try {
-      добавитьПечать();
-      tgAlert('fetch начат, модель: ' + getModel());
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 30000);
 
       const resp = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ сообщения: история, модель: getModel() })
+        body: JSON.stringify({ сообщения: история, модель: getModel() }),
+        signal: controller.signal
       });
+      clearTimeout(timer);
 
-      document.getElementById('печать')?.remove();
-      tgAlert('fetch статус: ' + resp.status);
+      типингDiv.remove();
 
       if (!resp.ok) {
         история.pop();
@@ -1492,10 +1498,10 @@
         }
       }
     } catch (err) {
-      document.getElementById('печать')?.remove();
+      типингDiv.remove();
       история.pop();
-      tgAlert('Ошибка catch: ' + (err?.message || String(err)));
-      показатьОшибкуВЧате('Ошибка: ' + (err?.message || String(err)));
+      const msg = err?.name === 'AbortError' ? 'Таймаут 30с — сервер не ответил' : (err?.message || String(err));
+      показатьОшибкуВЧате('Ошибка: ' + msg);
     }
 
     кнопка.disabled = false; кнопка.classList.remove('loading');
@@ -1504,34 +1510,30 @@
   async function печататьОтвет(текст) {
     const блок = document.getElementById('сообщения');
     const время = текущееВремя();
+
     const div = document.createElement('div');
     div.className = 'msg bot';
-    div.innerHTML = `<div class="avatar">${botIcon}</div><div class="bubble" id="type-bubble"><span class="stream-cursor" style="display:inline-block;width:2px;height:13px;background:var(--accent);vertical-align:text-bottom;border-radius:1px;animation:blink 0.8s infinite;margin-left:1px;"></span><div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button></div></div>`;
+    const пузырь = document.createElement('div');
+    пузырь.className = 'bubble';
+    пузырь.innerHTML = `<div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button></div>`;
+    div.innerHTML = `<div class="avatar">${botIcon}</div>`;
+    div.appendChild(пузырь);
     блок.appendChild(div);
     блок.scrollTop = блок.scrollHeight;
 
-    const пузырь = document.getElementById('type-bubble');
     const слова = текст.split('');
     let накоплен = '';
-    const задержка = Math.max(4, Math.min(18, Math.round(3000 / слова.length)));
+    const задержка = Math.max(4, Math.min(20, Math.round(2000 / слова.length)));
+    const footer = `<div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button></div>`;
 
     for (const символ of слова) {
       накоплен += символ;
-      if (пузырь) {
-        пузырь.innerHTML = форматировать(накоплен) +
-          `<span class="stream-cursor" style="display:inline-block;width:2px;height:13px;background:var(--accent);vertical-align:text-bottom;border-radius:1px;animation:blink 0.8s infinite;margin-left:1px;"></span>` +
-          `<div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button></div>`;
-        блок.scrollTop = блок.scrollHeight;
-      }
+      пузырь.innerHTML = форматировать(накоплен) + footer;
+      блок.scrollTop = блок.scrollHeight;
       await new Promise(r => setTimeout(r, задержка));
     }
 
-    if (пузырь) {
-      пузырь.querySelector('.stream-cursor')?.remove();
-      пузырь.innerHTML = форматировать(текст) +
-        `<div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button></div>`;
-      пузырь.removeAttribute('id');
-    }
+    пузырь.innerHTML = форматировать(текст) + footer;
     блок.scrollTop = блок.scrollHeight;
   }
 
