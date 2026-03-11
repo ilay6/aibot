@@ -218,6 +218,7 @@
     width: 30px; height: 30px; border-radius: 8px;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0; background: var(--bg3);
+    overflow: hidden;
     transition: background 0.4s, box-shadow 0.4s;
   }
   .msg.user .avatar { background: var(--accent); color: #fff; }
@@ -1395,7 +1396,7 @@
     if (!user) return userIcon;
     if (user.photo_url) {
       const ini = ((user.first_name?.[0]||'')+(user.last_name?.[0]||'')).toUpperCase()||'?';
-      return `<img class="avatar-photo" src="${user.photo_url}" alt="${ini}" onerror="this.outerHTML='<span class=\\"avatar-initials\\">${ini}</span>'">`;
+      return `<img class="avatar-photo" src="${user.photo_url}" alt="" onerror="this.outerHTML='<span class=\\"avatar-initials\\">${ini}</span>'">`;
     }
     const ini = ((user.first_name?.[0]||'')+(user.last_name?.[0]||'')).toUpperCase()||'?';
     return `<span class="avatar-initials">${ini}</span>`;
