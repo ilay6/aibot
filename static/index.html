@@ -1520,7 +1520,7 @@
     const блок = document.getElementById('сообщения');
     блок.innerHTML = '';
     document.getElementById('чат').classList.remove('empty');
-    история.filter(m => m.role !== 'system').forEach(m => добавитьСообщение(m.content, m.role === 'user' ? 'user' : 'bot', true));
+    история.filter(m => m.role !== 'system').forEach(m => добавитьСообщение(m.content, m.role === 'user' ? 'user' : 'bot', true, m.time || ''));
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.getElementById('чат').classList.add('active');
@@ -1574,14 +1574,14 @@
     return `<span class="avatar-initials">${ini}</span>`;
   }
 
-  function добавитьСообщение(текст, тип, немедленно) {
+  function добавитьСообщение(текст, тип, немедленно, время) {
     document.getElementById('приветствие')?.remove();
     document.getElementById('чат').classList.remove('empty');
     const блок = document.getElementById('сообщения');
     const div = document.createElement('div');
     div.className = `msg ${тип}`;
     if (немедленно) div.style.animationDuration = '0.15s';
-    const время = текущееВремя();
+    if (!время) время = текущееВремя();
     if (тип === 'user') {
       div.innerHTML = `<div class="avatar">${getUserAvatarContent()}</div><div class="bubble">${экранировать(текст)}<div class="bubble-footer"><span class="msg-time">${время}</span></div></div>`;
     } else {
@@ -1621,7 +1621,7 @@
     msgs.appendChild(msgDiv);
     msgs.scrollTop = msgs.scrollHeight;
 
-    история.push({ role: 'user', content: текст });
+    история.push({ role: 'user', content: текст, time: текущееВремя() });
 
     // Трекинг сообщения
     if (tgUser) {
@@ -1652,7 +1652,7 @@
       const resp = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ сообщения: история, модель: getModel() }),
+        body: JSON.stringify({ сообщения: история.map(m => ({ role: m.role, content: m.content })), модель: getModel() }),
         signal: controller.signal
       });
       clearTimeout(timer);
@@ -1668,7 +1668,7 @@
           история.pop();
           показатьОшибкуВЧате('Пустой ответ от сервера');
         } else {
-          история.push({ role: 'assistant', content: ответ });
+          история.push({ role: 'assistant', content: ответ, time: текущееВремя() });
           await печататьОтвет(ответ);
           сохранитьЧат();
         }
@@ -1900,7 +1900,7 @@
       история.push({ role: 'user', content: [
         { type: 'text', text: текст },
         { type: 'image_url', image_url: { url: imgData } }
-      ]});
+      ], time: текущееВремя() });
 
       const типингDiv = document.createElement('p');
       типингDiv.innerHTML = `<div class="typing"><span></span><span></span><span></span></div>`;
@@ -1913,7 +1913,7 @@
         const resp = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ сообщения: история, модель: getModel() }),
+          body: JSON.stringify({ сообщения: история.map(m => ({ role: m.role, content: m.content })), модель: getModel() }),
           signal: controller.signal
         });
         clearTimeout(timer);
@@ -1925,7 +1925,7 @@
           const данные = await resp.json();
           const ответ = данные.ответ;
           if (!ответ) { история.pop(); показатьОшибкуВЧате('Пустой ответ от сервера'); }
-          else { история.push({ role: 'assistant', content: ответ }); await печататьОтвет(ответ); сохранитьЧат(); }
+          else { история.push({ role: 'assistant', content: ответ, time: текущееВремя() }); await печататьОтвет(ответ); сохранитьЧат(); }
         }
       } catch (err) {
         типингDiv.remove();
