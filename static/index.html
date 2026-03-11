@@ -107,6 +107,7 @@
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
     transition: background 0.4s, border-color 0.4s;
+    position: relative;
   }
   .header-left { display: flex; align-items: center; gap: 10px; }
   .logo {
@@ -134,6 +135,34 @@
   @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
   .header-right { display: flex; align-items: center; gap: 8px; }
+
+  /* Header center — user info */
+  .header-center {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    position: absolute; left: 50%; transform: translateX(-50%);
+  }
+  .header-user-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    overflow: hidden; background: var(--bg3); border: 2px solid var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: var(--accent);
+    box-shadow: 0 0 10px var(--accent-glow);
+  }
+  .header-user-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .header-user-name { font-size: 10px; color: var(--text2); font-weight: 600; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* Fullscreen button */
+  .fullscreen-btn {
+    width: 34px; height: 34px; border-radius: 9px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: border-color 0.35s, background 0.5s, transform 0.35s, color 0.3s;
+    color: var(--text2); flex-shrink: 0;
+  }
+  .fullscreen-btn:hover { border-color: var(--accent); color: var(--accent); transform: scale(1.08); }
+  .fullscreen-btn:active { transform: scale(0.93); }
 
   /* Theme toggle */
   .theme-btn {
@@ -203,6 +232,7 @@
     flex: 1; overflow-y: auto; padding: 16px 12px;
     display: flex; flex-direction: column; gap: 14px;
     scroll-behavior: smooth;
+    max-width: 820px; width: 100%; margin: 0 auto;
   }
   .msg {
     display: flex; gap: 10px; align-items: flex-start;
@@ -308,6 +338,7 @@
     padding: 10px 12px 16px;
     background: transparent;
     flex-shrink: 0;
+    max-width: 820px; width: 100%; margin: 0 auto;
   }
   .input-wrap {
     display: flex; gap: 8px; align-items: flex-end;
@@ -912,10 +943,14 @@
     </div>
     <div>
       <div class="header-title">AIchat | APP</div>
-      <div class="header-sub"><div class="online-dot"></div> Mistral · Онлайн</div>
+      <div class="header-sub"><div class="online-dot"></div> AI · Онлайн</div>
     </div>
   </div>
+  <div class="header-center" id="header-center"></div>
   <div class="header-right">
+    <button class="fullscreen-btn" id="fullscreen-btn" onclick="переключитьПолныйЭкран()" title="Полный экран">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+    </button>
     <button class="theme-btn" id="theme-btn" onclick="переключитьТему()" title="Сменить тему">
       <svg class="theme-icon-dark" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>
       <svg class="theme-icon-tiffany" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zm0 16V5c3.86 0 7 3.14 7 7s-3.14 7-7 7z"/></svg>
@@ -984,6 +1019,10 @@
       <textarea id="ввод" placeholder="Напиши сообщение..." rows="1"
         onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();отправить()}"
         oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';обновитьСчетчик(this.value.length)"></textarea>
+      <button class="voice-btn" id="attach-btn" onclick="document.getElementById('file-input').click()" title="Прикрепить изображение">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M21.58 11.4l-9.17 9.17c-2.34 2.34-6.14 2.34-8.49 0-2.34-2.34-2.34-6.14 0-8.49l9.17-9.17c1.56-1.56 4.1-1.56 5.66 0 1.56 1.56 1.56 4.1 0 5.66l-9.17 9.17c-.78.78-2.05.78-2.83 0-.78-.78-.78-2.05 0-2.83l7.07-7.07 1.41 1.41-7.07 7.07 9.17-9.17c.78-.78.78-2.05 0-2.83-.78-.78-2.05-.78-2.83 0l-9.17 9.17c-1.56 1.56-1.56 4.1 0 5.66 1.56 1.56 4.1 1.56 5.66 0l9.17-9.17 1.41 1.42z"/></svg>
+      </button>
+      <input type="file" id="file-input" accept="image/*" style="display:none" onchange="прикрепитьИзображение(event)">
       <button class="voice-btn" id="voice-btn" onclick="голосовойВвод()" title="Голосовой ввод">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1 1.93c-3.94-.49-7-3.85-7-7.93H2c0 4.56 3.17 8.35 7.5 8.92V20H8v2h8v-2h-1.5v-2.15c4.33-.57 7.5-4.36 7.5-8.85h-2c0 4.08-3.06 7.44-7 7.93V16z"/></svg>
       </button>
@@ -1038,6 +1077,22 @@
 <script>
   const tg = window.Telegram?.WebApp;
   if (tg) { tg.expand(); }
+
+  // ── FULLSCREEN ──
+  function переключитьПолныйЭкран() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.() || document.documentElement.webkitRequestFullscreen?.();
+    } else {
+      document.exitFullscreen?.() || document.webkitExitFullscreen?.();
+    }
+  }
+  // Auto fullscreen on desktop
+  if (!tg && window.innerWidth > 768) {
+    document.addEventListener('click', function autoFS() {
+      document.documentElement.requestFullscreen?.();
+      document.removeEventListener('click', autoFS);
+    }, { once: true });
+  }
 
   const ADMIN_ID = 739848745;
   const ADMIN_SECRET = "aibot_secret";
@@ -1097,8 +1152,8 @@
       grad.addColorStop(0.85, accent);
       grad.addColorStop(1,    'transparent');
       ctx.strokeStyle = grad;
-      ctx.globalAlpha = i % 2 === 0 ? 0.09 : 0.06;
-      ctx.lineWidth = i % 3 === 0 ? 1.2 : 0.8;
+      ctx.globalAlpha = i % 2 === 0 ? 0.28 : 0.18;
+      ctx.lineWidth = i % 3 === 0 ? 1.8 : 1.2;
       ctx.stroke();
     });
     ctx.globalAlpha = 1;
@@ -1634,6 +1689,129 @@
     btn.disabled = false;
     btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg> Сгенерировать`;
   }
+
+  // ── USER AVATAR IN HEADER ──
+  (function initHeaderUser() {
+    const center = document.getElementById('header-center');
+    if (!center) return;
+    const user = tg?.initDataUnsafe?.user;
+    if (!user) return;
+    const name = user.first_name || user.username || '?';
+    const photoUrl = user.photo_url || '';
+    const ini = ((user.first_name?.[0]||'')+(user.last_name?.[0]||'')).toUpperCase()||'?';
+    center.innerHTML = `
+      <div class="header-user-avatar" id="header-avatar">
+        ${photoUrl ? `<img src="${photoUrl}" onerror="this.parentElement.innerHTML='${ini}'">` : ini}
+      </div>
+      <div class="header-user-name">${name}</div>
+    `;
+  })();
+
+  // ── IMAGE ATTACHMENT ──
+  let прикрепленноеИзображение = null;
+  function прикрепитьИзображение(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      показатьТост('Можно прикрепить только изображение');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      показатьТост('Максимальный размер — 5 МБ');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      прикрепленноеИзображение = e.target.result;
+      показатьТост('📎 Изображение прикреплено');
+      document.getElementById('attach-btn').style.color = 'var(--accent)';
+      // Show preview above input
+      let preview = document.getElementById('attach-preview');
+      if (!preview) {
+        preview = document.createElement('div');
+        preview.id = 'attach-preview';
+        preview.style.cssText = 'padding:6px 12px;display:flex;align-items:center;gap:8px;';
+        const inputArea = document.querySelector('.input-area');
+        inputArea.insertBefore(preview, inputArea.firstChild);
+      }
+      preview.innerHTML = `<img src="${e.target.result}" style="height:48px;border-radius:8px;object-fit:cover;"><span style="font-size:12px;color:var(--text2)">${file.name}</span><button onclick="убратьПрикрепление()" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:16px">✕</button>`;
+    };
+    reader.readAsDataURL(file);
+    event.target.value = '';
+  }
+
+  function убратьПрикрепление() {
+    прикрепленноеИзображение = null;
+    document.getElementById('attach-preview')?.remove();
+    document.getElementById('attach-btn').style.color = '';
+  }
+
+  // Patch отправить to include image
+  const _оригинальнаяОтправка = отправить;
+  отправить = async function() {
+    if (прикрепленноеИзображение) {
+      const поле = document.getElementById('ввод');
+      const текст = поле.value.trim() || 'Что на этом изображении?';
+      поле.value = ''; поле.style.height = 'auto';
+      обновитьСчетчик(0);
+      const кнопка = document.getElementById('кнопка');
+      кнопка.disabled = true; кнопка.classList.add('loading');
+
+      // Show user message with image
+      const msgs = document.getElementById('сообщения');
+      document.getElementById('приветствие')?.remove();
+      document.getElementById('чат').classList.remove('empty');
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'msg user';
+      msgDiv.innerHTML = `<div class="avatar">${getUserAvatarContent()}</div><div class="bubble"><img src="${прикрепленноеИзображение}" style="max-width:200px;border-radius:8px;margin-bottom:6px;display:block"><div>${экранировать(текст)}</div><div class="bubble-footer"><span class="msg-time">${текущееВремя()}</span></div></div>`;
+      msgs.appendChild(msgDiv);
+      msgs.scrollTop = msgs.scrollHeight;
+
+      const imgData = прикрепленноеИзображение;
+      убратьПрикрепление();
+
+      // Send to AI with image description request
+      история.push({ role: 'user', content: [
+        { type: 'text', text: текст },
+        { type: 'image_url', image_url: { url: imgData } }
+      ]});
+
+      const типингDiv = document.createElement('p');
+      типингDiv.innerHTML = `<div class="typing"><span></span><span></span><span></span></div>`;
+      msgs.appendChild(типингDiv);
+      msgs.scrollTop = msgs.scrollHeight;
+
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 30000);
+        const resp = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ сообщения: история, модель: getModel() }),
+          signal: controller.signal
+        });
+        clearTimeout(timer);
+        типингDiv.remove();
+        if (!resp.ok) {
+          история.pop();
+          показатьОшибкуВЧате('Ошибка сервера: ' + resp.status);
+        } else {
+          const данные = await resp.json();
+          const ответ = данные.ответ;
+          if (!ответ) { история.pop(); показатьОшибкуВЧате('Пустой ответ от сервера'); }
+          else { история.push({ role: 'assistant', content: ответ }); await печататьОтвет(ответ); сохранитьЧат(); }
+        }
+      } catch (err) {
+        типингDiv.remove();
+        история.pop();
+        const msg = err?.name === 'AbortError' ? 'Сервер не ответил (таймаут 30с)' : (err?.message || String(err));
+        показатьОшибкуВЧате('Ошибка: ' + msg);
+      }
+      кнопка.disabled = false; кнопка.classList.remove('loading');
+      return;
+    }
+    return _оригинальнаяОтправка();
+  };
 </script>
 </body>
 </html>
