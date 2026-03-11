@@ -643,7 +643,15 @@
     box-shadow: 0 0 24px rgba(10,186,181,0.35), 0 0 50px rgba(10,186,181,0.15);
   }
   .welcome h2 { font-size: 19px; font-weight: 700; }
-  .welcome p { font-size: 13px; color: var(--text2); max-width: 220px; line-height: 1.6; }
+  .welcome p { font-size: 13px; color: var(--text2); max-width: 260px; line-height: 1.6; }
+  .welcome-features {
+    display: flex; flex-direction: column; gap: 6px;
+    margin-top: 10px; text-align: left;
+  }
+  .welcome-feature-item {
+    font-size: 14px; color: var(--text); font-weight: 500;
+    display: flex; align-items: center; gap: 8px;
+  }
   .welcome-chips { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; margin-top: 4px; }
   .chip {
     background: var(--glass-bg); border: 1px solid var(--glass-border);
@@ -1052,7 +1060,12 @@
         <img src="/logo.jpg" alt="AIchat" style="width:100%;height:100%;object-fit:cover;border-radius:20px;" onerror="this.style.display='none'">
       </div>
       <h2>AIchat | APP</h2>
-      <p>Задай любой вопрос, попроси помочь с кодом или объяснить тему</p>
+      <div class="welcome-features">
+        <div class="welcome-feature-item">&#x1F4AC; Умный чат — как ChatGPT</div>
+        <div class="welcome-feature-item">&#x1F3A8; Генерация изображений</div>
+        <div class="welcome-feature-item">&#x1F4D0; Решение задач и код</div>
+      </div>
+      <p style="margin-top:8px;font-size:13px">Задай любой вопрос или выбери тему ниже</p>
       <div class="welcome-chips">
         <span class="chip" onclick="быстрыйЗапрос('Объясни код')">Объясни код</span>
         <span class="chip" onclick="быстрыйЗапрос('Помоги с текстом')">Помоги с текстом</span>
