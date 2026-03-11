@@ -1437,11 +1437,13 @@
     const кнопка = document.getElementById('кнопка');
     кнопка.disabled = true; кнопка.classList.add('loading');
 
-    добавитьСообщение(текст, 'user');
-    история.push({ role: 'user', content: текст });
-    добавитьПечать();
-
     try {
+      добавитьСообщение(текст, 'user');
+      история.push({ role: 'user', content: текст });
+      добавитьПечать();
+
+      показатьТост('Отправляю...');
+
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000);
       const resp = await fetch('/api/chat', {
@@ -1455,27 +1457,23 @@
 
       if (!resp.ok) {
         история.pop();
-        добавитьСообщение('Ошибка сервера (' + resp.status + '). Попробуй ещё раз.', 'bot');
-        кнопка.disabled = false; кнопка.classList.remove('loading');
-        return;
-      }
-
-      const данные = await resp.json();
-      const ответ = данные.ответ;
-      if (!ответ) {
-        история.pop();
-        добавитьСообщение('Пустой ответ от сервера. Попробуй ещё раз.', 'bot');
+        добавитьСообщение('Ошибка сервера ' + resp.status, 'bot');
       } else {
-        история.push({ role: 'assistant', content: ответ });
-        await печататьОтвет(ответ);
-        сохранитьЧат();
+        const данные = await resp.json();
+        const ответ = данные.ответ;
+        if (!ответ) {
+          история.pop();
+          добавитьСообщение('Пустой ответ. Попробуй ещё раз.', 'bot');
+        } else {
+          история.push({ role: 'assistant', content: ответ });
+          await печататьОтвет(ответ);
+          сохранитьЧат();
+        }
       }
-
     } catch (err) {
       document.getElementById('печать')?.remove();
       история.pop();
-      const msg = err?.name === 'AbortError' ? 'Таймаут. Сервер не ответил за 60 сек.' : 'Ошибка соединения: ' + (err?.message || err);
-      добавитьСообщение(msg, 'bot');
+      добавитьСообщение('Ошибка: ' + (err?.message || String(err)), 'bot');
     }
 
     кнопка.disabled = false; кнопка.classList.remove('loading');
