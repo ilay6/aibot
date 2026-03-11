@@ -969,11 +969,11 @@
   <div class="input-area">
     <div class="input-top">
       <div class="model-dd" id="model-dd" onclick="toggleModelDd(event)">
-        <span id="model-label">Mistral Large</span>
+        <span id="model-label">Mistral Small</span>
         <svg class="model-dd-arrow" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
         <div class="model-dd-list">
-          <div class="model-dd-item dd-active" onclick="выбратьМодель(event,'mistral-large-latest','Mistral Large',this)">Mistral Large<span>✓</span></div>
-          <div class="model-dd-item" onclick="выбратьМодель(event,'mistral-small-latest','Mistral Small',this)">Mistral Small</div>
+          <div class="model-dd-item" onclick="выбратьМодель(event,'mistral-large-latest','Mistral Large',this)">Mistral Large</div>
+          <div class="model-dd-item dd-active" onclick="выбратьМодель(event,'mistral-small-latest','Mistral Small',this)">Mistral Small<span>✓</span></div>
           <div class="model-dd-item" onclick="выбратьМодель(event,'codestral-latest','Codestral',this)">Codestral</div>
           <div class="model-dd-item" onclick="выбратьМодель(event,'mistral-medium-latest','Mistral Medium',this)">Mistral Medium</div>
         </div>
@@ -1223,7 +1223,7 @@
   ];
   let текущийЧатId = Date.now();
 
-  let _selectedModel = 'mistral-large-latest';
+  let _selectedModel = 'mistral-small-latest';
   function getModel() { return _selectedModel; }
 
   function toggleModelDd(e) {
@@ -1245,6 +1245,16 @@
   }
   document.addEventListener('click', () => document.getElementById('model-dd')?.classList.remove('open'));
   function текущееВремя() { return new Date().toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' }); }
+
+  function показатьОшибкуВЧате(текст) {
+    const msgs = document.getElementById('сообщения');
+    if (!msgs) return;
+    const div = document.createElement('div');
+    div.className = 'msg bot';
+    div.innerHTML = `<div class="avatar">${botIcon}</div><div class="bubble" style="background:#ff4444;color:#fff;">${экранировать(текст)}<div class="bubble-footer"><span class="msg-time">${текущееВремя()}</span></div></div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
 
   function переключить(id, кнопка) {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -1456,13 +1466,13 @@
 
       if (!resp.ok) {
         история.pop();
-        alert('Ошибка сервера: ' + resp.status);
+        показатьОшибкуВЧате('Ошибка сервера: ' + resp.status);
       } else {
         const данные = await resp.json();
         const ответ = данные.ответ;
         if (!ответ) {
           история.pop();
-          alert('Пустой ответ: ' + JSON.stringify(данные));
+          показатьОшибкуВЧате('Пустой ответ: ' + JSON.stringify(данные));
         } else {
           история.push({ role: 'assistant', content: ответ });
           await печататьОтвет(ответ);
@@ -1471,7 +1481,7 @@
       }
     } catch (err) {
       история.pop();
-      alert('fetch ошибка: ' + (err?.message || String(err)));
+      показатьОшибкуВЧате('Ошибка: ' + (err?.message || String(err)));
     }
 
     кнопка.disabled = false; кнопка.classList.remove('loading');
