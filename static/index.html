@@ -107,7 +107,6 @@
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
     transition: background 0.4s, border-color 0.4s;
-    position: relative;
   }
   .header-left { display: flex; align-items: center; gap: 10px; }
   .logo {
@@ -136,20 +135,15 @@
 
   .header-right { display: flex; align-items: center; gap: 8px; }
 
-  /* Header center — user info */
-  .header-center {
-    display: flex; flex-direction: column; align-items: center; gap: 2px;
-    position: absolute; left: 50%; transform: translateX(-50%);
-  }
+  /* Header user avatar (inline in header-left) */
   .header-user-avatar {
-    width: 32px; height: 32px; border-radius: 50%;
+    width: 30px; height: 30px; border-radius: 50%;
     overflow: hidden; background: var(--bg3); border: 2px solid var(--accent);
     display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 700; color: var(--accent);
-    box-shadow: 0 0 10px var(--accent-glow);
+    font-size: 11px; font-weight: 700; color: var(--accent);
+    box-shadow: 0 0 8px var(--accent-glow); flex-shrink: 0;
   }
   .header-user-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .header-user-name { font-size: 10px; color: var(--text2); font-weight: 600; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   /* Fullscreen button */
   .fullscreen-btn {
@@ -946,10 +940,11 @@
       <div class="header-sub"><div class="online-dot"></div> AI · Онлайн</div>
     </div>
   </div>
-  <div class="header-center" id="header-center"></div>
   <div class="header-right">
+    <div class="header-user-avatar" id="header-avatar"></div>
     <button class="fullscreen-btn" id="fullscreen-btn" onclick="переключитьПолныйЭкран()" title="Полный экран">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+      <svg id="fs-icon-expand" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+      <svg id="fs-icon-shrink" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>
     </button>
     <button class="theme-btn" id="theme-btn" onclick="переключитьТему()" title="Сменить тему">
       <svg class="theme-icon-dark" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>
@@ -1079,20 +1074,31 @@
   if (tg) { tg.expand(); }
 
   // ── FULLSCREEN ──
+  let _isFullscreen = false;
   function переключитьПолныйЭкран() {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen?.() || document.documentElement.webkitRequestFullscreen?.();
+    if (tg && tg.requestFullscreen) {
+      // Telegram WebApp Bot API 8.0+
+      if (!_isFullscreen) { tg.requestFullscreen(); } else { tg.exitFullscreen(); }
+    } else if (tg && tg.expand) {
+      tg.expand();
     } else {
-      document.exitFullscreen?.() || document.webkitExitFullscreen?.();
+      // Browser fallback
+      if (!document.fullscreenElement) {
+        (document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen)?.call(document.documentElement);
+      } else {
+        (document.exitFullscreen || document.webkitExitFullscreen)?.call(document);
+      }
     }
+    _isFullscreen = !_isFullscreen;
+    document.getElementById('fs-icon-expand').style.display = _isFullscreen ? 'none' : '';
+    document.getElementById('fs-icon-shrink').style.display = _isFullscreen ? '' : 'none';
   }
-  // Auto fullscreen on desktop
-  if (!tg && window.innerWidth > 768) {
-    document.addEventListener('click', function autoFS() {
-      document.documentElement.requestFullscreen?.();
-      document.removeEventListener('click', autoFS);
-    }, { once: true });
-  }
+  // Listen for browser fullscreen change
+  document.addEventListener('fullscreenchange', () => {
+    _isFullscreen = !!document.fullscreenElement;
+    document.getElementById('fs-icon-expand').style.display = _isFullscreen ? 'none' : '';
+    document.getElementById('fs-icon-shrink').style.display = _isFullscreen ? '' : 'none';
+  });
 
   const ADMIN_ID = 739848745;
   const ADMIN_SECRET = "aibot_secret";
@@ -1692,19 +1698,15 @@
 
   // ── USER AVATAR IN HEADER ──
   (function initHeaderUser() {
-    const center = document.getElementById('header-center');
-    if (!center) return;
+    const el = document.getElementById('header-avatar');
+    if (!el) return;
     const user = tg?.initDataUnsafe?.user;
-    if (!user) return;
-    const name = user.first_name || user.username || '?';
+    if (!user) { el.style.display = 'none'; return; }
     const photoUrl = user.photo_url || '';
     const ini = ((user.first_name?.[0]||'')+(user.last_name?.[0]||'')).toUpperCase()||'?';
-    center.innerHTML = `
-      <div class="header-user-avatar" id="header-avatar">
-        ${photoUrl ? `<img src="${photoUrl}" onerror="this.parentElement.innerHTML='${ini}'">` : ini}
-      </div>
-      <div class="header-user-name">${name}</div>
-    `;
+    el.innerHTML = photoUrl
+      ? `<img src="${photoUrl}" onerror="this.parentElement.innerHTML='${ini}'">`
+      : ini;
   })();
 
   // ── IMAGE ATTACHMENT ──
