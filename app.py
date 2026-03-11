@@ -92,19 +92,28 @@ async def чат_stream(данные: ЗапросЧат):
 async def картинка(данные: ЗапросКартинки):
     текст = quote(данные.запрос, safe='')
     seed = int(time.time()) % 1000000
-    url = f"https://image.pollinations.ai/prompt/{текст}?width=512&height=512&model=flux&seed={seed}"
-    try:
-        async with httpx.AsyncClient(timeout=90, follow_redirects=True) as http:
-            resp = await http.get(url, headers={"User-Agent": "Mozilla/5.0"})
-        if resp.status_code != 200:
-            return {"error": f"Сервер вернул {resp.status_code}"}
-        ct = resp.headers.get("content-type", "")
-        if "image" not in ct:
-            return {"error": f"Неверный тип ответа: {ct[:60]}"}
-        img_b64 = base64.b64encode(resp.content).decode()
-        return {"url": f"data:image/jpeg;base64,{img_b64}"}
-    except Exception as e:
-        return {"error": str(e)[:120]}
+    # Пробуем несколько вариантов URL
+    urls = [
+        f"https://image.pollinations.ai/prompt/{текст}?width=512&height=512&seed={seed}",
+        f"https://image.pollinations.ai/prompt/{текст}?seed={seed}",
+        f"https://image.pollinations.ai/prompt/{текст}",
+    ]
+    last_err = "Нет ответа"
+    for url in urls:
+        try:
+            async with httpx.AsyncClient(timeout=60, follow_redirects=True) as http:
+                resp = await http.get(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"})
+            if resp.status_code == 200:
+                ct = resp.headers.get("content-type", "")
+                if "image" in ct:
+                    img_b64 = base64.b64encode(resp.content).decode()
+                    return {"url": f"data:image/jpeg;base64,{img_b64}"}
+                last_err = f"Тип: {ct[:60]}"
+            else:
+                last_err = f"Статус {resp.status_code}"
+        except Exception as e:
+            last_err = str(e)[:80]
+    return {"error": last_err}
 
 @app.post("/api/track")
 async def track(data: TrackData):
