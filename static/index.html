@@ -1430,40 +1430,39 @@
     const текст = поле.value.trim();
     if (!текст || текст.length > MAX_CHARS) return;
 
-    tg?.HapticFeedback?.impactOccurred('light');
-
     поле.value = ''; поле.style.height = 'auto';
     обновитьСчетчик(0);
     const кнопка = document.getElementById('кнопка');
     кнопка.disabled = true; кнопка.classList.add('loading');
 
+    // Добавляем сообщение пользователя
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'msg user';
+    msgDiv.innerHTML = `<div class="avatar">${getUserAvatarContent()}</div><div class="bubble">${экранировать(текст)}<div class="bubble-footer"><span class="msg-time">${текущееВремя()}</span></div></div>`;
+    const msgs = document.getElementById('сообщения');
+    document.getElementById('приветствие')?.remove();
+    document.getElementById('чат').classList.remove('empty');
+    msgs.appendChild(msgDiv);
+    msgs.scrollTop = msgs.scrollHeight;
+
+    история.push({ role: 'user', content: текст });
+
     try {
-      добавитьСообщение(текст, 'user');
-      история.push({ role: 'user', content: текст });
-      добавитьПечать();
-
-      показатьТост('Отправляю...');
-
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000);
       const resp = await fetch('/api/chat', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ сообщения: история, модель: getModel() }),
-        signal: controller.signal
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ сообщения: история, модель: getModel() })
       });
-      clearTimeout(timeoutId);
-
-      document.getElementById('печать')?.remove();
 
       if (!resp.ok) {
         история.pop();
-        добавитьСообщение('Ошибка сервера ' + resp.status, 'bot');
+        alert('Ошибка сервера: ' + resp.status);
       } else {
         const данные = await resp.json();
         const ответ = данные.ответ;
         if (!ответ) {
           история.pop();
-          добавитьСообщение('Пустой ответ. Попробуй ещё раз.', 'bot');
+          alert('Пустой ответ: ' + JSON.stringify(данные));
         } else {
           история.push({ role: 'assistant', content: ответ });
           await печататьОтвет(ответ);
@@ -1471,9 +1470,8 @@
         }
       }
     } catch (err) {
-      document.getElementById('печать')?.remove();
       история.pop();
-      добавитьСообщение('Ошибка: ' + (err?.message || String(err)), 'bot');
+      alert('fetch ошибка: ' + (err?.message || String(err)));
     }
 
     кнопка.disabled = false; кнопка.classList.remove('loading');
