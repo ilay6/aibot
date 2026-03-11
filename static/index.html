@@ -1135,6 +1135,7 @@
   применитьТему();
 
   // Загружаем историю в sidebar при старте
+  let текущийЧатId = Date.now();
   отрисоватьИсторию();
 
   // ── TOAST ──
@@ -1229,7 +1230,6 @@
   let история = [
     { role: "system", content: "Ты полезный AI-ассистент. Отвечай кратко и по делу. Код оформляй в блоки." }
   ];
-  let текущийЧатId = Date.now();
 
   let _selectedModel = 'mistral-small-latest';
   function getModel() { return _selectedModel; }
