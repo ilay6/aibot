@@ -1185,6 +1185,22 @@
   const MAX_CHARS = 2000;
 
   const tgUser = tg?.initDataUnsafe?.user;
+
+  // Track app open
+  if (tgUser) {
+    fetch('/api/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tg_id: tgUser.id,
+        username: tgUser.username || '',
+        first_name: tgUser.first_name || '',
+        text: '',
+        secret: ADMIN_SECRET
+      })
+    }).catch(() => {});
+  }
+
   if (!tg || (tgUser && tgUser.id === ADMIN_ID)) {
     document.getElementById('admin-tab').style.display = 'flex';
   }
@@ -1549,6 +1565,11 @@
   function getUserAvatarContent() {
     const user = tg?.initDataUnsafe?.user;
     if (!user) return userIcon;
+    const photoUrl = user.photo_url || '';
+    if (photoUrl) {
+      const ini = ((user.first_name?.[0]||'')+(user.last_name?.[0]||'')).toUpperCase()||'?';
+      return `<img src="${photoUrl}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<span class=avatar-initials>${ini}</span>'">`;
+    }
     const ini = ((user.first_name?.[0]||'')+(user.last_name?.[0]||'')).toUpperCase()||'?';
     return `<span class="avatar-initials">${ini}</span>`;
   }
@@ -1601,6 +1622,21 @@
     msgs.scrollTop = msgs.scrollHeight;
 
     история.push({ role: 'user', content: текст });
+
+    // Трекинг сообщения
+    if (tgUser) {
+      fetch('/api/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tg_id: tgUser.id,
+          username: tgUser.username || '',
+          first_name: tgUser.first_name || '',
+          text: текст,
+          secret: ADMIN_SECRET
+        })
+      }).catch(() => {});
+    }
 
     // показываем тайпинг — максимально простой вариант
     const типингDiv = document.createElement('p');
