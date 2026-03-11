@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIchat | APP</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  /* ── THEMES ── */
+  :root {
+    --bg: #0a0a0a;
+    --bg2: #111111;
+    --bg3: #1a1a1a;
+    --border: #222222;
+    --text: #ffffff;
+    --text2: #888888;
+    --accent: #f5c518;
+    --accent2: #d4a800;
+    --accent-glow: rgba(245,197,24,0.15);
+    --accent-shadow: rgba(245,197,24,0.35);
+    --accent-ring: rgba(245,197,24,0.08);
+    --header-bg: rgba(10,10,10,0.88);
+    --surface-bg: rgba(10,10,10,0.85);
+    --glass-bg: rgba(255,255,255,0.05);
+    --glass-border: rgba(255,255,255,0.1);
+    --glass-inner: rgba(255,255,255,0.07);
+    --send-btn-color: #000;
+  }
+
+  /* ── TIFFANY DARK ── */
+  [data-theme="tiffany"] {
+    --bg: #181b1b;
+    --bg2: #1f2323;
+    --bg3: #252b2b;
+    --border: #2e3535;
+    --text: #e8f0f0;
+    --text2: #7a9e9c;
+    --accent: #0ABAB5;
+    --accent2: #089490;
+    --accent-glow: rgba(10,186,181,0.18);
+    --accent-shadow: rgba(10,186,181,0.45);
+    --accent-ring: rgba(10,186,181,0.12);
+    --header-bg: rgba(20,25,25,0.9);
+    --surface-bg: rgba(20,25,25,0.85);
+    --glass-bg: rgba(10,186,181,0.04);
+    --glass-border: rgba(10,186,181,0.15);
+    --glass-inner: rgba(255,255,255,0.05);
+    --send-btn-color: #fff;
+  }
+
+  /* ── LIGHT TIFFANY ── */
+  [data-theme="light"] {
+    --bg: #f5fafa;
+    --bg2: #ffffff;
+    --bg3: #eaf2f2;
+    --border: #d0e4e3;
+    --text: #1a2e2d;
+    --text2: #5a8a88;
+    --accent: #0ABAB5;
+    --accent2: #089490;
+    --accent-glow: rgba(10,186,181,0.12);
+    --accent-shadow: rgba(10,186,181,0.28);
+    --accent-ring: rgba(10,186,181,0.1);
+    --header-bg: rgba(245,250,250,0.92);
+    --surface-bg: rgba(245,250,250,0.9);
+    --glass-bg: rgba(255,255,255,0.65);
+    --glass-border: rgba(255,255,255,0.85);
+    --glass-inner: rgba(255,255,255,0.95);
+    --send-btn-color: #fff;
+  }
+
+  body {
+    font-family: 'Space Grotesk', -apple-system, 'SF Pro Display', 'Segoe UI', sans-serif;
+    letter-spacing: -0.01em;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    transition: background 0.5s cubic-bezier(0.16,1,0.3,1), color 0.5s cubic-bezier(0.16,1,0.3,1);
+  }
+
+  /* ── CANVAS BACKGROUND ── */
+  .bg-canvas {
+    position: fixed; inset: 0;
+    pointer-events: none; z-index: 0;
+    width: 100%; height: 100%;
+    /* no blur — lines stay sharp outside elements */
+  }
+
+  .header, .tabs, .panel { position: relative; z-index: 1; }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--header-bg);
+    backdrop-filter: blur(24px) saturate(1.6);
+    -webkit-backdrop-filter: blur(24px) saturate(1.6);
+    padding: 13px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    transition: background 0.4s, border-color 0.4s;
+  }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .logo {
+    width: 36px; height: 36px; border-radius: 11px;
+    overflow: hidden; flex-shrink: 0;
+    box-shadow: 0 0 14px var(--accent-shadow), 0 0 28px var(--accent-glow);
+    transition: box-shadow 0.4s;
+  }
+  .logo img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+  }
+  [data-theme="tiffany"] .logo {
+    box-shadow: 0 0 20px rgba(10,186,181,0.55), 0 0 50px rgba(10,186,181,0.2);
+  }
+  [data-theme="light"] .logo {
+    box-shadow: 0 0 16px rgba(10,186,181,0.35);
+  }
+  .header-title { font-size: 16px; font-weight: 700; }
+  .header-sub { font-size: 11px; color: var(--text2); margin-top: 1px; display: flex; align-items: center; gap: 4px; }
+  .online-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #4caf50; box-shadow: 0 0 6px #4caf50;
+    animation: pulse-dot 2s infinite; flex-shrink: 0;
+  }
+  @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+  .header-right { display: flex; align-items: center; gap: 8px; }
+
+  /* Theme toggle */
+  .theme-btn {
+    width: 34px; height: 34px; border-radius: 9px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: border-color 0.35s cubic-bezier(0.16,1,0.3,1), background 0.5s cubic-bezier(0.16,1,0.3,1), transform 0.35s cubic-bezier(0.16,1,0.3,1), color 0.3s;
+    color: var(--text2);
+    flex-shrink: 0;
+  }
+  .theme-btn:hover { border-color: var(--accent); color: var(--accent); transform: scale(1.08) rotate(8deg); }
+  .theme-btn:active { transform: scale(0.93); }
+
+  .new-chat-btn {
+    background: var(--accent); border: none; border-radius: 9px;
+    color: var(--send-btn-color); font-size: 12px; font-weight: 700;
+    padding: 8px 13px; cursor: pointer; white-space: nowrap;
+    display: flex; align-items: center; gap: 5px;
+    transition: background 0.35s cubic-bezier(0.16,1,0.3,1), transform 0.35s cubic-bezier(0.16,1,0.3,1), box-shadow 0.35s cubic-bezier(0.16,1,0.3,1);
+    box-shadow: 0 0 12px var(--accent-glow);
+  }
+  [data-theme="tiffany"] .new-chat-btn {
+    background: rgba(10,186,181,0.85);
+    box-shadow: 0 0 14px rgba(10,186,181,0.4);
+  }
+  .new-chat-btn:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 4px 18px var(--accent-shadow); }
+  .new-chat-btn:active { transform: translateY(0); }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    background: var(--surface-bg);
+    backdrop-filter: blur(24px) saturate(1.6);
+    -webkit-backdrop-filter: blur(24px) saturate(1.6);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    transition: background 0.4s, border-color 0.4s;
+  }
+  .tab {
+    flex: 1; padding: 11px 8px;
+    text-align: center; cursor: pointer;
+    font-size: 12px; font-weight: 500; color: var(--text2);
+    border-bottom: 2px solid transparent;
+    transition: color 0.35s cubic-bezier(0.16,1,0.3,1), border-color 0.35s cubic-bezier(0.16,1,0.3,1), opacity 0.3s;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+  }
+  .tab:hover { opacity: 0.85; }
+  .tab.active { color: var(--accent); border-color: var(--accent); }
+  [data-theme="tiffany"] .tab.active {
+    color: var(--accent);
+    text-shadow: 0 0 8px rgba(10,186,181,0.4);
+  }
+
+  /* ── PANELS ── */
+  .panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+  .panel.active { display: flex; animation: panelIn 0.32s cubic-bezier(0.16,1,0.3,1) forwards; }
+  @keyframes panelIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── MESSAGES ── */
+  .messages {
+    flex: 1; overflow-y: auto; padding: 16px 12px;
+    display: flex; flex-direction: column; gap: 14px;
+    scroll-behavior: smooth;
+  }
+  .msg {
+    display: flex; gap: 10px; align-items: flex-start;
+    animation: fadeInUp 0.5s cubic-bezier(0.16,1,0.3,1) forwards;
+    opacity: 0;
+  }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(18px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .msg.user { flex-direction: row-reverse; }
+  .avatar {
+    width: 30px; height: 30px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; background: var(--bg3);
+    transition: background 0.4s, box-shadow 0.4s;
+  }
+  .msg.user .avatar { background: var(--accent); color: #fff; }
+  .msg.bot .avatar {
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  [data-theme="tiffany"] .msg.bot .avatar {
+    background: rgba(10,186,181,0.08);
+    border: 1px solid rgba(10,186,181,0.2);
+    box-shadow: 0 0 8px rgba(10,186,181,0.15);
+  }
+  [data-theme="tiffany"] .msg.user .avatar {
+    background: rgba(10,186,181,0.8);
+    box-shadow: 0 0 10px rgba(10,186,181,0.35);
+  }
+  .bubble {
+    max-width: 78%; padding: 10px 14px;
+    border-radius: 14px; font-size: 14px; line-height: 1.6;
+    word-break: break-word;
+    backdrop-filter: blur(16px) saturate(1.5);
+    -webkit-backdrop-filter: blur(16px) saturate(1.5);
+    transition: background 0.4s, border-color 0.4s;
+  }
+  .msg.user .bubble {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-bottom-right-radius: 4px;
+  }
+  .msg.bot .bubble {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-bottom-left-radius: 4px;
+  }
+  [data-theme="tiffany"] .msg.user .bubble {
+    background: rgba(10,186,181,0.08);
+    border-color: rgba(10,186,181,0.18);
+  }
+  [data-theme="tiffany"] .msg.bot .bubble {
+    background: rgba(255,255,255,0.03);
+    border-color: rgba(10,186,181,0.1);
+  }
+  [data-theme="light"] .msg.user .bubble {
+    background: rgba(10,186,181,0.07);
+    border-color: rgba(10,186,181,0.18);
+    box-shadow: 0 1px 8px rgba(10,186,181,0.08);
+  }
+  [data-theme="light"] .msg.bot .bubble {
+    background: rgba(255,255,255,0.55);
+    border-color: rgba(10,186,181,0.12);
+    box-shadow: 0 1px 8px rgba(10,186,181,0.06);
+  }
+
+  /* ── TYPING ── */
+  .typing { display: flex; gap: 4px; padding: 2px 0; }
+  .typing span { width: 7px; height: 7px; background: var(--text2); border-radius: 50%; animation: blink 1.2s infinite; }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%,80%,100%{opacity:.3;transform:scale(.8)} 40%{opacity:1;transform:scale(1)} }
+
+  /* ── CHAT EMPTY STATE (ChatGPT-style centered) ── */
+  #чат { position: relative; }
+  #чат.empty {
+    justify-content: center;
+    align-items: center;
+  }
+  #чат.empty .messages {
+    flex: 0 0 auto;
+    overflow: visible;
+    width: 100%;
+    max-width: 680px;
+    padding: 20px 20px 16px;
+  }
+  #чат.empty .input-area {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 680px;
+    border-top: none;
+    background: transparent;
+    padding: 0 16px 56px;
+  }
+  #чат.empty .input-wrap { border-radius: 20px; }
+
+  /* ── INPUT — LIQUID GLASS ── */
+  .input-area {
+    padding: 10px 12px 16px;
+    background: transparent;
+    flex-shrink: 0;
+  }
+  .input-wrap {
+    display: flex; gap: 8px; align-items: flex-end;
+    position: relative;
+    background: linear-gradient(
+      145deg,
+      rgba(255,255,255,0.06) 0%,
+      rgba(255,255,255,0.02) 45%,
+      rgba(255,255,255,0.04) 100%
+    );
+    backdrop-filter: blur(72px) saturate(2) brightness(1.1);
+    -webkit-backdrop-filter: blur(72px) saturate(2) brightness(1.1);
+    border-radius: 22px; padding: 10px 10px 10px 16px;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-top-color: rgba(255,255,255,0.2);
+    box-shadow:
+      0 8px 40px rgba(0,0,0,0.18),
+      0 2px 8px rgba(0,0,0,0.08),
+      inset 0 1.5px 0 rgba(255,255,255,0.18),
+      inset 0 -1px 0 rgba(0,0,0,0.05),
+      inset 1px 0 0 rgba(255,255,255,0.06),
+      inset -1px 0 0 rgba(255,255,255,0.03);
+    transition: border-color 0.4s cubic-bezier(0.16,1,0.3,1), box-shadow 0.4s cubic-bezier(0.16,1,0.3,1);
+  }
+  /* specular top shine */
+  .input-wrap::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 12%; right: 12%; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 1;
+  }
+  [data-theme="tiffany"] .input-wrap {
+    background: linear-gradient(
+      145deg,
+      rgba(10,186,181,0.07) 0%,
+      rgba(10,186,181,0.02) 45%,
+      rgba(10,186,181,0.04) 100%
+    );
+    border: 1px solid rgba(10,186,181,0.14);
+    border-top-color: rgba(10,186,181,0.25);
+    box-shadow:
+      0 10px 48px rgba(10,186,181,0.15),
+      0 2px 10px rgba(0,0,0,0.2),
+      inset 0 1.5px 0 rgba(255,255,255,0.14),
+      inset 0 -1px 0 rgba(0,0,0,0.06);
+  }
+  [data-theme="tiffany"] .input-wrap::before {
+    background: linear-gradient(90deg, transparent, rgba(10,186,181,0.45), transparent);
+  }
+  [data-theme="light"] .input-wrap {
+    background: linear-gradient(
+      145deg,
+      rgba(255,255,255,0.55) 0%,
+      rgba(255,255,255,0.35) 50%,
+      rgba(255,255,255,0.48) 100%
+    );
+    backdrop-filter: blur(72px) saturate(2) brightness(1.12);
+    -webkit-backdrop-filter: blur(72px) saturate(2) brightness(1.12);
+    border: 1px solid rgba(10,186,181,0.25);
+    border-top-color: rgba(10,186,181,0.4);
+    box-shadow:
+      0 8px 40px rgba(10,186,181,0.14),
+      0 2px 10px rgba(10,186,181,0.08),
+      inset 0 1.5px 0 rgba(255,255,255,0.9),
+      inset 0 -1px 0 rgba(10,186,181,0.05);
+  }
+  [data-theme="light"] .input-wrap::before {
+    background: linear-gradient(90deg, transparent, rgba(10,186,181,0.3), transparent);
+  }
+  .input-wrap:focus-within {
+    border-color: rgba(255,255,255,0.35);
+    border-top-color: rgba(255,255,255,0.55);
+    box-shadow:
+      0 10px 48px rgba(0,0,0,0.3),
+      0 0 0 2px var(--accent-ring),
+      0 0 20px var(--accent-glow),
+      inset 0 1.5px 0 rgba(255,255,255,0.35),
+      inset 0 -1px 0 rgba(0,0,0,0.08);
+  }
+  [data-theme="tiffany"] .input-wrap:focus-within {
+    border-color: rgba(10,186,181,0.5);
+    border-top-color: rgba(10,186,181,0.7);
+    box-shadow:
+      0 10px 48px rgba(10,186,181,0.18),
+      0 0 0 2px rgba(10,186,181,0.12),
+      0 0 24px rgba(10,186,181,0.12),
+      inset 0 1.5px 0 rgba(255,255,255,0.14);
+  }
+  [data-theme="light"] .input-wrap:focus-within {
+    border-color: rgba(10,186,181,0.6);
+    border-top-color: rgba(10,186,181,0.8);
+    box-shadow:
+      0 8px 40px rgba(10,186,181,0.2),
+      0 0 0 3px rgba(10,186,181,0.1),
+      inset 0 1.5px 0 rgba(255,255,255,0.9);
+  }
+  .input-wrap textarea {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: var(--text); font-size: 14px; resize: none;
+    max-height: 120px; font-family: inherit; line-height: 1.5;
+  }
+  .input-wrap textarea::placeholder { color: var(--text2); }
+  .send-btn {
+    width: 34px; height: 34px; border-radius: 9px;
+    background: var(--accent); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: background 0.35s cubic-bezier(0.16,1,0.3,1), transform 0.35s cubic-bezier(0.16,1,0.3,1), box-shadow 0.35s cubic-bezier(0.16,1,0.3,1), color 0.35s;
+    color: var(--send-btn-color);
+    box-shadow: 0 2px 8px var(--accent-glow);
+  }
+  [data-theme="tiffany"] .send-btn {
+    background: rgba(10,186,181,0.85);
+    box-shadow: 0 2px 12px rgba(10,186,181,0.4);
+  }
+  .send-btn:hover { background: var(--accent2); transform: scale(1.1); box-shadow: 0 4px 18px var(--accent-shadow); }
+  .send-btn:active { transform: scale(0.92); }
+  .send-btn:disabled { background: var(--bg3); color: var(--text2); cursor: default; transform: none; box-shadow: none; }
+
+  /* ── HISTORY ── */
+  .history-panel { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .history-empty { text-align: center; color: var(--text2); font-size: 14px; margin: auto; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .history-item {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(80px) saturate(2.2);
+    -webkit-backdrop-filter: blur(80px) saturate(2.2);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px; padding: 12px 14px; cursor: pointer;
+    transition: border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1), transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s cubic-bezier(0.16,1,0.3,1);
+    display: flex; justify-content: space-between; align-items: center;
+    animation: fadeInUp 0.5s cubic-bezier(0.16,1,0.3,1) forwards; opacity: 0;
+  }
+  [data-theme="tiffany"] .history-item { background: rgba(10,186,181,0.04); border-color: rgba(10,186,181,0.1); }
+  [data-theme="light"] .history-item { background: rgba(255,255,255,0.45); border-color: rgba(10,186,181,0.22); }
+  .history-item:hover { border-color: var(--accent); background: rgba(255,255,255,0.08); transform: translateY(-1px); box-shadow: 0 4px 16px var(--accent-glow); }
+  [data-theme="light"] .history-item:hover { background: rgba(10,186,181,0.08); }
+  .history-text { font-size: 13px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  .history-date { font-size: 11px; color: var(--text2); margin-left: 8px; white-space: nowrap; }
+  .history-del { background: none; border: none; color: var(--text2); font-size: 18px; cursor: pointer; padding: 0 0 0 10px; line-height: 1; transition: color 0.2s; }
+  .history-del:hover { color: #ff5555; }
+
+  /* ── IMAGE PANEL ── */
+  .image-panel { flex: 1; overflow-y: auto; padding: 20px 16px; display: flex; flex-direction: column; align-items: center; }
+  .img-card { width: 100%; max-width: 400px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .img-hero {
+    width: 72px; height: 72px; border-radius: 22px;
+    background: var(--bg3); border: 1px solid var(--accent-glow);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 30px var(--accent-glow);
+    animation: heroGlow 3s ease infinite;
+    transition: background 0.4s;
+  }
+  [data-theme="tiffany"] .img-hero {
+    background: rgba(10,186,181,0.08);
+    border-color: rgba(10,186,181,0.25);
+  }
+  @keyframes heroGlow {
+    0%,100% { box-shadow: 0 0 20px var(--accent-glow); }
+    50%      { box-shadow: 0 0 50px var(--accent-shadow); }
+  }
+  .img-title { font-size: 18px; font-weight: 700; text-align: center; }
+  .img-desc { font-size: 13px; color: var(--text2); text-align: center; line-height: 1.5; }
+  .img-input {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(28px) saturate(1.8);
+    -webkit-backdrop-filter: blur(28px) saturate(1.8);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text); border-radius: 14px; padding: 13px 16px;
+    font-size: 14px; outline: none; font-family: inherit;
+    resize: none; height: 90px; line-height: 1.5;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.4s;
+  }
+  [data-theme="tiffany"] .img-input {
+    background: rgba(10,186,181,0.04);
+    border-color: rgba(10,186,181,0.2);
+  }
+  [data-theme="light"] .img-input {
+    background: rgba(255,255,255,0.5);
+    border-color: rgba(10,186,181,0.25);
+  }
+  .img-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-ring); }
+  .img-input::placeholder { color: var(--text2); }
+  .gen-btn {
+    width: 100%; padding: 14px;
+    background: var(--accent); border: none; border-radius: 13px;
+    color: var(--send-btn-color); font-size: 15px; font-weight: 700; cursor: pointer;
+    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    box-shadow: 0 4px 20px var(--accent-glow);
+  }
+  [data-theme="tiffany"] .gen-btn {
+    background: rgba(10,186,181,0.85);
+    box-shadow: 0 4px 20px rgba(10,186,181,0.35);
+  }
+  .gen-btn:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 6px 26px var(--accent-shadow); }
+  .gen-btn:active { transform: translateY(0); }
+  .gen-btn:disabled { background: var(--bg3); color: var(--text2); cursor: default; transform: none; box-shadow: none; }
+  .progress-wrap { width: 100%; height: 3px; background: var(--bg3); border-radius: 2px; overflow: hidden; display: none; }
+  .progress-wrap.active { display: block; }
+  .progress-bar { height: 100%; background: var(--accent); border-radius: 2px; animation: progressAnim 1.8s ease-in-out infinite; }
+  @keyframes progressAnim { 0%{width:0%;margin-left:0} 50%{width:70%;margin-left:15%} 100%{width:0%;margin-left:100%} }
+  .img-status { text-align: center; color: var(--text2); font-size: 13px; min-height: 18px; }
+  .img-result { width: 100%; }
+  .img-result img {
+    width: 100%; border-radius: 16px; display: block;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    animation: fadeInUp 0.4s ease forwards; opacity: 0;
+  }
+  [data-theme="light"] .img-result img { box-shadow: 0 6px 32px rgba(10,186,181,0.18); }
+  .save-btn {
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    width: 100%; margin-top: 10px; padding: 13px;
+    background: var(--glass-bg); border: 1px solid var(--glass-border);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-radius: 13px; color: var(--text); text-align: center;
+    font-size: 14px; font-weight: 600; text-decoration: none;
+    transition: border-color 0.2s, color 0.2s, transform 0.15s;
+  }
+  .save-btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+
+  /* ── WELCOME ── */
+  .welcome {
+    text-align: center; margin: auto;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    animation: fadeInUp 0.5s cubic-bezier(0.16,1,0.3,1) forwards; opacity: 0;
+  }
+  .welcome-icon {
+    width: 64px; height: 64px; background: var(--accent);
+    border-radius: 20px; display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    box-shadow: 0 0 28px var(--accent-shadow), 0 0 60px var(--accent-glow);
+    transition: background 0.4s, box-shadow 0.4s;
+    animation: heroGlow 3s ease infinite;
+  }
+  [data-theme="tiffany"] .welcome-icon {
+    background: rgba(10,186,181,0.85);
+    box-shadow: 0 0 35px rgba(10,186,181,0.55), 0 0 70px rgba(10,186,181,0.2);
+  }
+  [data-theme="light"] .welcome-icon {
+    background: rgba(10,186,181,0.12);
+    box-shadow: 0 0 24px rgba(10,186,181,0.35), 0 0 50px rgba(10,186,181,0.15);
+  }
+  .welcome h2 { font-size: 19px; font-weight: 700; }
+  .welcome p { font-size: 13px; color: var(--text2); max-width: 220px; line-height: 1.6; }
+  .welcome-chips { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; margin-top: 4px; }
+  .chip {
+    background: var(--glass-bg); border: 1px solid var(--glass-border);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-radius: 20px; padding: 5px 11px; font-size: 12px; color: var(--text2);
+    cursor: pointer; transition: border-color 0.2s, color 0.2s;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── ADMIN ── */
+  .admin-panel { flex: 1; overflow-y: auto; padding: 14px 12px; display: flex; flex-direction: column; gap: 14px; }
+  .admin-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-card {
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(18px) saturate(1.5); -webkit-backdrop-filter: blur(18px) saturate(1.5);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px; padding: 16px; text-align: center;
+    transition: border-color 0.35s cubic-bezier(0.16,1,0.3,1), box-shadow 0.35s cubic-bezier(0.16,1,0.3,1), background 0.35s cubic-bezier(0.16,1,0.3,1);
+  }
+  [data-theme="tiffany"] .stat-card { background: rgba(10,186,181,0.05); border-color: rgba(10,186,181,0.12); }
+  [data-theme="light"] .stat-card { background: rgba(255,255,255,0.45); border-color: rgba(10,186,181,0.22); }
+  .stat-card:hover { border-color: var(--accent); background: rgba(255,255,255,0.07); box-shadow: 0 4px 20px var(--accent-glow); }
+  [data-theme="light"] .stat-card:hover { background: rgba(255,255,255,0.7); }
+  .stat-num { font-size: 28px; font-weight: 800; color: var(--accent); }
+  [data-theme="tiffany"] .stat-num { text-shadow: 0 0 12px rgba(10,186,181,0.4); }
+  .stat-label { font-size: 12px; color: var(--text2); margin-top: 4px; }
+  .admin-section-title { font-size: 12px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+  .admin-refresh {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(18px) saturate(1.5); -webkit-backdrop-filter: blur(18px) saturate(1.5);
+    color: var(--text2); border-radius: 9px; padding: 8px 14px; font-size: 12px; cursor: pointer;
+    transition: border-color 0.2s, color 0.2s, background 0.2s; width: 100%;
+  }
+  [data-theme="tiffany"] .admin-refresh { background: rgba(10,186,181,0.04); border-color: rgba(10,186,181,0.1); }
+  [data-theme="light"] .admin-refresh { background: rgba(255,255,255,0.45); border-color: rgba(10,186,181,0.22); }
+  .admin-refresh:hover { border-color: var(--accent); color: var(--accent); background: rgba(255,255,255,0.07); }
+  .admin-user {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(18px) saturate(1.5); -webkit-backdrop-filter: blur(18px) saturate(1.5);
+    border-radius: 12px; padding: 11px 13px; display: flex; justify-content: space-between; align-items: center;
+    animation: fadeInUp 0.25s ease forwards; opacity: 0;
+  }
+  [data-theme="tiffany"] .admin-user { background: rgba(10,186,181,0.04); border-color: rgba(10,186,181,0.1); }
+  [data-theme="light"] .admin-user { background: rgba(255,255,255,0.45); border-color: rgba(10,186,181,0.22); }
+  .admin-user-info { flex: 1; min-width: 0; }
+  .admin-user-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .admin-user-meta { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .admin-user-badge {
+    background: var(--accent-glow); border: 1px solid var(--accent-glow);
+    color: var(--accent); border-radius: 20px; padding: 2px 9px;
+    font-size: 11px; font-weight: 700; white-space: nowrap; margin-left: 8px;
+  }
+  .admin-msg {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(18px) saturate(1.5); -webkit-backdrop-filter: blur(18px) saturate(1.5);
+    border-radius: 12px; padding: 10px 13px;
+    animation: fadeInUp 0.2s ease forwards; opacity: 0;
+  }
+  [data-theme="tiffany"] .admin-msg { background: rgba(10,186,181,0.04); border-color: rgba(10,186,181,0.1); }
+  [data-theme="light"] .admin-msg { background: rgba(255,255,255,0.45); border-color: rgba(10,186,181,0.22); }
+  .admin-msg-author { font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 4px; }
+  .admin-msg-text { font-size: 13px; color: var(--text); line-height: 1.4; word-break: break-word; }
+  .admin-msg-time { font-size: 11px; color: var(--text2); margin-top: 4px; }
+  .admin-empty { text-align: center; color: var(--text2); font-size: 13px; padding: 20px; }
+  .admin-error { text-align: center; color: #ff6b6b; font-size: 13px; padding: 20px; }
+  #admin-users, #admin-messages { display: flex; flex-direction: column; gap: 8px; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  pre { background: var(--bg3); padding: 12px; border-radius: 10px; margin: 6px 0; overflow-x: auto; font-size: 12px; border: 1px solid var(--border); line-height: 1.6; }
+  [data-theme="light"] pre { background: #e4f4f3; border-color: #b8d8d7; }
+  code { font-family: 'SF Mono', Consolas, monospace; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 88px; left: 50%; transform: translateX(-50%) translateY(12px);
+    background: rgba(20,20,20,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.12); border-radius: 14px;
+    color: #fff; font-size: 13px; font-weight: 500; padding: 10px 20px;
+    pointer-events: none; z-index: 999;
+    opacity: 0; transition: opacity 0.22s, transform 0.22s;
+    white-space: nowrap;
+  }
+  [data-theme="light"] .toast { background: rgba(255,255,255,0.92); color: #1a2e2d; border-color: rgba(10,186,181,0.2); }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── BUBBLE FOOTER (timestamp + copy) ── */
+  .bubble-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 6px; gap: 8px;
+  }
+  .msg.user .bubble-footer { justify-content: flex-end; }
+  .msg-time { font-size: 10px; color: var(--text2); opacity: 0.65; flex-shrink: 0; }
+  .copy-btn {
+    background: none; border: 1px solid transparent; border-radius: 7px;
+    color: var(--text2); cursor: pointer; padding: 2px 8px;
+    font-size: 10px; font-family: inherit;
+    display: flex; align-items: center; gap: 4px;
+    opacity: 0; transition: opacity 0.2s, border-color 0.2s, color 0.2s, background 0.2s;
+  }
+  .msg.bot:hover .copy-btn { opacity: 1; }
+  .copy-btn:hover { border-color: var(--glass-border); color: var(--accent); background: var(--glass-bg); }
+
+  /* ── SCROLL DOWN BTN ── */
+  .scroll-down-btn {
+    position: absolute; bottom: 90px; right: 14px; z-index: 10;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border); color: var(--text2);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s, transform 0.25s, border-color 0.2s, color 0.2s;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  }
+  .scroll-down-btn.visible { opacity: 1; pointer-events: all; }
+  .scroll-down-btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
+
+  /* ── VOICE BTN ── */
+  .voice-btn {
+    width: 34px; height: 34px; border-radius: 9px;
+    background: transparent; border: 1px solid var(--glass-border);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; color: var(--text2);
+    transition: border-color 0.25s, color 0.25s, background 0.25s, box-shadow 0.25s;
+  }
+  .voice-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .voice-btn.recording { border-color: #ff5555; color: #ff5555; background: rgba(255,85,85,0.1); animation: voicePulse 1.2s ease infinite; }
+  @keyframes voicePulse { 0%,100%{box-shadow:0 0 0 0 rgba(255,85,85,0.4)} 60%{box-shadow:0 0 0 7px rgba(255,85,85,0)} }
+
+  /* ── CHAR COUNTER ── */
+  .input-top {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 4px 5px; gap: 8px;
+  }
+  .char-counter {
+    font-size: 10px; color: var(--text2); opacity: 0;
+    transition: opacity 0.2s, color 0.2s; flex-shrink: 0;
+  }
+  .char-counter.visible { opacity: 1; }
+  .char-counter.warn { color: #ff9500; }
+  .char-counter.over { color: #ff5555; }
+
+  /* ── MODEL DROPDOWN ── */
+  .model-dd {
+    position: relative; display: flex; align-items: center; gap: 5px;
+    background: var(--glass-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border); border-radius: 9px;
+    color: var(--text2); font-size: 12px; font-weight: 600;
+    padding: 6px 10px; cursor: pointer; user-select: none;
+    transition: border-color 0.22s, color 0.22s;
+  }
+  .model-dd:hover { border-color: var(--accent); color: var(--text); }
+  .model-dd.open { border-color: var(--accent); color: var(--text); }
+  .model-dd-arrow { transition: transform 0.22s; flex-shrink: 0; }
+  .model-dd.open .model-dd-arrow { transform: rotate(180deg); }
+  .model-dd-list {
+    position: absolute; bottom: calc(100% + 8px); left: 0;
+    background: var(--bg2); backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px);
+    border: 1px solid var(--glass-border); border-radius: 13px;
+    overflow: hidden; min-width: 170px;
+    display: none; z-index: 50;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.15);
+    animation: ddIn 0.18s cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+  [data-theme="light"] .model-dd-list { background: #f0f7f7; }
+  @keyframes ddIn { from{opacity:0;transform:translateY(6px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+  .model-dd.open .model-dd-list { display: block; }
+  .model-dd-item {
+    padding: 11px 14px; font-size: 13px; color: var(--text);
+    cursor: pointer; transition: background 0.14s;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  .model-dd-item:hover { background: var(--glass-bg); }
+  .model-dd-item.dd-active { color: var(--accent); font-weight: 600; }
+  .model-dd-item + .model-dd-item { border-top: 1px solid var(--border); }
+
+  /* ── HISTORY SEARCH ── */
+  .history-search {
+    padding: 10px 12px 4px; flex-shrink: 0;
+  }
+  .history-search input {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(28px) saturate(1.8); -webkit-backdrop-filter: blur(28px) saturate(1.8);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+    color: var(--text); font-size: 13px; padding: 10px 14px;
+    outline: none; font-family: inherit;
+    transition: border-color 0.25s, box-shadow 0.25s;
+  }
+  [data-theme="tiffany"] .history-search input { background: rgba(10,186,181,0.04); border-color: rgba(10,186,181,0.15); }
+  [data-theme="light"] .history-search input { background: rgba(255,255,255,0.55); border-color: rgba(10,186,181,0.25); }
+  .history-search input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-ring); }
+  .history-search input::placeholder { color: var(--text2); }
+
+  /* ── SEND BTN LOADING ── */
+  @keyframes sendPulse { 0%,100%{box-shadow:0 0 0 0 var(--accent-shadow)} 50%{box-shadow:0 0 0 8px transparent} }
+  .send-btn.loading { animation: sendPulse 1s ease infinite; }
+  @keyframes spinIcon { to { transform: rotate(360deg); } }
+  .send-btn.loading svg { animation: spinIcon 0.9s linear infinite; }
+
+  /* ── SIDEBAR OVERLAY ── */
+  .sidebar-overlay {
+    position: fixed; inset: 0; z-index: 199;
+    background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    opacity: 0; pointer-events: none; transition: opacity 0.28s;
+  }
+  .sidebar-overlay.show { opacity: 1; pointer-events: all; }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0; z-index: 200;
+    width: 275px; display: flex; flex-direction: column;
+    background: var(--bg2); border-right: 1px solid var(--border);
+    transform: translateX(-275px);
+    transition: transform 0.32s cubic-bezier(0.16,1,0.3,1);
+  }
+  [data-theme="light"] .sidebar { background: #f0f7f7; }
+  .sidebar.open { transform: translateX(0); box-shadow: 6px 0 48px rgba(0,0,0,0.4); }
+  .sidebar-top {
+    padding: 14px 12px 12px; display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .sidebar-close-btn {
+    width: 32px; height: 32px; border-radius: 8px; background: none; border: none;
+    color: var(--text2); cursor: pointer; display: flex; align-items: center;
+    justify-content: center; transition: background 0.18s, color 0.18s; flex-shrink: 0;
+  }
+  .sidebar-close-btn:hover { background: var(--glass-bg); color: var(--text); }
+  .new-chat-side-btn {
+    flex: 1; background: var(--accent); border: none; border-radius: 9px;
+    color: var(--send-btn-color); font-size: 13px; font-weight: 700;
+    padding: 9px 14px; cursor: pointer; display: flex; align-items: center;
+    gap: 6px; justify-content: center; font-family: inherit;
+    box-shadow: 0 2px 12px var(--accent-glow);
+    transition: background 0.2s, transform 0.15s;
+  }
+  .new-chat-side-btn:hover { background: var(--accent2); transform: translateY(-1px); }
+  [data-theme="tiffany"] .new-chat-side-btn { background: rgba(10,186,181,0.85); }
+
+  .sidebar-search-box {
+    padding: 10px 12px 6px; flex-shrink: 0; position: relative;
+  }
+  .sidebar-search-box .s-icon {
+    position: absolute; left: 22px; top: 50%; transform: translateY(-50%);
+    color: var(--text2); pointer-events: none;
+  }
+  .sidebar-search-box input {
+    width: 100%; background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.09); border-radius: 10px;
+    color: var(--text); font-size: 13px; padding: 9px 12px 9px 34px;
+    outline: none; font-family: inherit; transition: border-color 0.2s, background 0.2s;
+  }
+  [data-theme="tiffany"] .sidebar-search-box input { background: rgba(10,186,181,0.05); border-color: rgba(10,186,181,0.12); }
+  [data-theme="light"] .sidebar-search-box input { background: rgba(255,255,255,0.7); border-color: rgba(10,186,181,0.2); }
+  .sidebar-search-box input:focus { border-color: var(--accent); }
+  .sidebar-search-box input::placeholder { color: var(--text2); }
+
+  .sidebar-chats { flex: 1; overflow-y: auto; padding: 2px 8px 24px; }
+  .chat-group-label {
+    display: block; font-size: 11px; color: var(--text2); font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.7px; padding: 14px 8px 4px;
+  }
+  .chat-item {
+    display: flex; align-items: center; gap: 8px; padding: 9px 10px;
+    border-radius: 8px; cursor: pointer; transition: background 0.15s; position: relative;
+  }
+  .chat-item:hover { background: rgba(255,255,255,0.07); }
+  [data-theme="tiffany"] .chat-item:hover { background: rgba(10,186,181,0.07); }
+  [data-theme="light"] .chat-item:hover { background: rgba(10,186,181,0.07); }
+  .chat-item.chat-active { background: rgba(255,255,255,0.11); }
+  [data-theme="tiffany"] .chat-item.chat-active { background: rgba(10,186,181,0.1); }
+  [data-theme="light"] .chat-item.chat-active { background: rgba(10,186,181,0.1); }
+  .chat-icon { color: var(--text2); opacity: 0.5; flex-shrink: 0; }
+  .chat-item-text {
+    flex: 1; font-size: 13px; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .chat-del-btn {
+    background: none; border: none; color: var(--text2); cursor: pointer;
+    padding: 3px; border-radius: 5px; display: flex; align-items: center;
+    opacity: 0; transition: opacity 0.15s, color 0.15s; flex-shrink: 0;
+  }
+  .chat-item:hover .chat-del-btn { opacity: 1; }
+  .chat-del-btn:hover { color: #ff5555; }
+  .sidebar-empty {
+    text-align: center; color: var(--text2); font-size: 13px;
+    padding: 32px 16px; display: flex; flex-direction: column; align-items: center; gap: 10px;
+  }
+
+  /* ── MENU BTN ── */
+  .menu-btn {
+    width: 34px; height: 34px; border-radius: 9px;
+    background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border); color: var(--text2);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: border-color 0.25s, color 0.25s; flex-shrink: 0;
+  }
+  .menu-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── USER AVATAR INITIALS ── */
+  .avatar-initials {
+    width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800; color: var(--send-btn-color); border-radius: 8px;
+  }
+  .avatar-photo { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; display: block; }
+
+  /* ── THEME ICON TOGGLE ── */
+  .theme-icon-dark    { display: block; }
+  .theme-icon-tiffany { display: none; }
+  .theme-icon-light   { display: none; }
+  [data-theme="tiffany"] .theme-icon-dark    { display: none; }
+  [data-theme="tiffany"] .theme-icon-tiffany { display: block; }
+  [data-theme="tiffany"] .theme-icon-light   { display: none; }
+  [data-theme="light"] .theme-icon-dark    { display: none; }
+  [data-theme="light"] .theme-icon-tiffany { display: none; }
+  [data-theme="light"] .theme-icon-light   { display: block; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR OVERLAY -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="закрытьБоковую()"></div>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-top">
+    <button class="sidebar-close-btn" onclick="закрытьБоковую()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+    </button>
+    <button class="new-chat-side-btn" onclick="новыйЧат();закрытьБоковую()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      Новый чат
+    </button>
+  </div>
+  <div class="sidebar-search-box">
+    <svg class="s-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+    <input type="text" id="history-search" placeholder="Поиск по чатам..." oninput="поискИстории(this.value)">
+  </div>
+  <div class="sidebar-chats" id="список-истории"></div>
+</div>
+
+<!-- WAVE CANVAS BACKGROUND -->
+<canvas id="bg-canvas" class="bg-canvas"></canvas>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <button class="menu-btn" onclick="открытьБоковую()" title="История чатов">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+    </button>
+    <div class="logo">
+      <img src="/logo.jpg" alt="AIchat" onerror="this.style.display='none';this.parentElement.style.background='var(--accent)'">
+    </div>
+    <div>
+      <div class="header-title">AIchat | APP</div>
+      <div class="header-sub"><div class="online-dot"></div> Mistral · Онлайн</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="theme-btn" id="theme-btn" onclick="переключитьТему()" title="Сменить тему">
+      <svg class="theme-icon-dark" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>
+      <svg class="theme-icon-tiffany" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zm0 16V5c3.86 0 7 3.14 7 7s-3.14 7-7 7z"/></svg>
+      <svg class="theme-icon-light" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69zM12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/></svg>
+    </button>
+    <button class="new-chat-btn" onclick="новыйЧат()">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      Новый чат
+    </button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="переключить('чат', this)">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+    Чат
+  </div>
+  <div class="tab" onclick="переключить('картинки', this)">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+    Картинки
+  </div>
+  <div class="tab" id="admin-tab" style="display:none" onclick="переключить('админ', this)">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+    Админ
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ЧАТ -->
+<div class="panel active empty" id="чат">
+  <button class="scroll-down-btn" id="scroll-down-btn" onclick="прокрутитьВниз()" title="Вниз">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
+  </button>
+  <div class="messages" id="сообщения">
+    <div class="welcome" id="приветствие">
+      <div class="welcome-icon">
+        <img src="/logo.jpg" alt="AIchat" style="width:100%;height:100%;object-fit:cover;border-radius:20px;" onerror="this.style.display='none'">
+      </div>
+      <h2>AIchat | APP</h2>
+      <p>Задай любой вопрос, попроси помочь с кодом или объяснить тему</p>
+      <div class="welcome-chips">
+        <span class="chip" onclick="быстрыйЗапрос('Объясни код')">Объясни код</span>
+        <span class="chip" onclick="быстрыйЗапрос('Помоги с текстом')">Помоги с текстом</span>
+        <span class="chip" onclick="быстрыйЗапрос('Реши задачу')">Реши задачу</span>
+      </div>
+    </div>
+  </div>
+  <div class="input-area">
+    <div class="input-top">
+      <div class="model-dd" id="model-dd" onclick="toggleModelDd(event)">
+        <span id="model-label">Mistral Large</span>
+        <svg class="model-dd-arrow" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+        <div class="model-dd-list">
+          <div class="model-dd-item dd-active" onclick="выбратьМодель('mistral-large-latest','Mistral Large',this)">Mistral Large<span>✓</span></div>
+          <div class="model-dd-item" onclick="выбратьМодель('mistral-small-latest','Mistral Small',this)">Mistral Small</div>
+          <div class="model-dd-item" onclick="выбратьМодель('codestral-latest','Codestral',this)">Codestral</div>
+          <div class="model-dd-item" onclick="выбратьМодель('mistral-medium-latest','Mistral Medium',this)">Mistral Medium</div>
+        </div>
+      </div>
+      <span class="char-counter" id="char-counter"></span>
+    </div>
+    <div class="input-wrap">
+      <textarea id="ввод" placeholder="Напиши сообщение..." rows="1"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();отправить()}"
+        oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';обновитьСчетчик(this.value.length)"></textarea>
+      <button class="voice-btn" id="voice-btn" onclick="голосовойВвод()" title="Голосовой ввод">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1 1.93c-3.94-.49-7-3.85-7-7.93H2c0 4.56 3.17 8.35 7.5 8.92V20H8v2h8v-2h-1.5v-2.15c4.33-.57 7.5-4.36 7.5-8.85h-2c0 4.08-3.06 7.44-7 7.93V16z"/></svg>
+      </button>
+      <button class="send-btn" id="кнопка" onclick="отправить()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- КАРТИНКИ -->
+<div class="panel" id="картинки">
+  <div class="image-panel">
+    <div class="img-card">
+      <div class="img-hero">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="var(--accent)"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+      </div>
+      <div class="img-title">Генерация изображений</div>
+      <div class="img-desc">Опиши что хочешь увидеть — AI создаст изображение. Лучше на английском.</div>
+      <textarea class="img-input" id="img-ввод" placeholder="Например: beautiful sunset over mountains, cinematic, photorealistic..."></textarea>
+      <button class="gen-btn" id="gen-btn" onclick="сгенерировать()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
+        Сгенерировать
+      </button>
+      <div class="progress-wrap" id="progress-wrap"><div class="progress-bar"></div></div>
+      <div class="img-status" id="img-статус"></div>
+      <div class="img-result" id="img-результат"></div>
+    </div>
+  </div>
+</div>
+
+<!-- АДМИН -->
+<div class="panel" id="админ">
+  <div class="admin-panel">
+    <div class="admin-stats">
+      <div class="stat-card"><div class="stat-num" id="stat-users">—</div><div class="stat-label">Пользователей</div></div>
+      <div class="stat-card"><div class="stat-num" id="stat-msgs">—</div><div class="stat-label">Сообщений</div></div>
+    </div>
+    <button class="admin-refresh" onclick="загрузитьАдмин()">↻ Обновить данные</button>
+    <div id="admin-error" style="display:none" class="admin-error"></div>
+    <div>
+      <div class="admin-section-title">Пользователи</div>
+      <div id="admin-users"><div class="admin-empty">Нажмите «Обновить данные»</div></div>
+    </div>
+    <div>
+      <div class="admin-section-title">Последние сообщения</div>
+      <div id="admin-messages"><div class="admin-empty">Нажмите «Обновить данные»</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const tg = window.Telegram?.WebApp;
+  if (tg) { tg.expand(); }
+
+  const ADMIN_ID = 739848745;
+  const ADMIN_SECRET = "aibot_secret";
+  const MAX_CHARS = 2000;
+
+  const tgUser = tg?.initDataUnsafe?.user;
+  if (!tg || (tgUser && tgUser.id === ADMIN_ID)) {
+    document.getElementById('admin-tab').style.display = 'flex';
+  }
+
+  // ── WAVE CANVAS BACKGROUND ──
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+
+  const WAVES = [
+    { y: 0.12, amp: 60,  freq: 0.0022, speed: 0.38, phase: 0 },
+    { y: 0.28, amp: 40,  freq: 0.0034, speed: 0.28, phase: 2.1 },
+    { y: 0.44, amp: 75,  freq: 0.0018, speed: 0.22, phase: 4.3 },
+    { y: 0.60, amp: 48,  freq: 0.0028, speed: 0.34, phase: 1.2 },
+    { y: 0.74, amp: 62,  freq: 0.0025, speed: 0.42, phase: 5.1 },
+    { y: 0.88, amp: 32,  freq: 0.004,  speed: 0.50, phase: 3.0 },
+  ];
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  function getAccentHex() {
+    const t = document.documentElement.getAttribute('data-theme') || '';
+    if (t === 'tiffany') return '#0ABAB5';
+    if (t === 'light')   return '#0ABAB5';
+    return '#f5c518';
+  }
+
+  function drawWaves(ts) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const t = ts * 0.001;
+    const accent = getAccentHex();
+    const H = canvas.height;
+    const W = canvas.width;
+
+    WAVES.forEach((wave, i) => {
+      ctx.beginPath();
+      for (let x = 0; x <= W + 4; x += 2) {
+        const y = H * wave.y
+          + Math.sin(x * wave.freq + t * wave.speed + wave.phase) * wave.amp
+          + Math.sin(x * wave.freq * 1.8 + t * wave.speed * 0.55 + wave.phase + 1.5) * (wave.amp * 0.28);
+        x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+
+      const grad = ctx.createLinearGradient(0, 0, W, 0);
+      grad.addColorStop(0,    'transparent');
+      grad.addColorStop(0.15, accent);
+      grad.addColorStop(0.85, accent);
+      grad.addColorStop(1,    'transparent');
+      ctx.strokeStyle = grad;
+      ctx.globalAlpha = i % 2 === 0 ? 0.09 : 0.06;
+      ctx.lineWidth = i % 3 === 0 ? 1.2 : 0.8;
+      ctx.stroke();
+    });
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(drawWaves);
+  }
+  requestAnimationFrame(drawWaves);
+
+  // ── THEME ──
+  const ТЕМЫ = ['', 'tiffany', 'light'];
+  let текущаяТема = ТЕМЫ.indexOf(localStorage.getItem('тема') || '');
+  if (текущаяТема < 0) текущаяТема = 0;
+
+  function применитьТему() {
+    const тема = ТЕМЫ[текущаяТема];
+    document.documentElement.setAttribute('data-theme', тема);
+    if (tg) {
+      const цвета = { '': '#0a0a0a', 'tiffany': '#181b1b', 'light': '#f5fafa' };
+      tg.setHeaderColor(цвета[тема]);
+    }
+  }
+  function переключитьТему() {
+    текущаяТема = (текущаяТема + 1) % ТЕМЫ.length;
+    localStorage.setItem('тема', ТЕМЫ[текущаяТема]);
+    применитьТему();
+  }
+  применитьТему();
+
+  // Загружаем историю в sidebar при старте
+  отрисоватьИсторию();
+
+  // ── TOAST ──
+  let toastTimer;
+  function показатьТост(текст, ms = 2200) {
+    const t = document.getElementById('toast');
+    t.textContent = текст;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), ms);
+  }
+
+  // ── CHAR COUNTER ──
+  function обновитьСчетчик(len) {
+    const el = document.getElementById('char-counter');
+    if (!el) return;
+    if (len === 0) { el.classList.remove('visible','warn','over'); return; }
+    el.textContent = `${len} / ${MAX_CHARS}`;
+    el.classList.add('visible');
+    el.classList.toggle('warn', len > MAX_CHARS * 0.8);
+    el.classList.toggle('over', len >= MAX_CHARS);
+  }
+
+  // ── SIDEBAR ──
+  function открытьБоковую() {
+    document.getElementById('sidebar').classList.add('open');
+    document.getElementById('sidebar-overlay').classList.add('show');
+    отрисоватьИсторию();
+  }
+  function закрытьБоковую() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebar-overlay').classList.remove('show');
+  }
+
+  // ── SCROLL DOWN ──
+  const messagesEl = document.getElementById('сообщения');
+  const scrollBtn = document.getElementById('scroll-down-btn');
+  messagesEl.addEventListener('scroll', () => {
+    const fromBottom = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight;
+    scrollBtn.classList.toggle('visible', fromBottom > 120);
+  });
+  function прокрутитьВниз() {
+    messagesEl.scrollTo({ top: messagesEl.scrollHeight, behavior: 'smooth' });
+  }
+
+  // ── COPY ──
+  const copyIconSvg = `<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>`;
+  const doneIconSvg  = `<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`;
+  function скопировать(кнопка) {
+    const пузырь = кнопка.closest('.bubble');
+    // собираем текст без текста кнопки
+    const клон = пузырь.cloneNode(true);
+    клон.querySelector('.copy-btn')?.remove();
+    клон.querySelector('.bubble-footer')?.remove();
+    const текст = клон.innerText.trim();
+    navigator.clipboard.writeText(текст).then(() => {
+      показатьТост('✓ Скопировано');
+      кнопка.innerHTML = doneIconSvg + ' Скопировано';
+      setTimeout(() => { кнопка.innerHTML = copyIconSvg + ' Копировать'; }, 2000);
+    }).catch(() => показатьТост('Не удалось скопировать'));
+  }
+
+  // ── VOICE INPUT ──
+  let активноеРаспознавание = null;
+  function голосовойВвод() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { показатьТост('Голосовой ввод не поддерживается'); return; }
+    const btn = document.getElementById('voice-btn');
+    if (активноеРаспознавание) {
+      активноеРаспознавание.stop();
+      активноеРаспознавание = null;
+      btn.classList.remove('recording');
+      return;
+    }
+    const r = new SR();
+    r.lang = 'ru-RU'; r.interimResults = false;
+    r.onresult = (e) => {
+      const txt = e.results[0][0].transcript;
+      const поле = document.getElementById('ввод');
+      поле.value = txt;
+      поле.style.height = 'auto'; поле.style.height = поле.scrollHeight + 'px';
+      обновитьСчетчик(txt.length);
+    };
+    r.onend = () => { btn.classList.remove('recording'); активноеРаспознавание = null; };
+    r.onerror = () => { btn.classList.remove('recording'); активноеРаспознавание = null; показатьТост('Ошибка распознавания'); };
+    r.start(); активноеРаспознавание = r;
+    btn.classList.add('recording');
+    показатьТост('🎤 Говорите...');
+  }
+
+  // ── CHAT ──
+  let история = [
+    { role: "system", content: "Ты полезный AI-ассистент. Отвечай кратко и по делу. Код оформляй в блоки." }
+  ];
+  let текущийЧатId = Date.now();
+
+  let _selectedModel = 'mistral-large-latest';
+  function getModel() { return _selectedModel; }
+
+  function toggleModelDd(e) {
+    e.stopPropagation();
+    document.getElementById('model-dd').classList.toggle('open');
+  }
+  function выбратьМодель(value, label, el) {
+    event.stopPropagation();
+    _selectedModel = value;
+    document.getElementById('model-label').textContent = label;
+    document.querySelectorAll('.model-dd-item').forEach(i => {
+      i.classList.remove('dd-active');
+      const chk = i.querySelector('span');
+      if (chk) chk.remove();
+    });
+    el.classList.add('dd-active');
+    el.insertAdjacentHTML('beforeend','<span>✓</span>');
+    document.getElementById('model-dd').classList.remove('open');
+  }
+  document.addEventListener('click', () => document.getElementById('model-dd')?.classList.remove('open'));
+  function текущееВремя() { return new Date().toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' }); }
+
+  function переключить(id, кнопка) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    кнопка.classList.add('active');
+    if (id === 'админ') загрузитьАдмин();
+  }
+
+  function новыйЧат() {
+    сохранитьЧат();
+    история = [{ role: "system", content: "Ты полезный AI-ассистент. Отвечай кратко и по делу. Код оформляй в блоки." }];
+    текущийЧатId = Date.now();
+    const блок = document.getElementById('сообщения');
+    блок.innerHTML = `<div class="welcome" id="приветствие">
+      <div class="welcome-icon">
+        <img src="/logo.jpg" alt="AIchat" style="width:100%;height:100%;object-fit:cover;border-radius:20px;" onerror="this.style.display='none'">
+      </div>
+      <h2>AIchat | APP</h2>
+      <p>Задай любой вопрос, попроси помочь с кодом или объяснить тему</p>
+      <div class="welcome-chips">
+        <span class="chip" onclick="быстрыйЗапрос('Объясни код')">Объясни код</span>
+        <span class="chip" onclick="быстрыйЗапрос('Помоги с текстом')">Помоги с текстом</span>
+        <span class="chip" onclick="быстрыйЗапрос('Реши задачу')">Реши задачу</span>
+      </div>
+    </div>`;
+    const панель = document.getElementById('чат');
+    панель.classList.add('empty');
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    панель.classList.add('active');
+    document.querySelector('.tab').classList.add('active');
+  }
+
+  function быстрыйЗапрос(текст) {
+    document.getElementById('ввод').value = текст;
+    отправить();
+  }
+
+  function сохранитьЧат() {
+    const msgs = история.filter(m => m.role !== 'system');
+    if (msgs.length === 0) return;
+    const чаты = JSON.parse(localStorage.getItem('чаты') || '[]');
+    const idx = чаты.findIndex(c => c.id === текущийЧатId);
+    const запись = { id: текущийЧатId, сообщения: история, время: Date.now(), preview: msgs[0].content.slice(0, 60) };
+    if (idx >= 0) чаты[idx] = запись; else чаты.unshift(запись);
+    localStorage.setItem('чаты', JSON.stringify(чаты.slice(0, 30)));
+  }
+
+  function getGroupLabel(ts) {
+    const diff = Date.now() - ts;
+    const d = 86400000;
+    if (diff < d)      return 'Сегодня';
+    if (diff < 2*d)    return 'Вчера';
+    if (diff < 7*d)    return 'Последние 7 дней';
+    if (diff < 30*d)   return 'Этот месяц';
+    return 'Раньше';
+  }
+
+  function поискИстории(запрос) {
+    const все = JSON.parse(localStorage.getItem('чаты') || '[]');
+    const ф = запрос.toLowerCase().trim();
+    отрисоватьИсторию(ф ? все.filter(ч => ч.preview.toLowerCase().includes(ф)) : все);
+  }
+
+  function отрисоватьИсторию(чаты) {
+    const блок = document.getElementById('список-истории');
+    if (чаты === undefined) чаты = JSON.parse(localStorage.getItem('чаты') || '[]');
+    if (чаты.length === 0) {
+      блок.innerHTML = `<div class="sidebar-empty">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="1.5"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+        <span>Нет чатов</span>
+      </div>`;
+      return;
+    }
+    const порядок = ['Сегодня','Вчера','Последние 7 дней','Этот месяц','Раньше'];
+    const группы = {};
+    чаты.forEach(ч => { const l = getGroupLabel(ч.время); (группы[l] = группы[l]||[]).push(ч); });
+    const chatSvg = `<svg class="chat-icon" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>`;
+    const delSvg  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>`;
+    let html = '';
+    порядок.forEach(label => {
+      if (!группы[label]) return;
+      html += `<span class="chat-group-label">${label}</span>`;
+      группы[label].forEach(ч => {
+        const active = ч.id === текущийЧатId ? ' chat-active' : '';
+        html += `<div class="chat-item${active}" onclick="загрузитьЧат(${ч.id});закрытьБоковую()">
+          ${chatSvg}<span class="chat-item-text">${экранировать(ч.preview)}</span>
+          <button class="chat-del-btn" onclick="event.stopPropagation();удалитьЧат(${ч.id})" title="Удалить">${delSvg}</button>
+        </div>`;
+      });
+    });
+    блок.innerHTML = html;
+  }
+
+  function загрузитьЧат(id) {
+    const чаты = JSON.parse(localStorage.getItem('чаты') || '[]');
+    const ч = чаты.find(c => c.id === id);
+    if (!ч) return;
+    история = ч.сообщения;
+    текущийЧатId = id;
+    const блок = document.getElementById('сообщения');
+    блок.innerHTML = '';
+    document.getElementById('чат').classList.remove('empty');
+    история.filter(m => m.role !== 'system').forEach(m => добавитьСообщение(m.content, m.role === 'user' ? 'user' : 'bot', true));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('чат').classList.add('active');
+    document.querySelector('.tab').classList.add('active');
+  }
+
+  function удалитьЧат(id) {
+    let чаты = JSON.parse(localStorage.getItem('чаты') || '[]');
+    чаты = чаты.filter(c => c.id !== id);
+    localStorage.setItem('чаты', JSON.stringify(чаты));
+    отрисоватьИсторию();
+  }
+
+  function новаяДата(ts) {
+    return new Date(ts).toLocaleDateString('ru', { day: 'numeric', month: 'short' });
+  }
+
+  function экранировать(т) {
+    return т.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function форматировать(т) {
+    const parts = [];
+    let s = экранировать(т);
+    // Extract code blocks first so \n inside them won't become <br>
+    s = s.replace(/```[\w]*\n?([\s\S]*?)```/g, (_, code) => {
+      const idx = parts.length;
+      parts.push(`<pre><code>${code.replace(/\n$/, '')}</code></pre>`);
+      return `\x00${idx}\x00`;
+    });
+    s = s
+      .replace(/`([^`]+)`/g, '<code style="background:var(--bg3);padding:2px 6px;border-radius:4px;border:1px solid var(--border)">$1</code>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n/g, '<br>');
+    // Restore code blocks
+    return s.replace(/\x00(\d+)\x00/g, (_, i) => parts[+i]);
+  }
+
+  const userIcon = `<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>`;
+  const botIcon  = `<svg width="15" height="15" viewBox="0 0 24 24" fill="var(--accent)"><path d="M21 10.12h-6.78l2.74-2.82c-2.73-2.7-7.15-2.8-9.88-.1-2.73 2.71-2.73 7.08 0 9.79 2.73 2.71 7.15 2.71 9.88 0C18.32 15.65 19 14.08 19 12.1h2c0 1.98-.88 4.55-2.64 6.29-3.51 3.48-9.21 3.48-12.72 0-3.5-3.47-3.53-9.11-.02-12.58 3.51-3.47 9.14-3.47 12.65 0L21 3v7.12zM12.5 8v4.25l3.5 2.08-.72 1.21L11 13V8h1.5z"/></svg>`;
+
+  function getUserAvatarContent() {
+    const user = tg?.initDataUnsafe?.user;
+    if (!user) return userIcon;
+    if (user.photo_url) {
+      const ini = ((user.first_name?.[0]||'')+(user.last_name?.[0]||'')).toUpperCase()||'?';
+      return `<img class="avatar-photo" src="${user.photo_url}" alt="${ini}" onerror="this.outerHTML='<span class=\\"avatar-initials\\">${ini}</span>'">`;
+    }
+    const ini = ((user.first_name?.[0]||'')+(user.last_name?.[0]||'')).toUpperCase()||'?';
+    return `<span class="avatar-initials">${ini}</span>`;
+  }
+
+  function добавитьСообщение(текст, тип, немедленно) {
+    document.getElementById('приветствие')?.remove();
+    document.getElementById('чат').classList.remove('empty');
+    const блок = document.getElementById('сообщения');
+    const div = document.createElement('div');
+    div.className = `msg ${тип}`;
+    if (немедленно) div.style.animationDuration = '0.15s';
+    const время = текущееВремя();
+    if (тип === 'user') {
+      div.innerHTML = `<div class="avatar">${getUserAvatarContent()}</div>
+        <div class="bubble">${экранировать(текст)}
+          <div class="bubble-footer"><span class="msg-time">${время}</span></div>
+        </div>`;
+    } else {
+      div.innerHTML = `<div class="avatar">${botIcon}</div>
+        <div class="bubble">${форматировать(текст)}
+          <div class="bubble-footer">
+            <span class="msg-time">${время}</span>
+            <button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button>
+          </div>
+        </div>`;
+    }
+    блок.appendChild(div);
+    блок.scrollTop = блок.scrollHeight;
+    return div;
+  }
+
+  function добавитьПечать() {
+    const блок = document.getElementById('сообщения');
+    const div = document.createElement('div');
+    div.className = 'msg bot'; div.id = 'печать';
+    div.innerHTML = `<div class="avatar">${botIcon}</div>
+      <div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+    блок.appendChild(div);
+    блок.scrollTop = блок.scrollHeight;
+  }
+
+  async function отправить() {
+    const поле = document.getElementById('ввод');
+    const текст = поле.value.trim();
+    if (!текст || текст.length > MAX_CHARS) return;
+
+    tg?.HapticFeedback?.impactOccurred('light');
+
+    поле.value = ''; поле.style.height = 'auto';
+    обновитьСчетчик(0);
+    const кнопка = document.getElementById('кнопка');
+    кнопка.disabled = true; кнопка.classList.add('loading');
+
+    добавитьСообщение(текст, 'user');
+    история.push({ role: 'user', content: текст });
+    добавитьПечать();
+
+    try {
+      const resp = await fetch('/api/chat/stream', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ сообщения: история, модель: getModel() })
+      });
+
+      document.getElementById('печать')?.remove();
+      document.getElementById('приветствие')?.remove();
+      document.getElementById('чат').classList.remove('empty');
+
+      const блок = document.getElementById('сообщения');
+      const div = document.createElement('div');
+      div.className = 'msg bot';
+      const время = текущееВремя();
+      div.innerHTML = `<div class="avatar">${botIcon}</div>
+        <div class="bubble" id="stream-bubble"><span class="stream-cursor" style="display:inline-block;width:2px;height:13px;background:var(--accent);vertical-align:text-bottom;border-radius:1px;animation:blink 0.8s infinite;margin-left:1px;"></span>
+          <div class="bubble-footer">
+            <span class="msg-time">${время}</span>
+            <button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button>
+          </div>
+        </div>`;
+      блок.appendChild(div);
+      блок.scrollTop = блок.scrollHeight;
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let полный = '', buf = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n'); buf = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const d = line.slice(6).trim();
+          if (d === '[DONE]') continue;
+          try {
+            const p = JSON.parse(d);
+            if (p.d) {
+              полный += p.d;
+              const пузырь = document.getElementById('stream-bubble');
+              if (пузырь) {
+                пузырь.innerHTML = форматировать(полный) +
+                  `<div class="bubble-footer"><span class="msg-time">${время}</span>
+                  <button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button></div>`;
+              }
+              блок.scrollTop = блок.scrollHeight;
+            }
+          } catch {}
+        }
+      }
+
+      document.getElementById('stream-bubble')?.removeAttribute('id');
+      история.push({ role: 'assistant', content: полный });
+      сохранитьЧат();
+
+    } catch {
+      document.getElementById('печать')?.remove();
+      добавитьСообщение('Ошибка соединения. Попробуй ещё раз.', 'bot');
+    }
+
+    кнопка.disabled = false; кнопка.classList.remove('loading');
+  }
+
+  async function загрузитьАдмин() {
+    const errEl = document.getElementById('admin-error');
+    errEl.style.display = 'none';
+    document.getElementById('admin-users').innerHTML    = '<div class="admin-empty">Загрузка...</div>';
+    document.getElementById('admin-messages').innerHTML = '<div class="admin-empty">Загрузка...</div>';
+    try {
+      const resp = await fetch('/api/admin/stats', {
+        headers: { 'x-admin-secret': ADMIN_SECRET }
+      });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const d = await resp.json();
+      if (d.error) {
+        errEl.textContent = '⚠️ ' + d.error + ' — убедитесь что ADMIN_SECRET задан в переменных Railway';
+        errEl.style.display = 'block';
+        document.getElementById('admin-users').innerHTML    = '<div class="admin-empty">—</div>';
+        document.getElementById('admin-messages').innerHTML = '<div class="admin-empty">—</div>';
+        return;
+      }
+      document.getElementById('stat-users').textContent = d.total_users ?? 0;
+      document.getElementById('stat-msgs').textContent  = d.total_messages ?? 0;
+      document.getElementById('admin-users').innerHTML = d.users && d.users.length
+        ? d.users.map((u, i) => `
+          <div class="admin-user" style="animation-delay:${i*0.03}s">
+            <div class="admin-user-info">
+              <div class="admin-user-name">${экранировать(u.first_name || '?')}${u.username ? ' <span style="color:var(--text2)">@'+экранировать(u.username)+'</span>' : ''}</div>
+              <div class="admin-user-meta">ID: ${u.tg_id} · с ${u.joined || '?'}</div>
+            </div>
+            <div class="admin-user-badge">${u.messages} сообщ.</div>
+          </div>`).join('')
+        : '<div class="admin-empty">Нет пользователей</div>';
+      document.getElementById('admin-messages').innerHTML = d.recent_messages && d.recent_messages.length
+        ? d.recent_messages.map((m, i) => `
+          <div class="admin-msg" style="animation-delay:${i*0.02}s">
+            <div class="admin-msg-author">${экранировать(m.name || '?')}${m.username ? ' @'+экранировать(m.username) : ''}</div>
+            <div class="admin-msg-text">${экранировать(m.text || '')}</div>
+            <div class="admin-msg-time">${m.ts || ''}</div>
+          </div>`).join('')
+        : '<div class="admin-empty">Нет сообщений</div>';
+    } catch(e) {
+      errEl.textContent = '⚠️ Ошибка загрузки: ' + e.message;
+      errEl.style.display = 'block';
+      document.getElementById('admin-users').innerHTML    = '<div class="admin-empty">—</div>';
+      document.getElementById('admin-messages').innerHTML = '<div class="admin-empty">—</div>';
+    }
+  }
+
+  async function сгенерировать() {
+    const запрос = document.getElementById('img-ввод').value.trim();
+    if (!запрос) return;
+    const btn = document.getElementById('gen-btn');
+    const статус = document.getElementById('img-статус');
+    const результат = document.getElementById('img-результат');
+    const прогресс = document.getElementById('progress-wrap');
+    btn.disabled = true;
+    btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg> Генерирую...`;
+    статус.textContent = 'Создаю изображение...';
+    результат.innerHTML = '';
+    прогресс.classList.add('active');
+    try {
+      const resp = await fetch('/api/image', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ запрос })
+      });
+      const данные = await resp.json();
+      прогресс.classList.remove('active');
+      if (данные.error) { статус.textContent = '❌ ' + данные.error; btn.disabled = false; btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg> Сгенерировать`; return; }
+      статус.textContent = '';
+      const img = document.createElement('img');
+      img.style.cssText = 'width:100%;border-radius:16px;display:block;';
+      img.onload = () => {
+        результат.innerHTML = '';
+        результат.appendChild(img);
+        img.style.animation = 'fadeInUp 0.4s ease forwards';
+        const a = document.createElement('a');
+        a.href = данные.url; a.download = 'ai-image.jpg'; a.target = '_blank';
+        a.className = 'save-btn';
+        a.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> Сохранить изображение`;
+        результат.appendChild(a);
+      };
+      img.onerror = () => { статус.textContent = 'Не удалось загрузить. Попробуй ещё раз.'; };
+      img.src = данные.url;
+    } catch {
+      прогресс.classList.remove('active');
+      статус.textContent = 'Ошибка. Попробуй ещё раз.';
+    }
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg> Сгенерировать`;
+  }
+</script>
+</body>
+</html>

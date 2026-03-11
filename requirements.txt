@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+mistralai>=1.2.0
+aiogram
+python-dotenv
+httpx
