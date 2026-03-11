@@ -1251,7 +1251,11 @@
     if (!msgs) return;
     const div = document.createElement('div');
     div.className = 'msg bot';
-    div.innerHTML = `<div class="avatar">${botIcon}</div><div class="bubble" style="background:#ff4444;color:#fff;">${экранировать(текст)}<div class="bubble-footer"><span class="msg-time">${текущееВремя()}</span></div></div>`;
+    const пузырь = document.createElement('div');
+    пузырь.className = 'bubble';
+    пузырь.style.cssText = 'background:#c0392b;color:#fff;';
+    пузырь.textContent = текст;
+    div.appendChild(пузырь);
     msgs.appendChild(div);
     msgs.scrollTop = msgs.scrollHeight;
   }
@@ -1456,6 +1460,7 @@
     msgs.scrollTop = msgs.scrollHeight;
 
     история.push({ role: 'user', content: текст });
+    добавитьПечать();
 
     try {
       const resp = await fetch('/api/chat', {
@@ -1463,6 +1468,8 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ сообщения: история, модель: getModel() })
       });
+
+      document.getElementById('печать')?.remove();
 
       if (!resp.ok) {
         история.pop();
@@ -1480,6 +1487,7 @@
         }
       }
     } catch (err) {
+      document.getElementById('печать')?.remove();
       история.pop();
       показатьОшибкуВЧате('Ошибка: ' + (err?.message || String(err)));
     }
