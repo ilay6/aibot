@@ -1410,18 +1410,9 @@
     if (немедленно) div.style.animationDuration = '0.15s';
     const время = текущееВремя();
     if (тип === 'user') {
-      div.innerHTML = `<div class="avatar">${getUserAvatarContent()}</div>
-        <div class="bubble">${экранировать(текст)}
-          <div class="bubble-footer"><span class="msg-time">${время}</span></div>
-        </div>`;
+      div.innerHTML = `<div class="avatar">${getUserAvatarContent()}</div><div class="bubble">${экранировать(текст)}<div class="bubble-footer"><span class="msg-time">${время}</span></div></div>`;
     } else {
-      div.innerHTML = `<div class="avatar">${botIcon}</div>
-        <div class="bubble">${форматировать(текст)}
-          <div class="bubble-footer">
-            <span class="msg-time">${время}</span>
-            <button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button>
-          </div>
-        </div>`;
+      div.innerHTML = `<div class="avatar">${botIcon}</div><div class="bubble">${форматировать(текст)}<div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button></div></div>`;
     }
     блок.appendChild(div);
     блок.scrollTop = блок.scrollHeight;
@@ -1432,8 +1423,7 @@
     const блок = document.getElementById('сообщения');
     const div = document.createElement('div');
     div.className = 'msg bot'; div.id = 'печать';
-    div.innerHTML = `<div class="avatar">${botIcon}</div>
-      <div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+    div.innerHTML = `<div class="avatar">${botIcon}</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
     блок.appendChild(div);
     блок.scrollTop = блок.scrollHeight;
   }
@@ -1476,13 +1466,7 @@
       const div = document.createElement('div');
       div.className = 'msg bot';
       const время = текущееВремя();
-      div.innerHTML = `<div class="avatar">${botIcon}</div>
-        <div class="bubble" id="stream-bubble"><span class="stream-cursor" style="display:inline-block;width:2px;height:13px;background:var(--accent);vertical-align:text-bottom;border-radius:1px;animation:blink 0.8s infinite;margin-left:1px;"></span>
-          <div class="bubble-footer">
-            <span class="msg-time">${время}</span>
-            <button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button>
-          </div>
-        </div>`;
+      div.innerHTML = `<div class="avatar">${botIcon}</div><div class="bubble" id="stream-bubble"><span class="stream-cursor" style="display:inline-block;width:2px;height:13px;background:var(--accent);vertical-align:text-bottom;border-radius:1px;animation:blink 0.8s infinite;margin-left:1px;"></span><div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button></div></div>`;
       блок.appendChild(div);
       блок.scrollTop = блок.scrollHeight;
 
@@ -1515,7 +1499,11 @@
         }
       }
 
-      document.getElementById('stream-bubble')?.removeAttribute('id');
+      const streamBubble = document.getElementById('stream-bubble');
+      if (streamBubble) {
+        streamBubble.querySelector('.stream-cursor')?.remove();
+        streamBubble.removeAttribute('id');
+      }
       if (!полный) {
         div.remove();
         история.pop();
