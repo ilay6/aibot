@@ -87,36 +87,24 @@ async def чат_stream(данные: ЗапросЧат):
     return StreamingResponse(generate(), media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
-HF_TOKEN = os.getenv("HF_TOKEN", "")
-HF_MODEL = "stabilityai/stable-diffusion-xl-base-1.0"
-
 @app.post("/api/image")
 async def картинка(данные: ЗапросКартинки):
-    if not HF_TOKEN:
-        return {"error": "HF_TOKEN не задан в переменных Railway"}
-    headers = {
-        "Authorization": f"Bearer {HF_TOKEN}",
-        "Content-Type": "application/json"
-    }
-    payload = {"inputs": данные.запрос, "parameters": {"width": 512, "height": 512}}
+    import base64
+    prompt_encoded = quote(данные.запрос)
+    url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=512&height=512&nologo=true"
     try:
-        async with httpx.AsyncClient(timeout=120) as http:
-            resp = await http.post(
-                f"https://api-inference.huggingface.co/models/{HF_MODEL}",
-                headers=headers,
-                json=payload
-            )
-        if resp.status_code == 503:
-            return {"error": "Модель загружается, подожди 20 сек и попробуй снова"}
+        async with httpx.AsyncClient(timeout=120, follow_redirects=True) as http:
+            resp = await http.get(url)
         if resp.status_code != 200:
-            return {"error": f"HuggingFace вернул {resp.status_code}"}
+            return {"error": f"Сервер вернул {resp.status_code}"}
         ct = resp.headers.get("content-type", "")
         if "image" not in ct:
-            return {"error": resp.text[:120]}
-        import base64
+            return {"error": "Сервер не вернул изображение"}
         img_b64 = base64.b64encode(resp.content).decode()
         fmt = "png" if "png" in ct else "jpeg"
         return {"url": f"data:image/{fmt};base64,{img_b64}"}
+    except httpx.TimeoutException:
+        return {"error": "Таймаут — сервер генерации не ответил за 2 минуты"}
     except Exception as e:
         return {"error": str(e)[:120]}
 
