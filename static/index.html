@@ -1444,7 +1444,7 @@
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000);
-      const resp = await fetch('/api/chat/stream', {
+      const resp = await fetch('/api/chat', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ сообщения: история, модель: getModel() }),
         signal: controller.signal
@@ -1460,57 +1460,14 @@
         return;
       }
 
-      document.getElementById('приветствие')?.remove();
-      document.getElementById('чат').classList.remove('empty');
-
-      const блок = document.getElementById('сообщения');
-      const div = document.createElement('div');
-      div.className = 'msg bot';
-      const время = текущееВремя();
-      div.innerHTML = `<div class="avatar">${botIcon}</div><div class="bubble" id="stream-bubble"><span class="stream-cursor" style="display:inline-block;width:2px;height:13px;background:var(--accent);vertical-align:text-bottom;border-radius:1px;animation:blink 0.8s infinite;margin-left:1px;"></span><div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button></div></div>`;
-      блок.appendChild(div);
-      блок.scrollTop = блок.scrollHeight;
-
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let полный = '', buf = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buf += decoder.decode(value, { stream: true });
-        const lines = buf.split('\n'); buf = lines.pop();
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const d = line.slice(6).trim();
-          if (d === '[DONE]') continue;
-          try {
-            const p = JSON.parse(d);
-            if (p.d) {
-              полный += p.d;
-              const пузырь = document.getElementById('stream-bubble');
-              if (пузырь) {
-                пузырь.innerHTML = форматировать(полный) +
-                  `<div class="bubble-footer"><span class="msg-time">${время}</span>
-                  <button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button></div>`;
-              }
-              блок.scrollTop = блок.scrollHeight;
-            }
-          } catch {}
-        }
-      }
-
-      const streamBubble = document.getElementById('stream-bubble');
-      if (streamBubble) {
-        streamBubble.querySelector('.stream-cursor')?.remove();
-        streamBubble.removeAttribute('id');
-      }
-      if (!полный) {
-        div.remove();
+      const данные = await resp.json();
+      const ответ = данные.ответ;
+      if (!ответ) {
         история.pop();
-        добавитьСообщение('Не удалось получить ответ. Попробуй ещё раз.', 'bot');
+        добавитьСообщение('Пустой ответ от сервера. Попробуй ещё раз.', 'bot');
       } else {
-        история.push({ role: 'assistant', content: полный });
+        история.push({ role: 'assistant', content: ответ });
+        добавитьСообщение(ответ, 'bot');
         сохранитьЧат();
       }
 
