@@ -137,7 +137,18 @@
 
   .header-right { display: flex; align-items: center; gap: 8px; }
 
-  /* (small header avatar removed — only center avatar used in wide mode) */
+  /* Small header avatar */
+  .header-user-small {
+    width: 30px; height: 30px; border-radius: 50%;
+    overflow: hidden; background: var(--bg3); border: 2px solid var(--accent);
+    display: none; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: var(--accent);
+    flex-shrink: 0;
+    box-shadow: 0 0 8px var(--accent-glow);
+    transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
+  }
+  .header-user-small img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .header-user-small .avatar-initials { font-size: 11px; }
 
   /* Fullscreen button */
   .fullscreen-btn {
@@ -1014,6 +1025,7 @@
     </div>
   </div>
   <div class="header-right">
+    <div class="header-user-small" id="header-user-small"></div>
     <div class="header-center-fs" id="header-center-fs"></div>
     <button class="fullscreen-btn" id="fullscreen-btn" onclick="переключитьПолныйЭкран()" title="Полный экран">
       <svg id="fs-icon-expand" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
@@ -1294,6 +1306,11 @@
       if (msgs.length > 0) {
         текущийЧатId = последний.id;
         история = последний.сообщения;
+        // Рендерим сообщения на экран
+        const блок = document.getElementById('сообщения');
+        блок.innerHTML = '';
+        document.getElementById('чат').classList.remove('empty');
+        msgs.forEach(m => добавитьСообщение(m.content, m.role === 'user' ? 'user' : 'bot', true, m.time || ''));
       }
     }
   })();
@@ -1596,10 +1613,19 @@
     div.className = `msg ${тип}`;
     if (немедленно) div.style.animationDuration = '0.15s';
     if (!время) время = текущееВремя();
+    // Обработка контента-массива (сообщения с изображениями)
+    let отображение = '';
+    if (Array.isArray(текст)) {
+      const textPart = текст.find(c => c.type === 'text')?.text || '';
+      const imgPart = текст.find(c => c.type === 'image_url');
+      отображение = (imgPart ? `<img src="${imgPart.image_url.url}" style="max-width:200px;border-radius:8px;margin-bottom:6px;display:block">` : '') + экранировать(textPart);
+    }
     if (тип === 'user') {
-      div.innerHTML = `<div class="avatar">${getUserAvatarContent()}</div><div class="bubble">${экранировать(текст)}<div class="bubble-footer"><span class="msg-time">${время}</span></div></div>`;
+      const content = Array.isArray(текст) ? отображение : экранировать(текст);
+      div.innerHTML = `<div class="avatar">${getUserAvatarContent()}</div><div class="bubble">${content}<div class="bubble-footer"><span class="msg-time">${время}</span></div></div>`;
     } else {
-      div.innerHTML = `<div class="avatar">${botIcon}</div><div class="bubble">${форматировать(текст)}<div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button></div></div>`;
+      const strТекст = Array.isArray(текст) ? (текст.find(c => c.type === 'text')?.text || '') : текст;
+      div.innerHTML = `<div class="avatar">${botIcon}</div><div class="bubble">${форматировать(strТекст)}<div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button></div></div>`;
     }
     блок.appendChild(div);
     блок.scrollTop = блок.scrollHeight;
@@ -1837,6 +1863,16 @@
       ? `<img src="${photoUrl}" onerror="this.parentElement.innerHTML='${ini}'">`
       : ini;
 
+    // Маленькая аватарка в хедере (всегда видна)
+    const small = document.getElementById('header-user-small');
+    if (small) {
+      small.style.display = 'flex';
+      small.innerHTML = photoUrl
+        ? `<img src="${photoUrl}" onerror="this.parentElement.innerHTML='<span class=avatar-initials>${ini}</span>'">`
+        : `<span class="avatar-initials">${ini}</span>`;
+    }
+
+    // Центральная аватарка (wide mode)
     const center = document.getElementById('header-center-fs');
     if (center) {
       center.style.display = 'flex';
