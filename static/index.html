@@ -177,31 +177,29 @@
   body.wide-mode .header-right { flex: 1; justify-content: flex-end; padding-right: 40px; }
 
   .header-center-fs {
-    position: absolute; left: 50%; transform: translateX(-50%);
     display: none; flex-direction: column; align-items: center; gap: 2px;
-    pointer-events: none;
   }
-  body.wide-mode .header-center-fs { display: flex; }
   .header-center-fs .header-user-avatar-big {
-    width: 34px; height: 34px; border-radius: 50%;
+    width: 30px; height: 30px; border-radius: 50%;
     overflow: hidden; background: var(--bg3); border: 2px solid var(--accent);
     display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 700; color: var(--accent);
-    box-shadow: 0 0 12px var(--accent-glow);
-    transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), box-shadow 0.4s, width 0.4s, height 0.4s;
+    font-size: 12px; font-weight: 700; color: var(--accent);
+    box-shadow: 0 0 8px var(--accent-glow);
+    transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
   }
   .header-center-fs .header-user-avatar-big img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .header-center-fs .header-user-name-fs {
-    font-size: 10px; color: var(--text2); font-weight: 600;
-    max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  .header-center-fs .header-user-name-fs { display: none; }
+  /* Wide mode: bigger avatar + name */
+  body.wide-mode .header-center-fs {
+    position: absolute; left: 50%; transform: translateX(-50%);
   }
-  /* Bigger avatar in wide mode */
   body.wide-mode .header-center-fs .header-user-avatar-big {
     width: 38px; height: 38px; font-size: 15px;
     box-shadow: 0 0 16px var(--accent-glow);
   }
   body.wide-mode .header-center-fs .header-user-name-fs {
-    font-size: 11px; max-width: 120px;
+    display: block; font-size: 11px; color: var(--text2); font-weight: 600;
+    max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
 
   /* smooth body layout transition */
@@ -1007,8 +1005,8 @@
       <div class="header-sub"><div class="online-dot"></div> AI · Онлайн</div>
     </div>
   </div>
-  <div class="header-center-fs" id="header-center-fs"></div>
   <div class="header-right">
+    <div class="header-center-fs" id="header-center-fs"></div>
     <button class="fullscreen-btn" id="fullscreen-btn" onclick="переключитьПолныйЭкран()" title="Полный экран">
       <svg id="fs-icon-expand" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
       <svg id="fs-icon-shrink" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>
@@ -1781,9 +1779,9 @@
       ? `<img src="${photoUrl}" onerror="this.parentElement.innerHTML='${ini}'">`
       : ini;
 
-    // Center avatar for wide mode
     const center = document.getElementById('header-center-fs');
     if (center) {
+      center.style.display = 'flex';
       center.innerHTML = `
         <div class="header-user-avatar-big">${avatarHTML}</div>
         <div class="header-user-name-fs">${name}</div>
