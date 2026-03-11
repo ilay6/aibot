@@ -91,8 +91,8 @@ async def чат_stream(данные: ЗапросЧат):
 @app.post("/api/image")
 async def картинка(данные: ЗапросКартинки):
     текст = quote(данные.запрос, safe='')
-    seed = int(time.time())
-    url = f"https://image.pollinations.ai/prompt/{текст}?width=512&height=512&nologo=true&seed={seed}"
+    seed = int(time.time()) % 1000000
+    url = f"https://image.pollinations.ai/prompt/{текст}?width=512&height=512&model=flux&seed={seed}"
     try:
         async with httpx.AsyncClient(timeout=90, follow_redirects=True) as http:
             resp = await http.get(url, headers={"User-Agent": "Mozilla/5.0"})
