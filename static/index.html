@@ -1620,7 +1620,11 @@
           a.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> Сохранить изображение`;
           результат.appendChild(a);
         };
-        img.onerror = () => { статус.textContent = '❌ Не удалось загрузить изображение'; };
+        статус.textContent = '⏳ Загружаю изображение...';
+        img.onerror = () => {
+          прогресс.classList.remove('active');
+          статус.innerHTML = 'Не удалось загрузить. <a href="' + данные.url + '" target="_blank" style="color:var(--accent)">Открыть в браузере</a>';
+        };
         img.src = данные.url;
       }
     } catch (e) {
