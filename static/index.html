@@ -1467,7 +1467,7 @@
         добавитьСообщение('Пустой ответ от сервера. Попробуй ещё раз.', 'bot');
       } else {
         история.push({ role: 'assistant', content: ответ });
-        добавитьСообщение(ответ, 'bot');
+        await печататьОтвет(ответ);
         сохранитьЧат();
       }
 
@@ -1479,6 +1479,40 @@
     }
 
     кнопка.disabled = false; кнопка.classList.remove('loading');
+  }
+
+  async function печататьОтвет(текст) {
+    const блок = document.getElementById('сообщения');
+    const время = текущееВремя();
+    const div = document.createElement('div');
+    div.className = 'msg bot';
+    div.innerHTML = `<div class="avatar">${botIcon}</div><div class="bubble" id="type-bubble"><span class="stream-cursor" style="display:inline-block;width:2px;height:13px;background:var(--accent);vertical-align:text-bottom;border-radius:1px;animation:blink 0.8s infinite;margin-left:1px;"></span><div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button></div></div>`;
+    блок.appendChild(div);
+    блок.scrollTop = блок.scrollHeight;
+
+    const пузырь = document.getElementById('type-bubble');
+    const слова = текст.split('');
+    let накоплен = '';
+    const задержка = Math.max(4, Math.min(18, Math.round(3000 / слова.length)));
+
+    for (const символ of слова) {
+      накоплен += символ;
+      if (пузырь) {
+        пузырь.innerHTML = форматировать(накоплен) +
+          `<span class="stream-cursor" style="display:inline-block;width:2px;height:13px;background:var(--accent);vertical-align:text-bottom;border-radius:1px;animation:blink 0.8s infinite;margin-left:1px;"></span>` +
+          `<div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button></div>`;
+        блок.scrollTop = блок.scrollHeight;
+      }
+      await new Promise(r => setTimeout(r, задержка));
+    }
+
+    if (пузырь) {
+      пузырь.querySelector('.stream-cursor')?.remove();
+      пузырь.innerHTML = форматировать(текст) +
+        `<div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button></div>`;
+      пузырь.removeAttribute('id');
+    }
+    блок.scrollTop = блок.scrollHeight;
   }
 
   async function загрузитьАдмин() {
