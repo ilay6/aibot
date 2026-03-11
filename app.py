@@ -4,6 +4,7 @@ import base64
 import sqlite3
 import httpx
 from datetime import datetime
+from urllib.parse import quote
 from fastapi import FastAPI, Header
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -85,7 +86,7 @@ async def чат_stream(данные: ЗапросЧат):
 
 @app.post("/api/image")
 async def картинка(данные: ЗапросКартинки):
-    текст = данные.запрос.replace(" ", "%20")
+    текст = quote(данные.запрос, safe='')
     url = f"https://image.pollinations.ai/prompt/{текст}?width=512&height=512&nologo=true"
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
     async with httpx.AsyncClient(timeout=90, follow_redirects=True) as http:
