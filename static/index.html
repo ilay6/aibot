@@ -1394,10 +1394,6 @@
   function getUserAvatarContent() {
     const user = tg?.initDataUnsafe?.user;
     if (!user) return userIcon;
-    if (user.photo_url) {
-      const ini = ((user.first_name?.[0]||'')+(user.last_name?.[0]||'')).toUpperCase()||'?';
-      return `<img class="avatar-photo" src="${user.photo_url}" alt="" onerror="this.outerHTML='<span class=\\"avatar-initials\\">${ini}</span>'">`;
-    }
     const ini = ((user.first_name?.[0]||'')+(user.last_name?.[0]||'')).toUpperCase()||'?';
     return `<span class="avatar-initials">${ini}</span>`;
   }
@@ -1446,10 +1442,14 @@
     добавитьПечать();
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
       const resp = await fetch('/api/chat/stream', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ сообщения: история, модель: getModel() })
+        body: JSON.stringify({ сообщения: история, модель: getModel() }),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
 
       document.getElementById('печать')?.remove();
 
@@ -1514,10 +1514,11 @@
         сохранитьЧат();
       }
 
-    } catch {
+    } catch (err) {
       document.getElementById('печать')?.remove();
       история.pop();
-      добавитьСообщение('Ошибка соединения. Попробуй ещё раз.', 'bot');
+      const msg = err?.name === 'AbortError' ? 'Таймаут. Сервер не ответил за 60 сек.' : 'Ошибка соединения: ' + (err?.message || err);
+      добавитьСообщение(msg, 'bot');
     }
 
     кнопка.disabled = false; кнопка.classList.remove('loading');
