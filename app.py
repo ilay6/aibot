@@ -8,12 +8,12 @@ from fastapi import FastAPI, Header
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from mistralai import Mistral
 from dotenv import load_dotenv
 
 load_dotenv()
 app = FastAPI()
-client = Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
+MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
+MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions"
 
 ADMIN_SECRET = os.getenv("ADMIN_SECRET", "")
 DB = "data.db"
@@ -56,22 +56,30 @@ class TrackData(BaseModel):
 @app.post("/api/chat")
 async def чат(данные: ЗапросЧат):
     модель = данные.модель if данные.модель in ALLOWED_MODELS else "mistral-large-latest"
-    ответ = client.chat.complete(
-        model=модель,
-        messages=данные.сообщения,
-    )
-    return {"ответ": ответ.choices[0].message.content}
+    async with httpx.AsyncClient(timeout=60) as http:
+        r = await http.post(MISTRAL_URL, headers={"Authorization": f"Bearer {MISTRAL_API_KEY}"}, json={"model": модель, "messages": данные.сообщения})
+    return {"ответ": r.json()["choices"][0]["message"]["content"]}
 
 @app.post("/api/chat/stream")
 async def чат_stream(данные: ЗапросЧат):
     модель = данные.модель if данные.модель in ALLOWED_MODELS else "mistral-large-latest"
-    def generate():
-        with client.chat.stream(model=модель, messages=данные.сообщения) as stream:
-            for chunk in stream:
-                delta = chunk.data.choices[0].delta.content
-                if delta:
-                    yield f"data: {json.dumps({'d': delta})}\n\n"
-        yield "data: [DONE]\n\n"
+    payload = {"model": модель, "messages": данные.сообщения, "stream": True}
+    headers = {"Authorization": f"Bearer {MISTRAL_API_KEY}"}
+    async def generate():
+        async with httpx.AsyncClient(timeout=60) as http:
+            async with http.stream("POST", MISTRAL_URL, headers=headers, json=payload) as r:
+                async for line in r.aiter_lines():
+                    if line.startswith("data: "):
+                        data = line[6:]
+                        if data == "[DONE]":
+                            yield "data: [DONE]\n\n"
+                            break
+                        try:
+                            delta = json.loads(data)["choices"][0]["delta"].get("content", "")
+                            if delta:
+                                yield f"data: {json.dumps({'d': delta})}\n\n"
+                        except Exception:
+                            pass
     return StreamingResponse(generate(), media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
