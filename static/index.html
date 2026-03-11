@@ -1285,6 +1285,18 @@
 
   // Загружаем историю в sidebar при старте
   let текущийЧатId = Date.now();
+  // Восстанавливаем последний активный чат
+  (function восстановитьПоследнийЧат() {
+    const чаты = JSON.parse(localStorage.getItem('чаты') || '[]');
+    if (чаты.length > 0) {
+      const последний = чаты[0];
+      const msgs = последний.сообщения.filter(m => m.role !== 'system');
+      if (msgs.length > 0) {
+        текущийЧатId = последний.id;
+        история = последний.сообщения;
+      }
+    }
+  })();
   отрисоватьИсторию();
 
   // ── TOAST ──
@@ -1460,7 +1472,9 @@
     if (msgs.length === 0) return;
     const чаты = JSON.parse(localStorage.getItem('чаты') || '[]');
     const idx = чаты.findIndex(c => c.id === текущийЧатId);
-    const запись = { id: текущийЧатId, сообщения: история, время: Date.now(), preview: msgs[0].content.slice(0, 60) };
+    const firstContent = msgs[0].content;
+    const previewText = typeof firstContent === 'string' ? firstContent : (firstContent?.find?.(c => c.type === 'text')?.text || 'Изображение');
+    const запись = { id: текущийЧатId, сообщения: история, время: Date.now(), preview: previewText.slice(0, 60) };
     if (idx >= 0) чаты[idx] = запись; else чаты.unshift(запись);
     localStorage.setItem('чаты', JSON.stringify(чаты.slice(0, 30)));
   }
