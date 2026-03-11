@@ -1247,17 +1247,37 @@
   function текущееВремя() { return new Date().toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' }); }
 
   function показатьОшибкуВЧате(текст) {
+    // Floating overlay — невозможно не заметить
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;top:60px;left:8px;right:8px;background:#c0392b;color:#fff;padding:14px;border-radius:12px;z-index:99999;font-size:13px;word-break:break-all;box-shadow:0 4px 20px rgba(0,0,0,0.5);';
+    overlay.textContent = текст;
+    overlay.onclick = () => overlay.remove();
+    document.body.appendChild(overlay);
+    setTimeout(() => overlay.remove(), 15000);
+    // Также в чат
     const msgs = document.getElementById('сообщения');
-    if (!msgs) return;
-    const div = document.createElement('div');
-    div.className = 'msg bot';
-    const пузырь = document.createElement('div');
-    пузырь.className = 'bubble';
-    пузырь.style.cssText = 'background:#c0392b;color:#fff;';
-    пузырь.textContent = текст;
-    div.appendChild(пузырь);
-    msgs.appendChild(div);
-    msgs.scrollTop = msgs.scrollHeight;
+    if (msgs) {
+      const div = document.createElement('div');
+      div.className = 'msg bot';
+      const p = document.createElement('div');
+      p.className = 'bubble';
+      p.style.cssText = 'background:#c0392b;color:#fff;';
+      p.textContent = текст;
+      div.appendChild(p);
+      msgs.appendChild(div);
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+  }
+
+  function dbg(текст) {
+    let bar = document.getElementById('__dbgbar');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = '__dbgbar';
+      bar.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#222;color:#0f0;font-size:11px;padding:4px 8px;z-index:99999;';
+      document.body.appendChild(bar);
+    }
+    bar.textContent = текст;
   }
 
   function переключить(id, кнопка) {
@@ -1469,8 +1489,9 @@
     msgs.scrollTop = msgs.scrollHeight;
 
     try {
+      dbg('1: fetch начат → ' + getModel());
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 30000);
+      const timer = setTimeout(() => { dbg('TIMEOUT 30s'); controller.abort(); }, 30000);
 
       const resp = await fetch('/api/chat', {
         method: 'POST',
@@ -1479,6 +1500,7 @@
         signal: controller.signal
       });
       clearTimeout(timer);
+      dbg('2: ответ ' + resp.status);
 
       типингDiv.remove();
 
@@ -1488,6 +1510,7 @@
       } else {
         const данные = await resp.json();
         const ответ = данные.ответ;
+        dbg('3: ответ получен, длина=' + (ответ||'').length);
         if (!ответ) {
           история.pop();
           показатьОшибкуВЧате('Пустой ответ: ' + JSON.stringify(данные));
@@ -1495,10 +1518,12 @@
           история.push({ role: 'assistant', content: ответ });
           await печататьОтвет(ответ);
           сохранитьЧат();
+          dbg('4: готово');
         }
       }
     } catch (err) {
       типингDiv.remove();
+      dbg('CATCH: ' + (err?.message || String(err)));
       история.pop();
       const msg = err?.name === 'AbortError' ? 'Таймаут 30с — сервер не ответил' : (err?.message || String(err));
       показатьОшибкуВЧате('Ошибка: ' + msg);
