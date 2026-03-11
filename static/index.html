@@ -971,10 +971,10 @@
         <span id="model-label">Mistral Large</span>
         <svg class="model-dd-arrow" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
         <div class="model-dd-list">
-          <div class="model-dd-item dd-active" onclick="выбратьМодель('mistral-large-latest','Mistral Large',this)">Mistral Large<span>✓</span></div>
-          <div class="model-dd-item" onclick="выбратьМодель('mistral-small-latest','Mistral Small',this)">Mistral Small</div>
-          <div class="model-dd-item" onclick="выбратьМодель('codestral-latest','Codestral',this)">Codestral</div>
-          <div class="model-dd-item" onclick="выбратьМодель('mistral-medium-latest','Mistral Medium',this)">Mistral Medium</div>
+          <div class="model-dd-item dd-active" onclick="выбратьМодель(event,'mistral-large-latest','Mistral Large',this)">Mistral Large<span>✓</span></div>
+          <div class="model-dd-item" onclick="выбратьМодель(event,'mistral-small-latest','Mistral Small',this)">Mistral Small</div>
+          <div class="model-dd-item" onclick="выбратьМодель(event,'codestral-latest','Codestral',this)">Codestral</div>
+          <div class="model-dd-item" onclick="выбратьМодель(event,'mistral-medium-latest','Mistral Medium',this)">Mistral Medium</div>
         </div>
       </div>
       <span class="char-counter" id="char-counter"></span>
@@ -1229,8 +1229,8 @@
     e.stopPropagation();
     document.getElementById('model-dd').classList.toggle('open');
   }
-  function выбратьМодель(value, label, el) {
-    event.stopPropagation();
+  function выбратьМодель(e, value, label, el) {
+    e.stopPropagation();
     _selectedModel = value;
     document.getElementById('model-label').textContent = label;
     document.querySelectorAll('.model-dd-item').forEach(i => {
@@ -1461,6 +1461,14 @@
       });
 
       document.getElementById('печать')?.remove();
+
+      if (!resp.ok) {
+        история.pop();
+        добавитьСообщение('Ошибка сервера (' + resp.status + '). Попробуй ещё раз.', 'bot');
+        кнопка.disabled = false; кнопка.classList.remove('loading');
+        return;
+      }
+
       document.getElementById('приветствие')?.remove();
       document.getElementById('чат').classList.remove('empty');
 
@@ -1508,11 +1516,18 @@
       }
 
       document.getElementById('stream-bubble')?.removeAttribute('id');
-      история.push({ role: 'assistant', content: полный });
-      сохранитьЧат();
+      if (!полный) {
+        div.remove();
+        история.pop();
+        добавитьСообщение('Не удалось получить ответ. Попробуй ещё раз.', 'bot');
+      } else {
+        история.push({ role: 'assistant', content: полный });
+        сохранитьЧат();
+      }
 
     } catch {
       document.getElementById('печать')?.remove();
+      история.pop();
       добавитьСообщение('Ошибка соединения. Попробуй ещё раз.', 'bot');
     }
 
