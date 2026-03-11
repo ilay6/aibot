@@ -59,7 +59,10 @@ async def чат(данные: ЗапросЧат):
     модель = данные.модель if данные.модель in ALLOWED_MODELS else "mistral-large-latest"
     async with httpx.AsyncClient(timeout=60) as http:
         r = await http.post(MISTRAL_URL, headers={"Authorization": f"Bearer {MISTRAL_API_KEY}"}, json={"model": модель, "messages": данные.сообщения})
-    return {"ответ": r.json()["choices"][0]["message"]["content"]}
+    try:
+        return {"ответ": r.json()["choices"][0]["message"]["content"]}
+    except Exception:
+        return {"ответ": f"[DEBUG] Статус: {r.status_code} | Ответ: {r.text[:300]}"}
 
 @app.post("/api/chat/stream")
 async def чат_stream(данные: ЗапросЧат):
