@@ -1036,6 +1036,14 @@
 </div>
 
 <script>
+  window.onerror = function(msg, src, line) {
+    const d = document.createElement('div');
+    d.style.cssText = 'position:fixed;top:50px;left:8px;right:8px;background:#900;color:#fff;padding:12px;border-radius:8px;z-index:99999;font-size:12px;';
+    d.textContent = 'JS ERROR: ' + msg + ' (line ' + line + ')';
+    d.onclick = () => d.remove();
+    document.body.appendChild(d);
+  };
+
   const tg = window.Telegram?.WebApp;
   if (tg) { tg.expand(); }
 
@@ -1481,15 +1489,17 @@
 
     история.push({ role: 'user', content: текст });
 
-    // показываем тайпинг
-    const типингDiv = document.createElement('div');
-    типингDiv.className = 'msg bot';
-    типингDiv.innerHTML = `<div class="avatar">${botIcon}</div><div class="bubble" style="opacity:0.7;font-style:italic;">Думаю...</div>`;
+    // показываем тайпинг — максимально простой вариант
+    const типингDiv = document.createElement('p');
+    типингDiv.style.cssText = 'color:yellow;font-size:15px;padding:8px 16px;';
+    типингDiv.textContent = '⏳ Думаю...';
     msgs.appendChild(типингDiv);
     msgs.scrollTop = msgs.scrollHeight;
+    document.title = 'Думаю...';
 
     try {
       dbg('1: fetch начат → ' + getModel());
+      document.title = '📡 Запрос...';
       const controller = new AbortController();
       const timer = setTimeout(() => { dbg('TIMEOUT 30s'); controller.abort(); }, 30000);
 
