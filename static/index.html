@@ -912,7 +912,7 @@
     </div>
     <div>
       <div class="header-title">AIchat | APP</div>
-      <div class="header-sub"><div class="online-dot"></div> Mistral · Онлайн [v5]</div>
+      <div class="header-sub"><div class="online-dot"></div> Mistral · Онлайн</div>
     </div>
   </div>
   <div class="header-right">
@@ -1036,14 +1036,6 @@
 </div>
 
 <script>
-  window.onerror = function(msg, src, line) {
-    const d = document.createElement('div');
-    d.style.cssText = 'position:fixed;top:50px;left:8px;right:8px;background:#900;color:#fff;padding:12px;border-radius:8px;z-index:99999;font-size:12px;';
-    d.textContent = 'JS ERROR: ' + msg + ' (line ' + line + ')';
-    d.onclick = () => d.remove();
-    document.body.appendChild(d);
-  };
-
   const tg = window.Telegram?.WebApp;
   if (tg) { tg.expand(); }
 
@@ -1255,37 +1247,17 @@
   function текущееВремя() { return new Date().toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' }); }
 
   function показатьОшибкуВЧате(текст) {
-    // Floating overlay — невозможно не заметить
-    const overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;top:60px;left:8px;right:8px;background:#c0392b;color:#fff;padding:14px;border-radius:12px;z-index:99999;font-size:13px;word-break:break-all;box-shadow:0 4px 20px rgba(0,0,0,0.5);';
-    overlay.textContent = текст;
-    overlay.onclick = () => overlay.remove();
-    document.body.appendChild(overlay);
-    setTimeout(() => overlay.remove(), 15000);
-    // Также в чат
     const msgs = document.getElementById('сообщения');
-    if (msgs) {
-      const div = document.createElement('div');
-      div.className = 'msg bot';
-      const p = document.createElement('div');
-      p.className = 'bubble';
-      p.style.cssText = 'background:#c0392b;color:#fff;';
-      p.textContent = текст;
-      div.appendChild(p);
-      msgs.appendChild(div);
-      msgs.scrollTop = msgs.scrollHeight;
-    }
-  }
-
-  function dbg(текст) {
-    let bar = document.getElementById('__dbgbar');
-    if (!bar) {
-      bar = document.createElement('div');
-      bar.id = '__dbgbar';
-      bar.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#222;color:#0f0;font-size:11px;padding:4px 8px;z-index:99999;';
-      document.body.appendChild(bar);
-    }
-    bar.textContent = текст;
+    if (!msgs) return;
+    const div = document.createElement('div');
+    div.className = 'msg bot';
+    const p = document.createElement('div');
+    p.className = 'bubble';
+    p.style.cssText = 'background:#c0392b;color:#fff;';
+    p.textContent = текст;
+    div.appendChild(p);
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
   }
 
   function переключить(id, кнопка) {
@@ -1492,16 +1464,13 @@
     // показываем тайпинг — максимально простой вариант
     const типингDiv = document.createElement('p');
     типингDiv.style.cssText = 'color:yellow;font-size:15px;padding:8px 16px;';
-    типингDiv.textContent = '⏳ Думаю...';
+    типингDiv.innerHTML = `<div class="typing"><span></span><span></span><span></span></div>`;
     msgs.appendChild(типингDiv);
     msgs.scrollTop = msgs.scrollHeight;
-    document.title = 'Думаю...';
 
     try {
-      dbg('1: fetch начат → ' + getModel());
-      document.title = '📡 Запрос...';
       const controller = new AbortController();
-      const timer = setTimeout(() => { dbg('TIMEOUT 30s'); controller.abort(); }, 30000);
+      const timer = setTimeout(() => controller.abort(), 30000);
 
       const resp = await fetch('/api/chat', {
         method: 'POST',
@@ -1510,8 +1479,6 @@
         signal: controller.signal
       });
       clearTimeout(timer);
-      dbg('2: ответ ' + resp.status);
-
       типингDiv.remove();
 
       if (!resp.ok) {
@@ -1520,22 +1487,19 @@
       } else {
         const данные = await resp.json();
         const ответ = данные.ответ;
-        dbg('3: ответ получен, длина=' + (ответ||'').length);
         if (!ответ) {
           история.pop();
-          показатьОшибкуВЧате('Пустой ответ: ' + JSON.stringify(данные));
+          показатьОшибкуВЧате('Пустой ответ от сервера');
         } else {
           история.push({ role: 'assistant', content: ответ });
           await печататьОтвет(ответ);
           сохранитьЧат();
-          dbg('4: готово');
         }
       }
     } catch (err) {
       типингDiv.remove();
-      dbg('CATCH: ' + (err?.message || String(err)));
       история.pop();
-      const msg = err?.name === 'AbortError' ? 'Таймаут 30с — сервер не ответил' : (err?.message || String(err));
+      const msg = err?.name === 'AbortError' ? 'Сервер не ответил (таймаут 30с)' : (err?.message || String(err));
       показатьОшибкуВЧате('Ошибка: ' + msg);
     }
 
@@ -1631,31 +1595,37 @@
     результат.innerHTML = '';
     прогресс.classList.add('active');
     try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 90000);
       const resp = await fetch('/api/image', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ запрос })
+        body: JSON.stringify({ запрос }),
+        signal: controller.signal
       });
+      clearTimeout(timer);
       const данные = await resp.json();
       прогресс.classList.remove('active');
-      if (данные.error) { статус.textContent = '❌ ' + данные.error; btn.disabled = false; btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg> Сгенерировать`; return; }
-      статус.textContent = '';
-      const img = document.createElement('img');
-      img.style.cssText = 'width:100%;border-radius:16px;display:block;';
-      img.onload = () => {
-        результат.innerHTML = '';
-        результат.appendChild(img);
-        img.style.animation = 'fadeInUp 0.4s ease forwards';
-        const a = document.createElement('a');
-        a.href = данные.url; a.download = 'ai-image.jpg'; a.target = '_blank';
-        a.className = 'save-btn';
-        a.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> Сохранить изображение`;
-        результат.appendChild(a);
-      };
-      img.onerror = () => { статус.textContent = 'Не удалось загрузить. Попробуй ещё раз.'; };
-      img.src = данные.url;
-    } catch {
+      if (данные.error) {
+        статус.textContent = '❌ ' + данные.error;
+      } else {
+        статус.textContent = '';
+        const img = document.createElement('img');
+        img.style.cssText = 'width:100%;border-radius:16px;display:block;';
+        img.onload = () => {
+          результат.innerHTML = '';
+          результат.appendChild(img);
+          const a = document.createElement('a');
+          a.href = данные.url; a.download = 'ai-image.jpg'; a.target = '_blank';
+          a.className = 'save-btn';
+          a.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> Сохранить изображение`;
+          результат.appendChild(a);
+        };
+        img.onerror = () => { статус.textContent = '❌ Не удалось загрузить изображение'; };
+        img.src = данные.url;
+      }
+    } catch (e) {
       прогресс.classList.remove('active');
-      статус.textContent = 'Ошибка. Попробуй ещё раз.';
+      статус.textContent = e?.name === 'AbortError' ? '❌ Таймаут — сервер не ответил' : '❌ Ошибка соединения';
     }
     btn.disabled = false;
     btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg> Сгенерировать`;
