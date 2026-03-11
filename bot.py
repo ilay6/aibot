@@ -39,8 +39,9 @@ async def старт(message: types.Message):
             web_app=WebAppInfo(url=WEBAPP_URL)
         )
     ]])
-    await message.answer(
-        "👋 Привет!\n\n"
+    await message.answer_photo(
+        photo=f"{WEBAPP_URL}/logo.jpg",
+        caption="👋 Привет!\n\n"
         "Я AI-ассистент с возможностями:\n\n"
         "💬 Умный чат — как ChatGPT\n"
         "🎨 Генерация изображений\n"
