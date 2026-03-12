@@ -190,6 +190,7 @@
   .header-center-fs {
     display: none; flex-direction: column; align-items: center; gap: 2px;
   }
+  .header-center-fs.visible { display: flex; }
   .header-center-fs .header-user-avatar-big {
     width: 30px; height: 30px; border-radius: 50%;
     overflow: hidden; background: var(--bg3); border: 2px solid var(--accent);
@@ -1313,6 +1314,11 @@
     return `<span class="avatar-initials">${ini}</span>`;
   }
 
+  // ── CHAT HISTORY (нужна до восстановления чата) ──
+  let история = [
+    { role: "system", content: "Ты полезный AI-ассистент. Отвечай кратко и по делу. Код оформляй в блоки." }
+  ];
+
   // Загружаем историю в sidebar при старте
   let текущийЧатId = Date.now();
   // Восстанавливаем последний активный чат
@@ -1421,10 +1427,6 @@
   }
 
   // ── CHAT ──
-  let история = [
-    { role: "system", content: "Ты полезный AI-ассистент. Отвечай кратко и по делу. Код оформляй в блоки." }
-  ];
-
   let _selectedModel = 'mistral-small-latest';
   function getModel() { return _selectedModel; }
 
@@ -1873,10 +1875,10 @@
         : `<span class="avatar-initials">${ini}</span>`;
     }
 
-    // Центральная аватарка (wide mode)
+    // Центральная аватарка (всегда видна)
     const center = document.getElementById('header-center-fs');
     if (center) {
-      center.style.display = 'flex';
+      center.classList.add('visible');
       center.innerHTML = `
         <div class="header-user-avatar-big">${avatarHTML}</div>
         <div class="header-user-name-fs">${name}</div>
