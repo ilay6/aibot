@@ -1134,7 +1134,7 @@
       <div class="welcome-chips">
         <span class="chip" onclick="быстрыйЗапрос('Объясни код')">Объясни код</span>
         <span class="chip" onclick="быстрыйЗапрос('Помоги с текстом')">Помоги с текстом</span>
-        <span class="chip" onclick="быстрыйЗапрос('Реши задачу')">Реши задачу</span>
+        <span class="chip" onclick="быстрыйЗапрос('/img красивый закат')">🎨 Картинка</span>
       </div>
     </div>
   </div>
@@ -1178,11 +1178,11 @@
         <svg width="34" height="34" viewBox="0 0 24 24" fill="var(--accent)"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
       </div>
       <div class="img-title">Генерация изображений</div>
-      <div class="img-desc">Опиши что хочешь увидеть — AI создаст изображение. Лучше на английском.</div>
-      <textarea class="img-input" id="img-ввод" placeholder="Например: beautiful sunset over mountains, cinematic, photorealistic..."></textarea>
+      <div class="img-desc">Напиши в чате <b>/img</b> и описание — картинка появится прямо в чате.</div>
+      <textarea class="img-input" id="img-ввод" placeholder="Или напиши здесь и нажми кнопку..."></textarea>
       <button class="gen-btn" id="gen-btn" onclick="сгенерировать()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
-        Сгенерировать
+        Сгенерировать в чат
       </button>
       <div class="progress-wrap" id="progress-wrap"><div class="progress-bar"></div></div>
       <div class="img-status" id="img-статус"></div>
@@ -1590,7 +1590,7 @@
       <div class="welcome-chips">
         <span class="chip" onclick="быстрыйЗапрос('Объясни код')">Объясни код</span>
         <span class="chip" onclick="быстрыйЗапрос('Помоги с текстом')">Помоги с текстом</span>
-        <span class="chip" onclick="быстрыйЗапрос('Реши задачу')">Реши задачу</span>
+        <span class="chip" onclick="быстрыйЗапрос('/img красивый закат')">🎨 Картинка</span>
       </div>
     </div>`;
     const панель = document.getElementById('чат');
@@ -1787,6 +1787,17 @@
     const текст = поле.value.trim();
     if (!текст || текст.length > MAX_CHARS) return;
 
+    // Перехват команды /img
+    if (текст.startsWith('/img ')) {
+      const запрос = текст.slice(5).trim();
+      if (!запрос) return;
+      поле.value = ''; поле.style.height = 'auto';
+      localStorage.removeItem('черновик');
+      обновитьСчетчик(0);
+      await генерацияВЧат(запрос);
+      return;
+    }
+
     поле.value = ''; поле.style.height = 'auto';
     localStorage.removeItem('черновик');
     обновитьСчетчик(0);
@@ -1965,54 +1976,61 @@
   async function сгенерировать() {
     const запрос = document.getElementById('img-ввод').value.trim();
     if (!запрос) return;
-    const btn = document.getElementById('gen-btn');
-    const статус = document.getElementById('img-статус');
-    const результат = document.getElementById('img-результат');
-    const прогресс = document.getElementById('progress-wrap');
-    btn.disabled = true;
-    btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg> Генерирую...`;
-    статус.textContent = 'Создаю изображение...';
-    результат.innerHTML = '';
-    прогресс.classList.add('active');
+    // Переключаемся на чат и генерируем там
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('чат').classList.add('active');
+    document.querySelector('.tab').classList.add('active');
+    document.getElementById('ввод').value = '/img ' + запрос;
+    document.getElementById('img-ввод').value = '';
+    отправить();
+  }
+
+  async function генерацияВЧат(запрос) {
+    const msgs = document.getElementById('сообщения');
+    document.getElementById('приветствие')?.remove();
+    document.getElementById('чат').classList.remove('empty');
+
+    // Сообщение пользователя
+    добавитьСообщение('🎨 ' + запрос, 'user', false);
+    история.push({ role: 'user', content: '🎨 ' + запрос, time: текущееВремя() });
+    трекнуть('🎨 ' + запрос, 'user');
+
+    // Typing
+    const типинг = document.createElement('div');
+    типинг.className = 'msg bot';
+    типинг.innerHTML = `<div class="avatar">${botIcon}</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+    msgs.appendChild(типинг);
+    msgs.scrollTop = msgs.scrollHeight;
+
     try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 90000);
       const resp = await fetch('/api/image', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ запрос }),
-        signal: controller.signal
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ запрос })
       });
-      clearTimeout(timer);
       const данные = await resp.json();
-      прогресс.classList.remove('active');
+      типинг.remove();
+
       if (данные.error) {
-        статус.textContent = '❌ ' + данные.error;
+        показатьОшибкуВЧате('Ошибка генерации: ' + данные.error);
+        история.pop();
       } else {
-        статус.textContent = '';
-        const img = document.createElement('img');
-        img.style.cssText = 'width:100%;border-radius:16px;display:block;';
-        img.onload = () => {
-          результат.innerHTML = '';
-          результат.appendChild(img);
-          const a = document.createElement('a');
-          a.href = данные.url; a.download = 'ai-image.jpg'; a.target = '_blank';
-          a.className = 'save-btn';
-          a.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> Сохранить изображение`;
-          результат.appendChild(a);
-        };
-        статус.textContent = '⏳ Загружаю изображение...';
-        img.onerror = () => {
-          прогресс.classList.remove('active');
-          статус.innerHTML = 'Не удалось загрузить. <a href="' + данные.url + '" target="_blank" style="color:var(--accent)">Открыть в браузере</a>';
-        };
-        img.src = данные.url;
+        const время = текущееВремя();
+        const div = document.createElement('div');
+        div.className = 'msg bot';
+        div.innerHTML = `<div class="avatar">${botIcon}</div><div class="bubble"><img src="${данные.url}" style="width:100%;max-width:400px;border-radius:12px;display:block" onerror="this.outerHTML='<span style=color:var(--text2)>Не удалось загрузить изображение</span>'"><div class="bubble-footer"><span class="msg-time">${время}</span><a href="${данные.url}" target="_blank" download="ai-image.jpg" style="font-size:10px;color:var(--accent);text-decoration:none;margin-left:8px">Сохранить</a></div></div>`;
+        msgs.appendChild(div);
+        msgs.scrollTop = msgs.scrollHeight;
+        история.push({ role: 'assistant', content: '[Изображение: ' + запрос + ']', time: время });
+        трекнуть('[Изображение: ' + запрос + ']', 'assistant');
+        сохранитьЧат();
       }
     } catch (e) {
-      прогресс.classList.remove('active');
-      статус.textContent = e?.name === 'AbortError' ? '❌ Таймаут — сервер не ответил' : '❌ Ошибка соединения';
+      типинг.remove();
+      история.pop();
+      показатьОшибкуВЧате('Ошибка соединения');
     }
-    btn.disabled = false;
-    btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg> Сгенерировать`;
   }
 
   // ── USER AVATAR IN HEADER ──
