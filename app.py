@@ -102,7 +102,20 @@ async def чат_stream(данные: ЗапросЧат):
 @app.post("/api/image")
 async def картинка(данные: ЗапросКартинки):
     import base64
-    prompt_encoded = quote(данные.запрос)
+    # Translate prompt to English (pollinations.ai fails on non-latin)
+    eng_prompt = данные.запрос
+    try:
+        async with httpx.AsyncClient(timeout=15) as http:
+            tr = await http.post(MISTRAL_URL,
+                headers={"Authorization": f"Bearer {MISTRAL_API_KEY}"},
+                json={"model": "mistral-small-latest", "messages": [
+                    {"role": "system", "content": "Translate the user's image prompt to English. Output ONLY the translated prompt, nothing else. If already English, return as-is."},
+                    {"role": "user", "content": данные.запрос}
+                ]})
+            eng_prompt = tr.json()["choices"][0]["message"]["content"].strip()
+    except Exception:
+        pass
+    prompt_encoded = quote(eng_prompt)
     url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=512&height=512&nologo=true"
     try:
         async with httpx.AsyncClient(timeout=120, follow_redirects=True) as http:
