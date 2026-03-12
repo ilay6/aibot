@@ -752,6 +752,39 @@
   [data-theme="light"] .toast { background: rgba(255,255,255,0.92); color: #1a2e2d; border-color: rgba(10,186,181,0.2); }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+  /* ── CONFIRM MODAL ── */
+  .confirm-overlay {
+    position: fixed; inset: 0; z-index: 10000;
+    background: rgba(0,0,0,0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.2s; pointer-events: none;
+  }
+  .confirm-overlay.show { opacity: 1; pointer-events: auto; }
+  .confirm-box {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 18px;
+    padding: 24px; max-width: 280px; width: 90%; text-align: center;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+    transform: scale(0.92); transition: transform 0.2s cubic-bezier(0.16,1,0.3,1);
+  }
+  .confirm-overlay.show .confirm-box { transform: scale(1); }
+  .confirm-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .confirm-sub { font-size: 13px; color: var(--text2); margin-bottom: 20px; }
+  .confirm-btns { display: flex; gap: 10px; }
+  .confirm-btns button {
+    flex: 1; padding: 10px 0; border-radius: 12px; border: none;
+    font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .confirm-btns button:active { transform: scale(0.96); }
+  .confirm-cancel {
+    background: var(--glass-bg); color: var(--text); border: 1px solid var(--border) !important;
+  }
+  .confirm-cancel:hover { background: var(--glass-inner); }
+  .confirm-delete {
+    background: #c0392b; color: #fff;
+  }
+  .confirm-delete:hover { background: #e74c3c; }
+
   .offline-banner {
     display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
     background: #c0392b; color: #fff; text-align: center;
@@ -1069,6 +1102,18 @@
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
+
+<!-- CONFIRM MODAL -->
+<div class="confirm-overlay" id="confirm-overlay" onclick="if(event.target===this)закрытьПодтверждение()">
+  <div class="confirm-box">
+    <div class="confirm-title" id="confirm-title">Удалить чат?</div>
+    <div class="confirm-sub" id="confirm-sub">Это действие нельзя отменить</div>
+    <div class="confirm-btns">
+      <button class="confirm-cancel" onclick="закрытьПодтверждение()">Отмена</button>
+      <button class="confirm-delete" id="confirm-ok">Удалить</button>
+    </div>
+  </div>
+</div>
 
 <!-- OFFLINE BANNER -->
 <div class="offline-banner" id="offline-banner">Нет соединения</div>
@@ -1612,8 +1657,22 @@
     document.querySelector('.tab').classList.add('active');
   }
 
-  function удалитьЧат(id) {
-    if (!confirm('Удалить этот чат?')) return;
+  let _confirmResolve = null;
+  function показатьПодтверждение() {
+    return new Promise(resolve => {
+      _confirmResolve = resolve;
+      document.getElementById('confirm-overlay').classList.add('show');
+    });
+  }
+  function закрытьПодтверждение(result = false) {
+    document.getElementById('confirm-overlay').classList.remove('show');
+    if (_confirmResolve) { _confirmResolve(result); _confirmResolve = null; }
+  }
+  document.getElementById('confirm-ok').onclick = () => закрытьПодтверждение(true);
+
+  async function удалитьЧат(id) {
+    const ok = await показатьПодтверждение();
+    if (!ok) return;
     let чаты = JSON.parse(localStorage.getItem('чаты') || '[]');
     чаты = чаты.filter(c => c.id !== id);
     localStorage.setItem('чаты', JSON.stringify(чаты));
