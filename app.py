@@ -116,7 +116,7 @@ async def картинка(данные: ЗапросКартинки):
     except Exception:
         pass
     prompt_encoded = quote(eng_prompt)
-    url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=512&height=512&nologo=true"
+    url = f"https://image.pollinations.ai/prompt/{prompt_encoded}"
     try:
         async with httpx.AsyncClient(timeout=120, follow_redirects=True) as http:
             # Try up to 2 times
