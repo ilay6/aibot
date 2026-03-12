@@ -1866,16 +1866,7 @@
       ? `<img src="${photoUrl}" onerror="this.parentElement.innerHTML='${ini}'">`
       : ini;
 
-    // Маленькая аватарка в хедере (всегда видна)
-    const small = document.getElementById('header-user-small');
-    if (small) {
-      small.style.display = 'flex';
-      small.innerHTML = photoUrl
-        ? `<img src="${photoUrl}" onerror="this.parentElement.innerHTML='<span class=avatar-initials>${ini}</span>'">`
-        : `<span class="avatar-initials">${ini}</span>`;
-    }
-
-    // Центральная аватарка (всегда видна)
+    // Аватарка в хедере
     const center = document.getElementById('header-center-fs');
     if (center) {
       center.classList.add('visible');
