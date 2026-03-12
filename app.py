@@ -102,26 +102,31 @@ async def чат_stream(данные: ЗапросЧат):
 @app.post("/api/image")
 async def картинка(данные: ЗапросКартинки):
     import base64
-    # Translate prompt to English (pollinations.ai fails on non-latin)
+    # Expand and translate prompt to English via Mistral
     eng_prompt = данные.запрос
     try:
         async with httpx.AsyncClient(timeout=15) as http:
             tr = await http.post(MISTRAL_URL,
                 headers={"Authorization": f"Bearer {MISTRAL_API_KEY}"},
                 json={"model": "mistral-small-latest", "messages": [
-                    {"role": "system", "content": "Translate the user's image prompt to English. Output ONLY the translated prompt, nothing else. If already English, return as-is."},
+                    {"role": "system", "content": "You are an image prompt engineer. Take the user's request and turn it into a detailed English prompt for an image generator (1-2 sentences). Be descriptive. Output ONLY the prompt."},
                     {"role": "user", "content": данные.запрос}
                 ]})
-            eng_prompt = tr.json()["choices"][0]["message"]["content"].strip()
+            eng_prompt = tr.json()["choices"][0]["message"]["content"].strip().strip('"')
     except Exception:
         pass
     prompt_encoded = quote(eng_prompt)
     url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=512&height=512&nologo=true"
     try:
         async with httpx.AsyncClient(timeout=120, follow_redirects=True) as http:
+            # Try up to 2 times
             resp = await http.get(url)
+            if resp.status_code != 200:
+                import asyncio
+                await asyncio.sleep(2)
+                resp = await http.get(url)
         if resp.status_code != 200:
-            return {"error": f"Сервер вернул {resp.status_code}"}
+            return {"error": f"Сервер вернул {resp.status_code}. Попробуйте другой запрос."}
         ct = resp.headers.get("content-type", "")
         if "image" not in ct:
             return {"error": "Сервер не вернул изображение"}
