@@ -101,7 +101,6 @@ async def чат_stream(данные: ЗапросЧат):
 
 @app.post("/api/image")
 async def картинка(данные: ЗапросКартинки):
-    import base64
     # Expand and translate prompt to English via Mistral
     eng_prompt = данные.запрос
     try:
@@ -117,26 +116,7 @@ async def картинка(данные: ЗапросКартинки):
         pass
     prompt_encoded = quote(eng_prompt)
     url = f"https://image.pollinations.ai/prompt/{prompt_encoded}"
-    try:
-        async with httpx.AsyncClient(timeout=120, follow_redirects=True) as http:
-            # Try up to 2 times
-            resp = await http.get(url)
-            if resp.status_code != 200:
-                import asyncio
-                await asyncio.sleep(2)
-                resp = await http.get(url)
-        if resp.status_code != 200:
-            return {"error": f"Сервер вернул {resp.status_code}. Попробуйте другой запрос."}
-        ct = resp.headers.get("content-type", "")
-        if "image" not in ct:
-            return {"error": "Сервер не вернул изображение"}
-        img_b64 = base64.b64encode(resp.content).decode()
-        fmt = "png" if "png" in ct else "jpeg"
-        return {"url": f"data:image/{fmt};base64,{img_b64}"}
-    except httpx.TimeoutException:
-        return {"error": "Таймаут — сервер генерации не ответил за 2 минуты"}
-    except Exception as e:
-        return {"error": str(e)[:120]}
+    return {"url": url}
 
 @app.post("/api/track")
 async def track(data: TrackData):
