@@ -31,8 +31,14 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         tg_id INTEGER,
         text TEXT,
-        ts TEXT
+        ts TEXT,
+        role TEXT DEFAULT 'user'
     )""")
+    # Migrate: add role column if missing
+    try:
+        con.execute("ALTER TABLE messages ADD COLUMN role TEXT DEFAULT 'user'")
+    except Exception:
+        pass
     con.commit()
     con.close()
 
@@ -53,6 +59,7 @@ class TrackData(BaseModel):
     first_name: str = ""
     text: str = ""
     secret: str = ""
+    role: str = "user"
 
 @app.post("/api/chat")
 async def чат(данные: ЗапросЧат):
@@ -123,8 +130,8 @@ async def track(data: TrackData):
     )
     if data.text:
         con.execute(
-            "INSERT INTO messages (tg_id, text, ts) VALUES (?,?,?)",
-            (data.tg_id, data.text, datetime.now().strftime("%Y-%m-%d %H:%M"))
+            "INSERT INTO messages (tg_id, text, ts, role) VALUES (?,?,?,?)",
+            (data.tg_id, data.text, datetime.now().strftime("%Y-%m-%d %H:%M"), data.role)
         )
     con.commit()
     con.close()
@@ -143,16 +150,16 @@ async def admin_stats(x_admin_secret: str = Header(None)):
         GROUP BY u.tg_id ORDER BY u.joined_at DESC
     """).fetchall()
     recent = con.execute("""
-        SELECT u.first_name, u.username, m.text, m.ts
+        SELECT u.first_name, u.username, m.text, m.ts, m.role
         FROM messages m LEFT JOIN users u ON m.tg_id = u.tg_id
-        ORDER BY m.ts DESC LIMIT 50
+        ORDER BY m.id DESC LIMIT 100
     """).fetchall()
     con.close()
     return {
         "total_users": total_users,
         "total_messages": total_msgs,
         "users": [{"tg_id": u[0], "username": u[1] or "", "first_name": u[2] or "", "joined": u[3], "messages": u[4]} for u in users],
-        "recent_messages": [{"name": m[0] or "?", "username": m[1] or "", "text": m[2], "ts": m[3]} for m in recent]
+        "recent_messages": [{"name": m[0] or "?", "username": m[1] or "", "text": m[2], "ts": m[3], "role": m[4] or "user"} for m in recent]
     }
 
 @app.get("/")

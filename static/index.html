@@ -752,6 +752,13 @@
   [data-theme="light"] .toast { background: rgba(255,255,255,0.92); color: #1a2e2d; border-color: rgba(10,186,181,0.2); }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+  .offline-banner {
+    display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+    background: #c0392b; color: #fff; text-align: center;
+    font-size: 12px; font-weight: 600; padding: 4px;
+  }
+  .offline-banner.show { display: block; }
+
   /* ── BUBBLE FOOTER (timestamp + copy) ── */
   .bubble-footer {
     display: flex; align-items: center; justify-content: space-between;
@@ -764,9 +771,10 @@
     color: var(--text2); cursor: pointer; padding: 2px 8px;
     font-size: 10px; font-family: inherit;
     display: flex; align-items: center; gap: 4px;
-    opacity: 0; transition: opacity 0.2s, border-color 0.2s, color 0.2s, background 0.2s;
+    opacity: 0.6; transition: opacity 0.2s, border-color 0.2s, color 0.2s, background 0.2s;
   }
   .msg.bot:hover .copy-btn { opacity: 1; }
+  @media (hover: none) { .copy-btn { opacity: 0.7; } }
   .copy-btn:hover { border-color: var(--glass-border); color: var(--accent); background: var(--glass-bg); }
 
   /* ── SCROLL DOWN BTN ── */
@@ -1062,6 +1070,9 @@
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<!-- OFFLINE BANNER -->
+<div class="offline-banner" id="offline-banner">Нет соединения</div>
+
 <!-- ЧАТ -->
 <div class="panel active empty" id="чат">
   <button class="scroll-down-btn" id="scroll-down-btn" onclick="прокрутитьВниз()" title="Вниз">
@@ -1098,7 +1109,7 @@
     <div class="input-wrap">
       <textarea id="ввод" placeholder="Напиши сообщение..." rows="1"
         onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();отправить()}"
-        oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';обновитьСчетчик(this.value.length)"></textarea>
+        oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';обновитьСчетчик(this.value.length);localStorage.setItem('черновик',this.value)"></textarea>
       <button class="voice-btn" id="attach-btn" onclick="document.getElementById('file-input').click()" title="Прикрепить изображение">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M21.58 11.4l-9.17 9.17c-2.34 2.34-6.14 2.34-8.49 0-2.34-2.34-2.34-6.14 0-8.49l9.17-9.17c1.56-1.56 4.1-1.56 5.66 0 1.56 1.56 1.56 4.1 0 5.66l-9.17 9.17c-.78.78-2.05.78-2.83 0-.78-.78-.78-2.05 0-2.83l7.07-7.07 1.41 1.41-7.07 7.07 9.17-9.17c.78-.78.78-2.05 0-2.83-.78-.78-2.05-.78-2.83 0l-9.17 9.17c-1.56 1.56-1.56 4.1 0 5.66 1.56 1.56 4.1 1.56 5.66 0l9.17-9.17 1.41 1.42z"/></svg>
       </button>
@@ -1340,6 +1351,9 @@
   })();
   отрисоватьИсторию();
 
+  // Восстановление черновика
+  { const d = localStorage.getItem('черновик'); if (d) { const inp = document.getElementById('ввод'); inp.value = d; inp.style.height = 'auto'; inp.style.height = inp.scrollHeight + 'px'; } }
+
   // ── TOAST ──
   let toastTimer;
   function показатьТост(текст, ms = 2200) {
@@ -1450,6 +1464,13 @@
   document.addEventListener('click', () => document.getElementById('model-dd')?.classList.remove('open'));
   function текущееВремя() { return new Date().toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' }); }
 
+  function повторитьПоследнее() {
+    const last = история.filter(m => m.role === 'user').pop();
+    if (!last) return;
+    document.getElementById('ввод').value = typeof last.content === 'string' ? last.content : (last.content?.find?.(c => c.type === 'text')?.text || '');
+    отправить();
+  }
+
   function показатьОшибкуВЧате(текст) {
     const msgs = document.getElementById('сообщения');
     if (!msgs) return;
@@ -1458,10 +1479,19 @@
     const p = document.createElement('div');
     p.className = 'bubble';
     p.style.cssText = 'background:#c0392b;color:#fff;';
-    p.textContent = текст;
+    p.innerHTML = `${экранировать(текст)}<br><button onclick="this.closest('.msg').remove();повторитьПоследнее()" style="margin-top:6px;padding:4px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.15);color:#fff;cursor:pointer;font-size:12px;font-family:inherit">↻ Повторить</button>`;
     div.appendChild(p);
     msgs.appendChild(div);
     msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function трекнуть(text, role = 'user') {
+    if (!tgUser) return;
+    fetch('/api/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tg_id: tgUser.id, username: tgUser.username || '', first_name: tgUser.first_name || '', text, role, secret: ADMIN_SECRET })
+    }).catch(() => {});
   }
 
   function переключить(id, кнопка) {
@@ -1511,7 +1541,13 @@
     const previewText = typeof firstContent === 'string' ? firstContent : (firstContent?.find?.(c => c.type === 'text')?.text || 'Изображение');
     const запись = { id: текущийЧатId, сообщения: история, время: Date.now(), preview: previewText.slice(0, 60) };
     if (idx >= 0) чаты[idx] = запись; else чаты.unshift(запись);
-    localStorage.setItem('чаты', JSON.stringify(чаты.slice(0, 30)));
+    const данные = JSON.stringify(чаты.slice(0, 30));
+    try { localStorage.setItem('чаты', данные); }
+    catch {
+      // Квота — удаляем старые чаты и пробуем снова
+      чаты.splice(15);
+      try { localStorage.setItem('чаты', JSON.stringify(чаты)); } catch {}
+    }
   }
 
   function getGroupLabel(ts) {
@@ -1577,9 +1613,11 @@
   }
 
   function удалитьЧат(id) {
+    if (!confirm('Удалить этот чат?')) return;
     let чаты = JSON.parse(localStorage.getItem('чаты') || '[]');
     чаты = чаты.filter(c => c.id !== id);
     localStorage.setItem('чаты', JSON.stringify(чаты));
+    if (id === текущийЧатId) новыйЧат();
     отрисоватьИсторию();
   }
 
@@ -1650,6 +1688,7 @@
     if (!текст || текст.length > MAX_CHARS) return;
 
     поле.value = ''; поле.style.height = 'auto';
+    localStorage.removeItem('черновик');
     обновитьСчетчик(0);
     const кнопка = document.getElementById('кнопка');
     кнопка.disabled = true; кнопка.classList.add('loading');
@@ -1667,19 +1706,7 @@
     история.push({ role: 'user', content: текст, time: текущееВремя() });
 
     // Трекинг сообщения
-    if (tgUser) {
-      fetch('/api/track', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tg_id: tgUser.id,
-          username: tgUser.username || '',
-          first_name: tgUser.first_name || '',
-          text: текст,
-          secret: ADMIN_SECRET
-        })
-      }).catch(() => {});
-    }
+    трекнуть(текст, 'user');
 
     // показываем тайпинг — максимально простой вариант
     const типингDiv = document.createElement('p');
@@ -1690,9 +1717,9 @@
 
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 30000);
+      const timer = setTimeout(() => controller.abort(), 60000);
 
-      const resp = await fetch('/api/chat', {
+      const resp = await fetch('/api/chat/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ сообщения: история.map(m => ({ role: m.role, content: m.content })), модель: getModel() }),
@@ -1705,21 +1732,51 @@
         история.pop();
         показатьОшибкуВЧате('Ошибка сервера: ' + resp.status);
       } else {
-        const данные = await resp.json();
-        const ответ = данные.ответ;
-        if (!ответ) {
+        const время = текущееВремя();
+        const div = document.createElement('div');
+        div.className = 'msg bot';
+        const пузырь = document.createElement('div');
+        пузырь.className = 'bubble';
+        const footer = `<div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button></div>`;
+        div.innerHTML = `<div class="avatar">${botIcon}</div>`;
+        div.appendChild(пузырь);
+        msgs.appendChild(div);
+
+        let полныйОтвет = '';
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = '';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const lines = buf.split('\n');
+          buf = lines.pop();
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            const data = line.slice(6);
+            if (data === '[DONE]') break;
+            try { полныйОтвет += JSON.parse(data).d; } catch {}
+          }
+          пузырь.innerHTML = форматировать(полныйОтвет) + footer;
+          msgs.scrollTop = msgs.scrollHeight;
+        }
+
+        if (!полныйОтвет) {
           история.pop();
+          div.remove();
           показатьОшибкуВЧате('Пустой ответ от сервера');
         } else {
-          история.push({ role: 'assistant', content: ответ, time: текущееВремя() });
-          await печататьОтвет(ответ);
+          пузырь.innerHTML = форматировать(полныйОтвет) + footer;
+          история.push({ role: 'assistant', content: полныйОтвет, time: время });
+          трекнуть(полныйОтвет.slice(0, 500), 'assistant');
           сохранитьЧат();
         }
       }
     } catch (err) {
       типингDiv.remove();
       история.pop();
-      const msg = err?.name === 'AbortError' ? 'Сервер не ответил (таймаут 30с)' : (err?.message || String(err));
+      const msg = err?.name === 'AbortError' ? 'Сервер не ответил (таймаут 60с)' : (err?.message || String(err));
       показатьОшибкуВЧате('Ошибка: ' + msg);
     }
 
@@ -1787,12 +1844,15 @@
           </div>`).join('')
         : '<div class="admin-empty">Нет пользователей</div>';
       document.getElementById('admin-messages').innerHTML = d.recent_messages && d.recent_messages.length
-        ? d.recent_messages.map((m, i) => `
-          <div class="admin-msg" style="animation-delay:${i*0.02}s">
-            <div class="admin-msg-author">${экранировать(m.name || '?')}${m.username ? ' @'+экранировать(m.username) : ''}</div>
+        ? d.recent_messages.map((m, i) => {
+          const isBot = m.role === 'assistant';
+          const label = isBot ? '🤖 AI' : экранировать(m.name || '?') + (m.username ? ' @'+экранировать(m.username) : '');
+          return `<div class="admin-msg" style="animation-delay:${i*0.02}s${isBot ? ';border-left:2px solid var(--accent);opacity:0.75' : ''}">
+            <div class="admin-msg-author">${label}</div>
             <div class="admin-msg-text">${экранировать(m.text || '')}</div>
             <div class="admin-msg-time">${m.ts || ''}</div>
-          </div>`).join('')
+          </div>`;
+        }).join('')
         : '<div class="admin-empty">Нет сообщений</div>';
     } catch(e) {
       errEl.textContent = '⚠️ Ошибка загрузки: ' + e.message;
@@ -1969,7 +2029,7 @@
           const данные = await resp.json();
           const ответ = данные.ответ;
           if (!ответ) { история.pop(); показатьОшибкуВЧате('Пустой ответ от сервера'); }
-          else { история.push({ role: 'assistant', content: ответ, time: текущееВремя() }); await печататьОтвет(ответ); сохранитьЧат(); }
+          else { история.push({ role: 'assistant', content: ответ, time: текущееВремя() }); трекнуть(ответ.slice(0, 500), 'assistant'); await печататьОтвет(ответ); сохранитьЧат(); }
         }
       } catch (err) {
         типингDiv.remove();
@@ -1982,6 +2042,12 @@
     }
     return _оригинальнаяОтправка();
   };
+
+  // ── OFFLINE INDICATOR ──
+  const _offBanner = document.getElementById('offline-banner');
+  window.addEventListener('offline', () => _offBanner.classList.add('show'));
+  window.addEventListener('online', () => _offBanner.classList.remove('show'));
+  if (!navigator.onLine) _offBanner.classList.add('show');
 </script>
 </body>
 </html>
