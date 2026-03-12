@@ -1378,24 +1378,52 @@
 
   // Загружаем историю в sidebar при старте
   let текущийЧатId = Date.now();
-  // Восстанавливаем последний активный чат
-  (function восстановитьПоследнийЧат() {
-    const чаты = JSON.parse(localStorage.getItem('чаты') || '[]');
-    if (чаты.length > 0) {
-      const последний = чаты[0];
-      const msgs = последний.сообщения.filter(m => m.role !== 'system');
-      if (msgs.length > 0) {
-        текущийЧатId = последний.id;
-        история = последний.сообщения;
-        // Рендерим сообщения на экран
-        const блок = document.getElementById('сообщения');
-        блок.innerHTML = '';
-        document.getElementById('чат').classList.remove('empty');
-        msgs.forEach(m => добавитьСообщение(m.content, m.role === 'user' ? 'user' : 'bot', true, m.time || ''));
-      }
+
+  function восстановитьИзМассива(чаты) {
+    if (!чаты || чаты.length === 0) return;
+    const последний = чаты[0];
+    const msgs = (последний.сообщения || []).filter(m => m.role !== 'system');
+    if (msgs.length > 0) {
+      текущийЧатId = последний.id;
+      история = последний.сообщения;
+      const блок = document.getElementById('сообщения');
+      блок.innerHTML = '';
+      document.getElementById('чат').classList.remove('empty');
+      msgs.forEach(m => добавитьСообщение(m.content, m.role === 'user' ? 'user' : 'bot', true, m.time || ''));
     }
-  })();
+  }
+
+  // Сначала из localStorage (мгновенно)
+  восстановитьИзМассива(JSON.parse(localStorage.getItem('чаты') || '[]'));
   отрисоватьИсторию();
+
+  // Потом подтягиваем с сервера (если есть tg-аккаунт)
+  if (tgUser) {
+    fetch('/api/chats/load', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tg_id: tgUser.id, secret: ADMIN_SECRET })
+    }).then(r => r.json()).then(d => {
+      if (d.chats && d.chats.length > 0) {
+        const local = JSON.parse(localStorage.getItem('чаты') || '[]');
+        const localTime = local[0]?.время || 0;
+        const serverTime = d.chats[0]?.время || 0;
+        if (serverTime > localTime) {
+          // Сервер новее — используем его
+          localStorage.setItem('чаты', JSON.stringify(d.chats));
+          восстановитьИзМассива(d.chats);
+          отрисоватьИсторию();
+        } else if (localTime > serverTime) {
+          // Локал новее — пушим на сервер
+          синхрНаСервер(local);
+        }
+      } else {
+        // На сервере пусто — пушим локальные
+        const local = JSON.parse(localStorage.getItem('чаты') || '[]');
+        if (local.length > 0) синхрНаСервер(local);
+      }
+    }).catch(() => {});
+  }
 
   // Восстановление черновика
   { const d = localStorage.getItem('черновик'); if (d) { const inp = document.getElementById('ввод'); inp.value = d; inp.style.height = 'auto'; inp.style.height = inp.scrollHeight + 'px'; } }
@@ -1587,13 +1615,24 @@
     const previewText = typeof firstContent === 'string' ? firstContent : (firstContent?.find?.(c => c.type === 'text')?.text || 'Изображение');
     const запись = { id: текущийЧатId, сообщения: история, время: Date.now(), preview: previewText.slice(0, 60) };
     if (idx >= 0) чаты[idx] = запись; else чаты.unshift(запись);
-    const данные = JSON.stringify(чаты.slice(0, 30));
-    try { localStorage.setItem('чаты', данные); }
-    catch {
-      // Квота — удаляем старые чаты и пробуем снова
-      чаты.splice(15);
-      try { localStorage.setItem('чаты', JSON.stringify(чаты)); } catch {}
-    }
+    const trimmed = чаты.slice(0, 30);
+    try { localStorage.setItem('чаты', JSON.stringify(trimmed)); }
+    catch { чаты.splice(15); try { localStorage.setItem('чаты', JSON.stringify(чаты)); } catch {} }
+    // Синхронизация на сервер
+    синхрНаСервер(trimmed);
+  }
+
+  let _syncTimer = null;
+  function синхрНаСервер(чаты) {
+    if (!tgUser) return;
+    clearTimeout(_syncTimer);
+    _syncTimer = setTimeout(() => {
+      fetch('/api/chats/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tg_id: tgUser.id, secret: ADMIN_SECRET, chats: чаты })
+      }).catch(() => {});
+    }, 1500);
   }
 
   function getGroupLabel(ts) {
@@ -1677,6 +1716,7 @@
     let чаты = JSON.parse(localStorage.getItem('чаты') || '[]');
     чаты = чаты.filter(c => c.id !== id);
     localStorage.setItem('чаты', JSON.stringify(чаты));
+    синхрНаСервер(чаты);
     if (id === текущийЧатId) новыйЧат();
     отрисоватьИсторию();
   }

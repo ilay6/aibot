@@ -34,6 +34,11 @@ def init_db():
         ts TEXT,
         role TEXT DEFAULT 'user'
     )""")
+    con.execute("""CREATE TABLE IF NOT EXISTS chats (
+        tg_id INTEGER PRIMARY KEY,
+        data TEXT DEFAULT '[]',
+        updated_at TEXT
+    )""")
     # Migrate: add role column if missing
     try:
         con.execute("ALTER TABLE messages ADD COLUMN role TEXT DEFAULT 'user'")
@@ -161,6 +166,48 @@ async def admin_stats(x_admin_secret: str = Header(None)):
         "users": [{"tg_id": u[0], "username": u[1] or "", "first_name": u[2] or "", "joined": u[3], "messages": u[4]} for u in users],
         "recent_messages": [{"name": m[0] or "?", "username": m[1] or "", "text": m[2], "ts": m[3], "role": m[4] or "user"} for m in recent]
     }
+
+class SyncData(BaseModel):
+    tg_id: int
+    secret: str = ""
+    chats: list = []
+
+@app.post("/api/chats/save")
+async def chats_save(data: SyncData):
+    if not ADMIN_SECRET or data.secret != ADMIN_SECRET:
+        return {"ok": False}
+    con = sqlite3.connect(DB)
+    # Keep only last 30 chats, strip image data to save space
+    trimmed = []
+    for c in data.chats[:30]:
+        msgs = []
+        for m in c.get("сообщения", []):
+            content = m.get("content", "")
+            if isinstance(content, list):
+                content = [p for p in content if p.get("type") != "image_url"]
+            msgs.append({"role": m.get("role","user"), "content": content, "time": m.get("time","")})
+        trimmed.append({"id": c.get("id"), "сообщения": msgs, "время": c.get("время"), "preview": c.get("preview","")[:60]})
+    con.execute(
+        "INSERT OR REPLACE INTO chats (tg_id, data, updated_at) VALUES (?,?,?)",
+        (data.tg_id, json.dumps(trimmed, ensure_ascii=False)[:500000], datetime.now().strftime("%Y-%m-%d %H:%M"))
+    )
+    con.commit()
+    con.close()
+    return {"ok": True}
+
+@app.post("/api/chats/load")
+async def chats_load(data: SyncData):
+    if not ADMIN_SECRET or data.secret != ADMIN_SECRET:
+        return {"chats": []}
+    con = sqlite3.connect(DB)
+    row = con.execute("SELECT data FROM chats WHERE tg_id=?", (data.tg_id,)).fetchone()
+    con.close()
+    if not row:
+        return {"chats": []}
+    try:
+        return {"chats": json.loads(row[0])}
+    except Exception:
+        return {"chats": []}
 
 @app.get("/")
 async def index():
