@@ -2004,27 +2004,34 @@
     msgs.scrollTop = msgs.scrollHeight;
 
     try {
+      const imgCtrl = new AbortController();
+      const imgTimer = setTimeout(() => imgCtrl.abort(), 120000);
       const resp = await fetch('/api/image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ запрос })
+        body: JSON.stringify({ запрос }),
+        signal: imgCtrl.signal
       });
+      clearTimeout(imgTimer);
       const данные = await resp.json();
       типинг.remove();
 
       if (данные.error) {
-        показатьОшибкуВЧате('Ошибка генерации: ' + данные.error);
+        показатьОшибкуВЧате(данные.error);
         история.pop();
-      } else {
+      } else if (данные.image) {
         const время = текущееВремя();
         const div = document.createElement('div');
         div.className = 'msg bot';
-        div.innerHTML = `<div class="avatar">${botIcon}</div><div class="bubble"><img src="${данные.url}" style="width:100%;max-width:400px;border-radius:12px;display:block" onerror="this.outerHTML='<span style=color:var(--text2)>Не удалось загрузить изображение</span>'"><div class="bubble-footer"><span class="msg-time">${время}</span><a href="${данные.url}" target="_blank" download="ai-image.jpg" style="font-size:10px;color:var(--accent);text-decoration:none;margin-left:8px">Сохранить</a></div></div>`;
+        div.innerHTML = `<div class="avatar">${botIcon}</div><div class="bubble"><img src="${данные.image}" style="width:100%;max-width:400px;border-radius:12px;display:block"><div class="bubble-footer"><span class="msg-time">${время}</span><a href="${данные.image}" download="ai-image.png" style="font-size:10px;color:var(--accent);text-decoration:none;margin-left:8px">Сохранить</a></div></div>`;
         msgs.appendChild(div);
         msgs.scrollTop = msgs.scrollHeight;
         история.push({ role: 'assistant', content: '[Изображение: ' + запрос + ']', time: время });
         трекнуть('[Изображение: ' + запрос + ']', 'assistant');
         сохранитьЧат();
+      } else {
+        показатьОшибкуВЧате('Неизвестная ошибка генерации');
+        история.pop();
       }
     } catch (e) {
       типинг.remove();

@@ -1,6 +1,8 @@
 import os
 import json
 import time
+import base64
+import asyncio
 import sqlite3
 import httpx
 from datetime import datetime
@@ -99,6 +101,20 @@ async def чат_stream(данные: ЗапросЧат):
     return StreamingResponse(generate(), media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
+IMAGE_MODELS = ["turbo", "sana", "zimage"]
+
+async def _try_pollinations(http: httpx.AsyncClient, prompt_encoded: str, model: str):
+    """Try to fetch image from pollinations with a specific model. Returns bytes or None."""
+    url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?model={model}&width=768&height=768&nologo=true&enhance=true"
+    try:
+        r = await http.get(url, follow_redirects=True)
+        ct = r.headers.get("content-type", "")
+        if r.status_code == 200 and ct.startswith("image/"):
+            return r.content, ct
+    except Exception:
+        pass
+    return None, None
+
 @app.post("/api/image")
 async def картинка(данные: ЗапросКартинки):
     # Expand and translate prompt to English via Mistral
@@ -114,9 +130,27 @@ async def картинка(данные: ЗапросКартинки):
             eng_prompt = tr.json()["choices"][0]["message"]["content"].strip().strip('"')
     except Exception:
         pass
+
     prompt_encoded = quote(eng_prompt)
-    url = f"https://image.pollinations.ai/prompt/{prompt_encoded}"
-    return {"url": url}
+
+    # Try each model, return first successful image as base64
+    async with httpx.AsyncClient(timeout=90, follow_redirects=True) as http:
+        for model in IMAGE_MODELS:
+            img_bytes, ct = await _try_pollinations(http, prompt_encoded, model)
+            if img_bytes:
+                b64 = base64.b64encode(img_bytes).decode()
+                mime = ct.split(";")[0]
+                return {"image": f"data:{mime};base64,{b64}"}
+
+        # Retry first model once more after a short pause
+        await asyncio.sleep(3)
+        img_bytes, ct = await _try_pollinations(http, prompt_encoded, IMAGE_MODELS[0])
+        if img_bytes:
+            b64 = base64.b64encode(img_bytes).decode()
+            mime = ct.split(";")[0]
+            return {"image": f"data:{mime};base64,{b64}"}
+
+    return {"error": "Все модели генерации временно недоступны. Попробуйте позже."}
 
 @app.post("/api/track")
 async def track(data: TrackData):
