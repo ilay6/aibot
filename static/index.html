@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>AIchat | APP</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -310,7 +310,7 @@
     opacity: 0;
   }
   @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(18px) scale(0.98); }
+    from { opacity: 0; transform: translateY(14px) scale(0.97); }
     to   { opacity: 1; transform: translateY(0) scale(1); }
   }
   .msg.user { flex-direction: row-reverse; }
@@ -757,16 +757,17 @@
     position: fixed; inset: 0; z-index: 10000;
     background: rgba(0,0,0,0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
     display: flex; align-items: center; justify-content: center;
-    opacity: 0; transition: opacity 0.2s; pointer-events: none;
+    opacity: 0; transition: opacity 0.35s ease; pointer-events: none;
   }
   .confirm-overlay.show { opacity: 1; pointer-events: auto; }
   .confirm-box {
     background: var(--bg2); border: 1px solid var(--border); border-radius: 18px;
     padding: 24px; max-width: 280px; width: 90%; text-align: center;
     box-shadow: 0 12px 40px rgba(0,0,0,0.4);
-    transform: scale(0.92); transition: transform 0.2s cubic-bezier(0.16,1,0.3,1);
+    transform: scale(0.88) translateY(12px); opacity: 0;
+    transition: transform 0.45s cubic-bezier(0.16,1,0.3,1), opacity 0.35s ease;
   }
-  .confirm-overlay.show .confirm-box { transform: scale(1); }
+  .confirm-overlay.show .confirm-box { transform: scale(1) translateY(0); opacity: 1; }
   .confirm-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
   .confirm-sub { font-size: 13px; color: var(--text2); margin-bottom: 20px; }
   .confirm-btns { display: flex; gap: 10px; }
