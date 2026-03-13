@@ -71,12 +71,25 @@ class TrackData(BaseModel):
 @app.post("/api/chat")
 async def чат(данные: ЗапросЧат):
     модель = данные.модель if данные.модель in ALLOWED_MODELS else "mistral-large-latest"
-    async with httpx.AsyncClient(timeout=60) as http:
-        r = await http.post(MISTRAL_URL, headers={"Authorization": f"Bearer {MISTRAL_API_KEY}"}, json={"model": модель, "messages": данные.сообщения})
-    try:
-        return {"ответ": r.json()["choices"][0]["message"]["content"]}
-    except Exception:
-        return {"ответ": f"[DEBUG] Статус: {r.status_code} | Ответ: {r.text[:300]}"}
+    headers = {"Authorization": f"Bearer {MISTRAL_API_KEY}"}
+    payload = {"model": модель, "messages": данные.сообщения}
+    last_status = 0
+    for attempt in range(3):
+        try:
+            async with httpx.AsyncClient(timeout=60) as http:
+                r = await http.post(MISTRAL_URL, headers=headers, json=payload)
+            last_status = r.status_code
+            if r.status_code == 200:
+                return {"ответ": r.json()["choices"][0]["message"]["content"]}
+            if r.status_code == 429:
+                await asyncio.sleep(2 * (attempt + 1))
+                continue
+            break
+        except Exception:
+            await asyncio.sleep(2)
+    if last_status == 429:
+        return {"ответ": "Слишком много запросов, подождите немного и попробуйте снова."}
+    return {"ответ": "Сервер временно недоступен. Попробуйте позже."}
 
 @app.post("/api/chat/stream")
 async def чат_stream(данные: ЗапросЧат):
@@ -84,20 +97,34 @@ async def чат_stream(данные: ЗапросЧат):
     payload = {"model": модель, "messages": данные.сообщения, "stream": True}
     headers = {"Authorization": f"Bearer {MISTRAL_API_KEY}"}
     async def generate():
-        async with httpx.AsyncClient(timeout=60) as http:
-            async with http.stream("POST", MISTRAL_URL, headers=headers, json=payload) as r:
-                async for line in r.aiter_lines():
-                    if line.startswith("data: "):
-                        data = line[6:]
-                        if data == "[DONE]":
+        for attempt in range(3):
+            try:
+                async with httpx.AsyncClient(timeout=60) as http:
+                    async with http.stream("POST", MISTRAL_URL, headers=headers, json=payload) as r:
+                        if r.status_code == 429:
+                            await asyncio.sleep(2 * (attempt + 1))
+                            continue
+                        if r.status_code != 200:
+                            yield f"data: {json.dumps({'d': 'Сервер временно недоступен. Попробуйте позже.'})}\n\n"
                             yield "data: [DONE]\n\n"
-                            break
-                        try:
-                            delta = json.loads(data)["choices"][0]["delta"].get("content", "")
-                            if delta:
-                                yield f"data: {json.dumps({'d': delta})}\n\n"
-                        except Exception:
-                            pass
+                            return
+                        async for line in r.aiter_lines():
+                            if line.startswith("data: "):
+                                data = line[6:]
+                                if data == "[DONE]":
+                                    yield "data: [DONE]\n\n"
+                                    return
+                                try:
+                                    delta = json.loads(data)["choices"][0]["delta"].get("content", "")
+                                    if delta:
+                                        yield f"data: {json.dumps({'d': delta})}\n\n"
+                                except Exception:
+                                    pass
+                        return
+            except Exception:
+                await asyncio.sleep(2)
+        yield f"data: {json.dumps({'d': 'Слишком много запросов, подождите немного.'})}\n\n"
+        yield "data: [DONE]\n\n"
     return StreamingResponse(generate(), media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
