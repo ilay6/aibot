@@ -96,11 +96,22 @@ def _get_api(модель: str):
         return POLLINATIONS_URL, {}, "openai"
     return MISTRAL_URL, {"Authorization": f"Bearer {MISTRAL_API_KEY}"}, модель
 
+def _fix_messages_for_gpt(msgs: list) -> list:
+    """Pollinations API mangles Cyrillic in system prompts. Replace with English equivalent."""
+    fixed = []
+    for m in msgs:
+        if m.get("role") == "system":
+            fixed.append({"role": "system", "content": "You are a helpful AI assistant. Reply in the same language the user writes in. Be concise and to the point. Format code in code blocks."})
+        else:
+            fixed.append(m)
+    return fixed
+
 @app.post("/api/chat")
 async def чат(данные: ЗапросЧат):
     модель = данные.модель if данные.модель in ALLOWED_MODELS else "mistral-large-latest"
     url, headers, model_name = _get_api(модель)
-    payload = {"model": model_name, "messages": данные.сообщения}
+    msgs = _fix_messages_for_gpt(данные.сообщения) if модель == "gpt" else данные.сообщения
+    payload = {"model": model_name, "messages": msgs}
     last_status = 0
     http = get_http()
     for attempt in range(3):
@@ -123,7 +134,8 @@ async def чат(данные: ЗапросЧат):
 async def чат_stream(данные: ЗапросЧат):
     модель = данные.модель if данные.модель in ALLOWED_MODELS else "mistral-large-latest"
     url, headers, model_name = _get_api(модель)
-    payload = {"model": model_name, "messages": данные.сообщения, "stream": True}
+    msgs = _fix_messages_for_gpt(данные.сообщения) if модель == "gpt" else данные.сообщения
+    payload = {"model": model_name, "messages": msgs, "stream": True}
     async def generate():
         http = get_http()
         for attempt in range(3):
