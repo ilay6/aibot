@@ -129,30 +129,46 @@ async def чат_stream(данные: ЗапросЧат):
         for attempt in range(3):
             try:
                 async with http.stream("POST", url, headers=headers, json=payload) as r:
-                        if r.status_code == 429:
-                            await asyncio.sleep(2 * (attempt + 1))
+                    if r.status_code == 429:
+                        await asyncio.sleep(2 * (attempt + 1))
+                        continue
+                    if r.status_code != 200:
+                        # Stream failed — try non-stream fallback for GPT
+                        if модель == "gpt" and attempt < 2:
+                            await asyncio.sleep(1)
                             continue
-                        if r.status_code != 200:
-                            yield f"data: {json.dumps({'d': 'Сервер временно недоступен. Попробуйте позже.'})}\n\n"
-                            yield "data: [DONE]\n\n"
-                            return
-                        async for line in r.aiter_lines():
-                            if line.startswith("data: "):
-                                data = line[6:]
-                                if data == "[DONE]":
-                                    yield "data: [DONE]\n\n"
-                                    return
-                                try:
-                                    d = json.loads(data)["choices"][0]["delta"]
-                                    content = d.get("content") or ""
-                                    if content:
-                                        yield f"data: {json.dumps({'d': content})}\n\n"
-                                except Exception:
-                                    pass
+                        yield f"data: {json.dumps({'d': 'Сервер временно недоступен. Попробуйте позже.'})}\n\n"
                         yield "data: [DONE]\n\n"
                         return
+                    async for line in r.aiter_lines():
+                        if line.startswith("data: "):
+                            data = line[6:]
+                            if data.strip() == "[DONE]":
+                                yield "data: [DONE]\n\n"
+                                return
+                            try:
+                                delta = json.loads(data)["choices"][0]["delta"]
+                                content = delta.get("content") or ""
+                                if content:
+                                    yield f"data: {json.dumps({'d': content})}\n\n"
+                            except Exception:
+                                pass
+                    yield "data: [DONE]\n\n"
+                    return
             except Exception:
                 await asyncio.sleep(2)
+        # All stream attempts failed — try non-stream as last resort
+        if модель == "gpt":
+            try:
+                fallback_payload = {"model": model_name, "messages": данные.сообщения}
+                r = await http.post(url, headers=headers, json=fallback_payload)
+                if r.status_code == 200:
+                    text = r.json()["choices"][0]["message"]["content"]
+                    yield f"data: {json.dumps({'d': text})}\n\n"
+                    yield "data: [DONE]\n\n"
+                    return
+            except Exception:
+                pass
         yield f"data: {json.dumps({'d': 'Слишком много запросов, подождите немного.'})}\n\n"
         yield "data: [DONE]\n\n"
     return StreamingResponse(generate(), media_type="text/event-stream",

@@ -1218,10 +1218,9 @@
 </div><!-- /main-wrap -->
 
 <script>
-  // v3
+  // v4
   window.onerror = function(msg, src, line) {
-    document.title = 'ERR:' + line + ':' + msg;
-    alert('JS Error line ' + line + ': ' + msg);
+    console.error('JS Error line ' + line + ': ' + msg);
   };
 
   // ── CRITICAL EARLY DECLARATIONS (avoid TDZ) ──
@@ -1889,6 +1888,8 @@
 
         let полныйОтвет = '';
         let streamDone = false;
+        // Show typing dots inside bubble while waiting for first content
+        пузырь.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
         const reader = resp.body.getReader();
         const decoder = new TextDecoder();
         let buf = '';
