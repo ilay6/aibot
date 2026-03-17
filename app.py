@@ -75,7 +75,8 @@ def init_db():
 
 init_db()
 
-ALLOWED_MODELS = {"mistral-large-latest", "mistral-small-latest", "codestral-latest", "mistral-medium-latest"}
+ALLOWED_MODELS = {"mistral-large-latest", "mistral-small-latest", "codestral-latest", "mistral-medium-latest", "gpt"}
+POLLINATIONS_URL = "https://text.pollinations.ai/openai/chat/completions"
 
 class ЗапросЧат(BaseModel):
     сообщения: list
@@ -92,16 +93,22 @@ class TrackData(BaseModel):
     secret: str = ""
     role: str = "user"
 
+def _get_api(модель: str):
+    """Return (url, headers, model_name) based on selected model."""
+    if модель == "gpt":
+        return POLLINATIONS_URL, {}, "openai"
+    return MISTRAL_URL, {"Authorization": f"Bearer {MISTRAL_API_KEY}"}, модель
+
 @app.post("/api/chat")
 async def чат(данные: ЗапросЧат):
     модель = данные.модель if данные.модель in ALLOWED_MODELS else "mistral-large-latest"
-    headers = {"Authorization": f"Bearer {MISTRAL_API_KEY}"}
-    payload = {"model": модель, "messages": данные.сообщения}
+    url, headers, model_name = _get_api(модель)
+    payload = {"model": model_name, "messages": данные.сообщения}
     last_status = 0
     http = get_http()
     for attempt in range(3):
         try:
-            r = await http.post(MISTRAL_URL, headers=headers, json=payload)
+            r = await http.post(url, headers=headers, json=payload)
             last_status = r.status_code
             if r.status_code == 200:
                 return {"ответ": r.json()["choices"][0]["message"]["content"]}
@@ -118,13 +125,13 @@ async def чат(данные: ЗапросЧат):
 @app.post("/api/chat/stream")
 async def чат_stream(данные: ЗапросЧат):
     модель = данные.модель if данные.модель in ALLOWED_MODELS else "mistral-large-latest"
-    payload = {"model": модель, "messages": данные.сообщения, "stream": True}
-    headers = {"Authorization": f"Bearer {MISTRAL_API_KEY}"}
+    url, headers, model_name = _get_api(модель)
+    payload = {"model": model_name, "messages": данные.сообщения, "stream": True}
     async def generate():
         http = get_http()
         for attempt in range(3):
             try:
-                async with http.stream("POST", MISTRAL_URL, headers=headers, json=payload) as r:
+                async with http.stream("POST", url, headers=headers, json=payload) as r:
                         if r.status_code == 429:
                             await asyncio.sleep(2 * (attempt + 1))
                             continue
