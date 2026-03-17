@@ -1218,7 +1218,7 @@
 </div><!-- /main-wrap -->
 
 <script>
-  // v6
+  // v7
   window.onerror = function(msg, src, line) {
     alert('JS Error line ' + line + ': ' + msg);
   };
@@ -1302,6 +1302,7 @@
     { y: 0.88, amp: 32,  freq: 0.004,  speed: 0.50, phase: 3.0 },
   ];
 
+  var _cachedGrad = null, _cachedAccent = '', _cachedW = 0;
   let _resizeTimer;
   function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -1315,8 +1316,6 @@
     const t = document.documentElement.getAttribute('data-theme') || '';
     return (t === 'tiffany' || t === 'light') ? '#0ABAB5' : '#f5c518';
   }
-
-  let _cachedGrad = null, _cachedAccent = '', _cachedW = 0;
   function getGrad(accent, W) {
     if (_cachedGrad && _cachedAccent === accent && _cachedW === W) return _cachedGrad;
     const g = ctx.createLinearGradient(0, 0, W, 0);
