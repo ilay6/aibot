@@ -12,11 +12,8 @@ from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from starlette.middleware.gzip import GZipMiddleware
-
 load_dotenv()
 app = FastAPI()
-app.add_middleware(GZipMiddleware, minimum_size=500)
 
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
 MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions"

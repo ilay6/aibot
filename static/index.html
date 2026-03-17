@@ -1150,7 +1150,7 @@
         <div class="model-dd-list">
           <div class="model-dd-item" onclick="выбратьМодель(event,'gpt','GPT',this)">GPT <span style="font-size:10px;color:var(--text2);font-weight:400">бесплатно</span></div>
           <div class="model-dd-item" onclick="выбратьМодель(event,'mistral-large-latest','Mistral Large',this)">Mistral Large</div>
-          <div class="model-dd-item dd-active" onclick="выбратьМодель(event,'mistral-small-latest','Mistral Small',this)">Mistral Small<span>✓</span></div>
+          <div class="model-dd-item dd-active" onclick="выбратьМодель(event,'mistral-small-latest','Mistral Small',this)">Mistral Small<span class="dd-check">✓</span></div>
           <div class="model-dd-item" onclick="выбратьМодель(event,'codestral-latest','Codestral',this)">Codestral</div>
           <div class="model-dd-item" onclick="выбратьМодель(event,'mistral-medium-latest','Mistral Medium',this)">Mistral Medium</div>
         </div>
@@ -1548,11 +1548,10 @@
     document.getElementById('model-label').textContent = label;
     document.querySelectorAll('.model-dd-item').forEach(i => {
       i.classList.remove('dd-active');
-      const chk = i.querySelector('span');
-      if (chk) chk.remove();
+      i.querySelector('.dd-check')?.remove();
     });
     el.classList.add('dd-active');
-    el.insertAdjacentHTML('beforeend','<span>✓</span>');
+    el.insertAdjacentHTML('beforeend','<span class="dd-check">✓</span>');
     document.getElementById('model-dd').classList.remove('open');
   }
   document.addEventListener('click', () => document.getElementById('model-dd')?.classList.remove('open'));
