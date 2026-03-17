@@ -1068,7 +1068,7 @@
     </div>
     <div>
       <div class="header-title">AIchat | APP</div>
-      <div class="header-sub"><div class="online-dot"></div> AI · Онлайн</div>
+      <div class="header-sub"><div class="online-dot"></div> AI · v2</div>
     </div>
   </div>
   <div class="header-right">
@@ -1218,6 +1218,11 @@
 </div><!-- /main-wrap -->
 
 <script>
+  // v2 — debug
+  window.onerror = function(msg, src, line) {
+    document.title = 'ERR:' + line + ':' + msg;
+    alert('JS Error line ' + line + ': ' + msg);
+  };
   const tg = window.Telegram?.WebApp;
   if (tg) { tg.expand(); }
 
