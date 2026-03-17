@@ -12,17 +12,39 @@ from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from dotenv import load_dotenv
+from starlette.middleware.gzip import GZipMiddleware
 
 load_dotenv()
 app = FastAPI()
+app.add_middleware(GZipMiddleware, minimum_size=500)
+
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
 MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions"
-
 ADMIN_SECRET = os.getenv("ADMIN_SECRET", "")
 DB = "data.db"
 
+# Global HTTP client — reuses TCP/TLS connections across requests
+_http: httpx.AsyncClient | None = None
+def get_http() -> httpx.AsyncClient:
+    global _http
+    if _http is None or _http.is_closed:
+        _http = httpx.AsyncClient(
+            timeout=httpx.Timeout(90, connect=10),
+            limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
+            follow_redirects=True,
+        )
+    return _http
+
+@app.on_event("shutdown")
+async def _shutdown():
+    if _http and not _http.is_closed:
+        await _http.aclose()
+
 def init_db():
     con = sqlite3.connect(DB)
+    con.execute("PRAGMA journal_mode=WAL")
+    con.execute("PRAGMA synchronous=NORMAL")
+    con.execute("PRAGMA cache_size=-8000")
     con.execute("""CREATE TABLE IF NOT EXISTS users (
         tg_id INTEGER PRIMARY KEY,
         username TEXT DEFAULT '',
@@ -41,6 +63,8 @@ def init_db():
         data TEXT DEFAULT '[]',
         updated_at TEXT
     )""")
+    con.execute("CREATE INDEX IF NOT EXISTS idx_msg_tg ON messages(tg_id)")
+    con.execute("CREATE INDEX IF NOT EXISTS idx_msg_id_desc ON messages(id DESC)")
     # Migrate: add role column if missing
     try:
         con.execute("ALTER TABLE messages ADD COLUMN role TEXT DEFAULT 'user'")
@@ -74,10 +98,10 @@ async def чат(данные: ЗапросЧат):
     headers = {"Authorization": f"Bearer {MISTRAL_API_KEY}"}
     payload = {"model": модель, "messages": данные.сообщения}
     last_status = 0
+    http = get_http()
     for attempt in range(3):
         try:
-            async with httpx.AsyncClient(timeout=60) as http:
-                r = await http.post(MISTRAL_URL, headers=headers, json=payload)
+            r = await http.post(MISTRAL_URL, headers=headers, json=payload)
             last_status = r.status_code
             if r.status_code == 200:
                 return {"ответ": r.json()["choices"][0]["message"]["content"]}
@@ -97,10 +121,10 @@ async def чат_stream(данные: ЗапросЧат):
     payload = {"model": модель, "messages": данные.сообщения, "stream": True}
     headers = {"Authorization": f"Bearer {MISTRAL_API_KEY}"}
     async def generate():
+        http = get_http()
         for attempt in range(3):
             try:
-                async with httpx.AsyncClient(timeout=60) as http:
-                    async with http.stream("POST", MISTRAL_URL, headers=headers, json=payload) as r:
+                async with http.stream("POST", MISTRAL_URL, headers=headers, json=payload) as r:
                         if r.status_code == 429:
                             await asyncio.sleep(2 * (attempt + 1))
                             continue
@@ -146,36 +170,35 @@ async def _try_pollinations(http: httpx.AsyncClient, prompt_encoded: str, model:
 async def картинка(данные: ЗапросКартинки):
     # Expand and translate prompt to English via Mistral
     eng_prompt = данные.запрос
+    http = get_http()
     try:
-        async with httpx.AsyncClient(timeout=15) as http:
-            tr = await http.post(MISTRAL_URL,
-                headers={"Authorization": f"Bearer {MISTRAL_API_KEY}"},
-                json={"model": "mistral-small-latest", "messages": [
-                    {"role": "system", "content": "You are an image prompt engineer. Take the user's request and turn it into a detailed English prompt for an image generator (1-2 sentences). Be descriptive. Output ONLY the prompt."},
-                    {"role": "user", "content": данные.запрос}
-                ]})
-            eng_prompt = tr.json()["choices"][0]["message"]["content"].strip().strip('"')
+        tr = await http.post(MISTRAL_URL,
+            headers={"Authorization": f"Bearer {MISTRAL_API_KEY}"},
+            json={"model": "mistral-small-latest", "messages": [
+                {"role": "system", "content": "You are an image prompt engineer. Take the user's request and turn it into a detailed English prompt for an image generator (1-2 sentences). Be descriptive. Output ONLY the prompt."},
+                {"role": "user", "content": данные.запрос}
+            ]})
+        eng_prompt = tr.json()["choices"][0]["message"]["content"].strip().strip('"')
     except Exception:
         pass
 
     prompt_encoded = quote(eng_prompt)
 
     # Try each model, return first successful image as base64
-    async with httpx.AsyncClient(timeout=90, follow_redirects=True) as http:
-        for model in IMAGE_MODELS:
-            img_bytes, ct = await _try_pollinations(http, prompt_encoded, model)
-            if img_bytes:
-                b64 = base64.b64encode(img_bytes).decode()
-                mime = ct.split(";")[0]
-                return {"image": f"data:{mime};base64,{b64}"}
-
-        # Retry first model once more after a short pause
-        await asyncio.sleep(3)
-        img_bytes, ct = await _try_pollinations(http, prompt_encoded, IMAGE_MODELS[0])
+    for model in IMAGE_MODELS:
+        img_bytes, ct = await _try_pollinations(http, prompt_encoded, model)
         if img_bytes:
             b64 = base64.b64encode(img_bytes).decode()
             mime = ct.split(";")[0]
             return {"image": f"data:{mime};base64,{b64}"}
+
+    # Retry first model once more after a short pause
+    await asyncio.sleep(3)
+    img_bytes, ct = await _try_pollinations(http, prompt_encoded, IMAGE_MODELS[0])
+    if img_bytes:
+        b64 = base64.b64encode(img_bytes).decode()
+        mime = ct.split(";")[0]
+        return {"image": f"data:{mime};base64,{b64}"}
 
     return {"error": "Все модели генерации временно недоступны. Попробуйте позже."}
 
@@ -185,12 +208,9 @@ async def track(data: TrackData):
         return {"ok": False}
     con = sqlite3.connect(DB)
     con.execute(
-        "INSERT OR IGNORE INTO users (tg_id, username, first_name, joined_at) VALUES (?,?,?,?)",
+        """INSERT INTO users (tg_id, username, first_name, joined_at) VALUES (?,?,?,?)
+           ON CONFLICT(tg_id) DO UPDATE SET username=excluded.username, first_name=excluded.first_name""",
         (data.tg_id, data.username, data.first_name, datetime.now().strftime("%Y-%m-%d %H:%M"))
-    )
-    con.execute(
-        "UPDATE users SET username=?, first_name=? WHERE tg_id=?",
-        (data.username, data.first_name, data.tg_id)
     )
     if data.text:
         con.execute(
