@@ -1068,7 +1068,7 @@
     </div>
     <div>
       <div class="header-title">AIchat | APP</div>
-      <div class="header-sub"><div class="online-dot"></div> AI · v2</div>
+      <div class="header-sub"><div class="online-dot"></div> AI · v3</div>
     </div>
   </div>
   <div class="header-right">
@@ -1218,11 +1218,16 @@
 </div><!-- /main-wrap -->
 
 <script>
-  // v2 — debug
+  // v3
   window.onerror = function(msg, src, line) {
     document.title = 'ERR:' + line + ':' + msg;
     alert('JS Error line ' + line + ': ' + msg);
   };
+
+  // ── CRITICAL EARLY DECLARATIONS (avoid TDZ) ──
+  var _selectedModel = 'mistral-small-latest';
+  function getModel() { return _selectedModel; }
+
   const tg = window.Telegram?.WebApp;
   if (tg) { tg.expand(); }
 
@@ -1540,8 +1545,6 @@
   }
 
   // ── CHAT ──
-  let _selectedModel = 'mistral-small-latest';
-  function getModel() { return _selectedModel; }
 
   function toggleModelDd(e) {
     if (e.target.closest('.model-dd-item')) return;
