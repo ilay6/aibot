@@ -1,5 +1,6 @@
 import os
 import asyncio
+import time
 import httpx
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
@@ -14,6 +15,10 @@ dp = Dispatcher()
 WEBAPP_URL = os.getenv("WEBAPP_URL", "")
 ADMIN_ID = int(os.getenv("ADMIN_ID", "0"))
 ADMIN_SECRET = os.getenv("ADMIN_SECRET", "")
+
+def webapp_url():
+    """Add cache-busting parameter so Telegram doesn't serve stale HTML."""
+    return f"{WEBAPP_URL}?v={int(time.time())}"
 
 async def track(user, text=""):
     if not WEBAPP_URL or not ADMIN_SECRET:
@@ -36,7 +41,7 @@ async def старт(message: types.Message):
     клавиатура = InlineKeyboardMarkup(inline_keyboard=[[
         InlineKeyboardButton(
             text="🤖 Открыть AI Ассистент",
-            web_app=WebAppInfo(url=WEBAPP_URL)
+            web_app=WebAppInfo(url=webapp_url())
         )
     ]])
     await message.answer_photo(
@@ -57,7 +62,7 @@ async def admin_cmd(message: types.Message):
     клавиатура = InlineKeyboardMarkup(inline_keyboard=[[
         InlineKeyboardButton(
             text="📊 Открыть админ-панель",
-            web_app=WebAppInfo(url=WEBAPP_URL)
+            web_app=WebAppInfo(url=webapp_url())
         )
     ]])
     await message.answer("🔐 Открой приложение и перейди во вкладку Админ", reply_markup=клавиатура)
