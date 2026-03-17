@@ -143,11 +143,13 @@ async def чат_stream(данные: ЗапросЧат):
                                     yield "data: [DONE]\n\n"
                                     return
                                 try:
-                                    delta = json.loads(data)["choices"][0]["delta"].get("content", "")
-                                    if delta:
-                                        yield f"data: {json.dumps({'d': delta})}\n\n"
+                                    d = json.loads(data)["choices"][0]["delta"]
+                                    content = d.get("content") or ""
+                                    if content:
+                                        yield f"data: {json.dumps({'d': content})}\n\n"
                                 except Exception:
                                     pass
+                        yield "data: [DONE]\n\n"
                         return
             except Exception:
                 await asyncio.sleep(2)

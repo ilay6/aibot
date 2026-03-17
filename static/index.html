@@ -1539,22 +1539,29 @@
   function getModel() { return _selectedModel; }
 
   function toggleModelDd(e) {
+    if (e.target.closest('.model-dd-item')) return;
     e.stopPropagation();
     document.getElementById('model-dd').classList.toggle('open');
   }
   function выбратьМодель(e, value, label, el) {
+    e.preventDefault();
     e.stopPropagation();
+    e.stopImmediatePropagation();
     _selectedModel = value;
     document.getElementById('model-label').textContent = label;
-    document.querySelectorAll('.model-dd-item').forEach(i => {
-      i.classList.remove('dd-active');
-      i.querySelector('.dd-check')?.remove();
-    });
+    const items = document.querySelectorAll('.model-dd-item');
+    for (let i = 0; i < items.length; i++) {
+      items[i].classList.remove('dd-active');
+      const chk = items[i].querySelector('.dd-check');
+      if (chk) chk.remove();
+    }
     el.classList.add('dd-active');
     el.insertAdjacentHTML('beforeend','<span class="dd-check">✓</span>');
     document.getElementById('model-dd').classList.remove('open');
   }
-  document.addEventListener('click', () => document.getElementById('model-dd')?.classList.remove('open'));
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.model-dd')) document.getElementById('model-dd')?.classList.remove('open');
+  });
   function текущееВремя() { return new Date().toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' }); }
 
   function повторитьПоследнее() {
@@ -1847,7 +1854,7 @@
 
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 60000);
+      const timer = setTimeout(() => controller.abort(), 90000);
 
       const resp = await fetch('/api/chat/stream', {
         method: 'POST',
@@ -1855,10 +1862,10 @@
         body: JSON.stringify({ сообщения: история.map(m => ({ role: m.role, content: m.content })), модель: getModel() }),
         signal: controller.signal
       });
-      clearTimeout(timer);
       типингDiv.remove();
 
       if (!resp.ok) {
+        clearTimeout(timer);
         история.pop();
         показатьОшибкуВЧате('Ошибка сервера: ' + resp.status);
       } else {
@@ -1873,10 +1880,11 @@
         msgs.appendChild(div);
 
         let полныйОтвет = '';
+        let streamDone = false;
         const reader = resp.body.getReader();
         const decoder = new TextDecoder();
         let buf = '';
-        while (true) {
+        while (!streamDone) {
           const { done, value } = await reader.read();
           if (done) break;
           buf += decoder.decode(value, { stream: true });
@@ -1885,12 +1893,18 @@
           for (const line of lines) {
             if (!line.startsWith('data: ')) continue;
             const data = line.slice(6);
-            if (data === '[DONE]') break;
-            try { полныйОтвет += JSON.parse(data).d; } catch {}
+            if (data === '[DONE]') { streamDone = true; break; }
+            try {
+              const chunk = JSON.parse(data).d;
+              if (chunk) полныйОтвет += chunk;
+            } catch {}
           }
-          пузырь.innerHTML = форматировать(полныйОтвет) + footer;
-          msgs.scrollTop = msgs.scrollHeight;
+          if (полныйОтвет) {
+            пузырь.innerHTML = форматировать(полныйОтвет) + footer;
+            msgs.scrollTop = msgs.scrollHeight;
+          }
         }
+        clearTimeout(timer);
 
         if (!полныйОтвет) {
           история.pop();
