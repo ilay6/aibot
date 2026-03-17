@@ -1218,7 +1218,7 @@
 </div><!-- /main-wrap -->
 
 <script>
-  // v4
+  // v5
   window.onerror = function(msg, src, line) {
     console.error('JS Error line ' + line + ': ' + msg);
   };
@@ -1852,84 +1852,116 @@
     // Трекинг сообщения
     трекнуть(текст, 'user');
 
-    // показываем тайпинг — максимально простой вариант
-    const типингDiv = document.createElement('p');
-    типингDiv.style.cssText = 'color:yellow;font-size:15px;padding:8px 16px;';
-    типингDiv.innerHTML = `<div class="typing"><span></span><span></span><span></span></div>`;
+    // показываем тайпинг
+    const типингDiv = document.createElement('div');
+    типингDiv.className = 'msg bot';
+    типингDiv.innerHTML = `<div class="avatar">${botIcon}</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
     msgs.appendChild(типингDiv);
     msgs.scrollTop = msgs.scrollHeight;
 
+    const модель = getModel();
+    const isGPT = модель === 'gpt';
+
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 90000);
+      const timer = setTimeout(() => controller.abort(), isGPT ? 60000 : 90000);
+      const apiPayload = JSON.stringify({ сообщения: история.map(m => ({ role: m.role, content: m.content })), модель });
 
-      const resp = await fetch('/api/chat/stream', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ сообщения: история.map(m => ({ role: m.role, content: m.content })), модель: getModel() }),
-        signal: controller.signal
-      });
-      типингDiv.remove();
-
-      if (!resp.ok) {
+      if (isGPT) {
+        // GPT: non-stream (Pollinations streaming unreliable)
+        const resp = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: apiPayload,
+          signal: controller.signal
+        });
         clearTimeout(timer);
-        история.pop();
-        показатьОшибкуВЧате('Ошибка сервера: ' + resp.status);
-      } else {
-        const время = текущееВремя();
-        const div = document.createElement('div');
-        div.className = 'msg bot';
-        const пузырь = document.createElement('div');
-        пузырь.className = 'bubble';
-        const footer = `<div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button></div>`;
-        div.innerHTML = `<div class="avatar">${botIcon}</div>`;
-        div.appendChild(пузырь);
-        msgs.appendChild(div);
-
-        let полныйОтвет = '';
-        let streamDone = false;
-        // Show typing dots inside bubble while waiting for first content
-        пузырь.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
-        const reader = resp.body.getReader();
-        const decoder = new TextDecoder();
-        let buf = '';
-        while (!streamDone) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buf += decoder.decode(value, { stream: true });
-          const lines = buf.split('\n');
-          buf = lines.pop();
-          for (const line of lines) {
-            if (!line.startsWith('data: ')) continue;
-            const data = line.slice(6);
-            if (data === '[DONE]') { streamDone = true; break; }
-            try {
-              const chunk = JSON.parse(data).d;
-              if (chunk) полныйОтвет += chunk;
-            } catch {}
-          }
-          if (полныйОтвет) {
-            пузырь.innerHTML = форматировать(полныйОтвет) + footer;
-            msgs.scrollTop = msgs.scrollHeight;
+        типингDiv.remove();
+        if (!resp.ok) {
+          история.pop();
+          показатьОшибкуВЧате('Ошибка сервера: ' + resp.status);
+        } else {
+          const данные = await resp.json();
+          const ответ = данные.ответ;
+          if (!ответ) {
+            история.pop();
+            показатьОшибкуВЧате('Пустой ответ от сервера');
+          } else {
+            история.push({ role: 'assistant', content: ответ, time: текущееВремя() });
+            трекнуть(ответ.slice(0, 500), 'assistant');
+            добавитьСообщение(ответ, 'bot');
+            сохранитьЧат();
           }
         }
-        clearTimeout(timer);
+      } else {
+        // Mistral: streaming
+        const resp = await fetch('/api/chat/stream', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: apiPayload,
+          signal: controller.signal
+        });
+        типингDiv.remove();
 
-        if (!полныйОтвет) {
+        if (!resp.ok) {
+          clearTimeout(timer);
           история.pop();
-          div.remove();
-          показатьОшибкуВЧате('Пустой ответ от сервера');
+          показатьОшибкуВЧате('Ошибка сервера: ' + resp.status);
         } else {
-          пузырь.innerHTML = форматировать(полныйОтвет) + footer;
-          история.push({ role: 'assistant', content: полныйОтвет, time: время });
-          трекнуть(полныйОтвет.slice(0, 500), 'assistant');
-          сохранитьЧат();
+          const время = текущееВремя();
+          const div = document.createElement('div');
+          div.className = 'msg bot';
+          const пузырь = document.createElement('div');
+          пузырь.className = 'bubble';
+          const footer = `<div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button></div>`;
+          div.innerHTML = `<div class="avatar">${botIcon}</div>`;
+          div.appendChild(пузырь);
+          msgs.appendChild(div);
+
+          let полныйОтвет = '';
+          let streamDone = false;
+          пузырь.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+          const reader = resp.body.getReader();
+          const decoder = new TextDecoder();
+          let buf = '';
+          while (!streamDone) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buf += decoder.decode(value, { stream: true });
+            const lines = buf.split('\n');
+            buf = lines.pop();
+            for (const line of lines) {
+              if (!line.startsWith('data: ')) continue;
+              const data = line.slice(6);
+              if (data === '[DONE]') { streamDone = true; break; }
+              try {
+                const chunk = JSON.parse(data).d;
+                if (chunk) полныйОтвет += chunk;
+              } catch {}
+            }
+            if (полныйОтвет) {
+              пузырь.innerHTML = форматировать(полныйОтвет) + footer;
+              msgs.scrollTop = msgs.scrollHeight;
+            }
+          }
+          clearTimeout(timer);
+
+          if (!полныйОтвет) {
+            история.pop();
+            div.remove();
+            показатьОшибкуВЧате('Пустой ответ от сервера');
+          } else {
+            пузырь.innerHTML = форматировать(полныйОтвет) + footer;
+            история.push({ role: 'assistant', content: полныйОтвет, time: время });
+            трекнуть(полныйОтвет.slice(0, 500), 'assistant');
+            сохранитьЧат();
+          }
         }
       }
     } catch (err) {
       типингDiv.remove();
       история.pop();
-      const msg = err?.name === 'AbortError' ? 'Сервер не ответил (таймаут 60с)' : (err?.message || String(err));
+      const msg = err?.name === 'AbortError' ? 'Сервер не ответил (таймаут)' : (err?.message || String(err));
       показатьОшибкуВЧате('Ошибка: ' + msg);
     }
 
