@@ -1215,14 +1215,14 @@
         </div>
       </div>
       <div class="persona-dd" id="persona-dd" onclick="togglePersonaDd(event)">
-        <span id="persona-icon">🤖</span>
+        <span id="persona-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a2 2 0 012 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 017 7h1a1 1 0 110 2h-1v1a3 3 0 01-3 3H6a3 3 0 01-3-3v-1H2a1 1 0 110-2h1a7 7 0 017-7h1V5.73A2 2 0 0112 2zM9 14a1 1 0 100-2 1 1 0 000 2zm6 0a1 1 0 100-2 1 1 0 000 2z"/></svg></span>
         <span id="persona-label">Ассистент</span>
         <div class="persona-dd-list">
-          <div class="persona-dd-item pa-active" onclick="выбратьПерсону(event,0,this)"><span class="persona-emoji">🤖</span> Ассистент</div>
-          <div class="persona-dd-item" onclick="выбратьПерсону(event,1,this)"><span class="persona-emoji">💻</span> Программист</div>
-          <div class="persona-dd-item" onclick="выбратьПерсону(event,2,this)"><span class="persona-emoji">🌐</span> Переводчик</div>
-          <div class="persona-dd-item" onclick="выбратьПерсону(event,3,this)"><span class="persona-emoji">✍️</span> Копирайтер</div>
-          <div class="persona-dd-item" onclick="выбратьПерсону(event,4,this)"><span class="persona-emoji">📚</span> Учитель</div>
+          <div class="persona-dd-item pa-active" onclick="выбратьПерсону(event,0,this)"><span class="persona-emoji"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a2 2 0 012 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 017 7h1a1 1 0 110 2h-1v1a3 3 0 01-3 3H6a3 3 0 01-3-3v-1H2a1 1 0 110-2h1a7 7 0 017-7h1V5.73A2 2 0 0112 2zM9 14a1 1 0 100-2 1 1 0 000 2zm6 0a1 1 0 100-2 1 1 0 000 2z"/></svg></span> Ассистент</div>
+          <div class="persona-dd-item" onclick="выбратьПерсону(event,1,this)"><span class="persona-emoji"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg></span> Программист</div>
+          <div class="persona-dd-item" onclick="выбратьПерсону(event,2,this)"><span class="persona-emoji"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg></span> Переводчик</div>
+          <div class="persona-dd-item" onclick="выбратьПерсону(event,3,this)"><span class="persona-emoji"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></span> Копирайтер</div>
+          <div class="persona-dd-item" onclick="выбратьПерсону(event,4,this)"><span class="persona-emoji"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg></span> Учитель</div>
         </div>
       </div>
       <span class="char-counter" id="char-counter"></span>
@@ -1462,12 +1462,19 @@
   }
 
   // ── PERSONAS (needed before chat history init) ──
+  const _pIcons = [
+    `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a2 2 0 012 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 017 7h1a1 1 0 110 2h-1v1a3 3 0 01-3 3H6a3 3 0 01-3-3v-1H2a1 1 0 110-2h1a7 7 0 017-7h1V5.73A2 2 0 0112 2zM9 14a1 1 0 100-2 1 1 0 000 2zm6 0a1 1 0 100-2 1 1 0 000 2z"/></svg>`,
+    `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>`,
+    `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>`,
+    `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>`,
+    `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>`
+  ];
   const ПЕРСОНЫ = [
-    { icon: '🤖', name: 'Ассистент', prompt: 'Ты полезный AI-ассистент. Отвечай кратко и по делу. Код оформляй в блоки.' },
-    { icon: '💻', name: 'Программист', prompt: 'Ты опытный программист-эксперт. Пиши чистый, оптимальный код. Объясняй решения. Используй лучшие практики. Код оформляй в блоки с указанием языка.' },
-    { icon: '🌐', name: 'Переводчик', prompt: 'Ты профессиональный переводчик. Переводи текст максимально точно и естественно. Если язык не указан, переводи с русского на английский и наоборот. Сохраняй стиль и тон оригинала.' },
-    { icon: '✍️', name: 'Копирайтер', prompt: 'Ты креативный копирайтер. Пиши яркие, цепляющие тексты. Используй сторителлинг, метафоры и эмоции. Адаптируй стиль под задачу.' },
-    { icon: '📚', name: 'Учитель', prompt: 'Ты терпеливый учитель. Объясняй сложные темы простым языком. Используй аналогии и примеры. Задавай наводящие вопросы. Проверяй понимание.' }
+    { icon: _pIcons[0], name: 'Ассистент', prompt: 'Ты полезный AI-ассистент. Отвечай кратко и по делу. Код оформляй в блоки.' },
+    { icon: _pIcons[1], name: 'Программист', prompt: 'Ты опытный программист-эксперт. Пиши чистый, оптимальный код. Объясняй решения. Используй лучшие практики. Код оформляй в блоки с указанием языка.' },
+    { icon: _pIcons[2], name: 'Переводчик', prompt: 'Ты профессиональный переводчик. Переводи текст максимально точно и естественно. Если язык не указан, переводи с русского на английский и наоборот. Сохраняй стиль и тон оригинала.' },
+    { icon: _pIcons[3], name: 'Копирайтер', prompt: 'Ты креативный копирайтер. Пиши яркие, цепляющие тексты. Используй сторителлинг, метафоры и эмоции. Адаптируй стиль под задачу.' },
+    { icon: _pIcons[4], name: 'Учитель', prompt: 'Ты терпеливый учитель. Объясняй сложные темы простым языком. Используй аналогии и примеры. Задавай наводящие вопросы. Проверяй понимание.' }
   ];
   let _currentPersona = 0;
 
@@ -1594,22 +1601,47 @@
 
   // ── TTS ──
   function озвучить(кнопка) {
-    if (window.speechSynthesis.speaking) {
-      window.speechSynthesis.cancel();
+    const synth = window.speechSynthesis;
+    if (!synth) { показатьТост('Озвучка не поддерживается'); return; }
+    if (synth.speaking || synth.pending) {
+      synth.cancel();
       document.querySelectorAll('.tts-btn.speaking').forEach(b => b.classList.remove('speaking'));
       return;
     }
     const пузырь = кнопка.closest('.bubble');
     const клон = пузырь.cloneNode(true);
     клон.querySelector('.bubble-footer')?.remove();
+    клон.querySelector('.follow-ups')?.remove();
     const текст = клон.innerText.trim();
-    const utterance = new SpeechSynthesisUtterance(текст);
-    utterance.lang = 'ru-RU';
-    utterance.rate = 1.05;
-    кнопка.classList.add('speaking');
-    utterance.onend = () => кнопка.classList.remove('speaking');
-    utterance.onerror = () => кнопка.classList.remove('speaking');
-    window.speechSynthesis.speak(utterance);
+    if (!текст) { показатьТост('Нечего озвучивать'); return; }
+    // Chrome bug: voices may not be loaded yet
+    const _speak = () => {
+      const u = new SpeechSynthesisUtterance(текст);
+      // Try to find Russian voice
+      const voices = synth.getVoices();
+      const ruVoice = voices.find(v => v.lang.startsWith('ru'));
+      if (ruVoice) u.voice = ruVoice;
+      u.lang = 'ru-RU';
+      u.rate = 1.0;
+      u.pitch = 1.0;
+      кнопка.classList.add('speaking');
+      кнопка.innerHTML = ttsIconSvg + ' Стоп';
+      u.onend = () => { кнопка.classList.remove('speaking'); кнопка.innerHTML = ttsIconSvg + ' Озвучить'; };
+      u.onerror = () => { кнопка.classList.remove('speaking'); кнопка.innerHTML = ttsIconSvg + ' Озвучить'; показатьТост('Ошибка озвучки'); };
+      synth.speak(u);
+      // Chrome workaround: speech stops after ~15s, need to resume
+      const keepAlive = setInterval(() => {
+        if (!synth.speaking) { clearInterval(keepAlive); return; }
+        synth.pause(); synth.resume();
+      }, 10000);
+      u.onend = () => { clearInterval(keepAlive); кнопка.classList.remove('speaking'); кнопка.innerHTML = ttsIconSvg + ' Озвучить'; };
+    };
+    if (synth.getVoices().length === 0) {
+      synth.onvoiceschanged = () => { _speak(); synth.onvoiceschanged = null; };
+      setTimeout(_speak, 500); // fallback if event never fires
+    } else {
+      _speak();
+    }
   }
 
   // ── REACTIONS ──
