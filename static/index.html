@@ -2119,16 +2119,28 @@
       показатьТост('Можно прикрепить только изображение');
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      показатьТост('Максимальный размер — 5 МБ');
+    if (file.size > 20 * 1024 * 1024) {
+      показатьТост('Максимальный размер — 20 МБ');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      прикрепленноеИзображение = e.target.result;
+    показатьТост('📎 Обработка...');
+    // Compress image via canvas for large files
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      const MAX_DIM = 1536; // max dimension for vision API
+      if (w > MAX_DIM || h > MAX_DIM) {
+        const scale = MAX_DIM / Math.max(w, h);
+        w = Math.round(w * scale);
+        h = Math.round(h * scale);
+      }
+      const cvs = document.createElement('canvas');
+      cvs.width = w; cvs.height = h;
+      cvs.getContext('2d').drawImage(img, 0, 0, w, h);
+      const quality = file.size > 5 * 1024 * 1024 ? 0.7 : 0.85;
+      прикрепленноеИзображение = cvs.toDataURL('image/jpeg', quality);
       показатьТост('📎 Изображение прикреплено');
       document.getElementById('attach-btn').style.color = 'var(--accent)';
-      // Show preview above input
       let preview = document.getElementById('attach-preview');
       if (!preview) {
         preview = document.createElement('div');
@@ -2137,9 +2149,11 @@
         const inputArea = document.querySelector('.input-area');
         inputArea.insertBefore(preview, inputArea.firstChild);
       }
-      preview.innerHTML = `<img src="${e.target.result}" style="height:48px;border-radius:8px;object-fit:cover;"><span style="font-size:12px;color:var(--text2)">${file.name}</span><button onclick="убратьПрикрепление()" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:16px">✕</button>`;
+      const sizeMB = (прикрепленноеИзображение.length * 0.75 / 1024 / 1024).toFixed(1);
+      preview.innerHTML = `<img src="${прикрепленноеИзображение}" style="height:48px;border-radius:8px;object-fit:cover;"><span style="font-size:12px;color:var(--text2)">${file.name} (${sizeMB} МБ)</span><button onclick="убратьПрикрепление()" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:16px">✕</button>`;
+      URL.revokeObjectURL(img.src);
     };
-    reader.readAsDataURL(file);
+    img.src = URL.createObjectURL(file);
     event.target.value = '';
   }
 
@@ -2185,12 +2199,13 @@
       msgs.scrollTop = msgs.scrollHeight;
 
       try {
+        // Use Pixtral (Mistral vision model) for image analysis
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 30000);
+        const timer = setTimeout(() => controller.abort(), 90000);
         const resp = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ сообщения: история.map(m => ({ role: m.role, content: m.content })), модель: getModel() }),
+          body: JSON.stringify({ сообщения: история.map(m => ({ role: m.role, content: m.content })), модель: 'pixtral-large-latest' }),
           signal: controller.signal
         });
         clearTimeout(timer);
@@ -2202,12 +2217,12 @@
           const данные = await resp.json();
           const ответ = данные.ответ;
           if (!ответ) { история.pop(); показатьОшибкуВЧате('Пустой ответ от сервера'); }
-          else { история.push({ role: 'assistant', content: ответ, time: текущееВремя() }); трекнуть(ответ.slice(0, 500), 'assistant'); await печататьОтвет(ответ); сохранитьЧат(); }
+          else { история.push({ role: 'assistant', content: ответ, time: текущееВремя() }); трекнуть(ответ.slice(0, 500), 'assistant'); добавитьСообщение(ответ, 'bot'); сохранитьЧат(); }
         }
       } catch (err) {
         типингDiv.remove();
         история.pop();
-        const msg = err?.name === 'AbortError' ? 'Сервер не ответил (таймаут 30с)' : (err?.message || String(err));
+        const msg = err?.name === 'AbortError' ? 'Сервер не ответил (таймаут)' : (err?.message || String(err));
         показатьОшибкуВЧате('Ошибка: ' + msg);
       }
       кнопка.disabled = false; кнопка.classList.remove('loading');

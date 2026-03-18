@@ -72,7 +72,7 @@ def init_db():
 
 init_db()
 
-ALLOWED_MODELS = {"mistral-large-latest", "mistral-small-latest", "codestral-latest", "gpt"}
+ALLOWED_MODELS = {"mistral-large-latest", "mistral-small-latest", "codestral-latest", "gpt", "pixtral-large-latest"}
 POLLINATIONS_URL = "https://text.pollinations.ai/openai/chat/completions"
 
 class ЗапросЧат(BaseModel):
