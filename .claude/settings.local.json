@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import py_compile; py_compile.compile\\(''app.py'', doraise=True\\)\")",
+      "Bash(curl -s \"https://text.pollinations.ai/openai\" --max-time 10)",
+      "Bash(curl -s -X POST \"https://text.pollinations.ai/openai/chat/completions\" -H \"Content-Type: application/json\" -d '{\"\"\"\"model\"\"\"\":\"\"\"\"openai\"\"\"\",\"\"\"\"messages\"\"\"\":[{\"\"\"\"role\"\"\"\":\"\"\"\"user\"\"\"\",\"\"\"\"content\"\"\"\":\"\"\"\"Say hi in 5 words\"\"\"\"}],\"\"\"\"stream\"\"\"\":false}' --max-time 15)",
+      "Bash(curl -s -X POST \"https://text.pollinations.ai/openai/chat/completions\" -H \"Content-Type: application/json\" -d '{\"\"\"\"model\"\"\"\":\"\"\"\"openai\"\"\"\",\"\"\"\"messages\"\"\"\":[{\"\"\"\"role\"\"\"\":\"\"\"\"user\"\"\"\",\"\"\"\"content\"\"\"\":\"\"\"\"Say hi\"\"\"\"}],\"\"\"\"stream\"\"\"\":true}' --max-time 10)",
+      "Bash(curl -s -X POST \"https://text.pollinations.ai/openai/chat/completions\" -H \"Content-Type: application/json\" -d '{\"\"\"\"model\"\"\"\":\"\"\"\"openai\"\"\"\",\"\"\"\"messages\"\"\"\":[{\"\"\"\"role\"\"\"\":\"\"\"\"user\"\"\"\",\"\"\"\"content\"\"\"\":\"\"\"\"Say hello\"\"\"\"}],\"\"\"\"stream\"\"\"\":true}' --max-time 15)",
+      "Bash(curl -s -X POST \"https://text.pollinations.ai/openai/chat/completions\" -H \"Content-Type: application/json\" -d '{\"\"\"\"model\"\"\"\":\"\"\"\"openai\"\"\"\",\"\"\"\"messages\"\"\"\":[{\"\"\"\"role\"\"\"\":\"\"\"\"user\"\"\"\",\"\"\"\"content\"\"\"\":\"\"\"\"Привет, скажи одно слово\"\"\"\"}],\"\"\"\"stream\"\"\"\":false}' --max-time 20)",
+      "Bash(curl -s -N -X POST \"https://text.pollinations.ai/openai/chat/completions\" -H \"Content-Type: application/json\" -d '{\"\"\"\"model\"\"\"\":\"\"\"\"openai\"\"\"\",\"\"\"\"messages\"\"\"\":[{\"\"\"\"role\"\"\"\":\"\"\"\"system\"\"\"\",\"\"\"\"content\"\"\"\":\"\"\"\"You are a helpful assistant. Reply briefly.\"\"\"\"},{\"\"\"\"role\"\"\"\":\"\"\"\"user\"\"\"\",\"\"\"\"content\"\"\"\":\"\"\"\"hi\"\"\"\"}],\"\"\"\"stream\"\"\"\":true}' --max-time 30)",
+      "Bash(curl -s -X POST \"https://text.pollinations.ai/openai/chat/completions\" -H \"Content-Type: application/json\" -d '{\"\"\"\"model\"\"\"\":\"\"\"\"openai\"\"\"\",\"\"\"\"messages\"\"\"\":[{\"\"\"\"role\"\"\"\":\"\"\"\"system\"\"\"\",\"\"\"\"content\"\"\"\":\"\"\"\"Ты полезный AI-ассистент. Отвечай кратко и по делу.\"\"\"\"},{\"\"\"\"role\"\"\"\":\"\"\"\"user\"\"\"\",\"\"\"\"content\"\"\"\":\"\"\"\"привет\"\"\"\"}]}' --max-time 30)",
+      "Bash(curl -s -X POST \"https://text.pollinations.ai/openai/chat/completions\" -H \"Content-Type: application/json; charset=utf-8\" -d '{\"\"\"\"model\"\"\"\":\"\"\"\"openai\"\"\"\",\"\"\"\"messages\"\"\"\":[{\"\"\"\"role\"\"\"\":\"\"\"\"system\"\"\"\",\"\"\"\"content\"\"\"\":\"\"\"\"You are a helpful AI assistant. Reply in Russian. Be concise.\"\"\"\"},{\"\"\"\"role\"\"\"\":\"\"\"\"user\"\"\"\",\"\"\"\"content\"\"\"\":\"\"\"\"hello\"\"\"\"}]}' --max-time 30)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d[''''choices''''][0][''''message''''][''''content'''']\\)\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://aibot-production-f64c.up.railway.app/\" --max-time 10)",
+      "Bash(curl -s \"https://aibot-production-f64c.up.railway.app/\" --max-time 10)",
+      "Bash(curl -s -X POST \"https://aibot-production-f64c.up.railway.app/api/chat\" -H \"Content-Type: application/json\" -d '{\"\"сообщения\"\":[{\"\"role\"\":\"\"system\"\",\"\"content\"\":\"\"Ты полезный AI-ассистент.\"\"},{\"\"role\"\":\"\"user\"\",\"\"content\"\":\"\"привет\"\"}],\"\"модель\"\":\"\"gpt\"\"}' --max-time 30)",
+      "Bash(python3 -c \":*)"
+    ]
+  }
+}
