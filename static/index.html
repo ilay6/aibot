@@ -100,7 +100,7 @@
 
   /* ── HEADER ── */
   .header {
-    background: linear-gradient(135deg, rgba(124,58,237,0.15) 0%, var(--header-bg) 40%, rgba(37,99,235,0.1) 100%);
+    background: linear-gradient(135deg, rgba(245,197,24,0.08) 0%, var(--header-bg) 45%, rgba(255,120,50,0.06) 100%);
     backdrop-filter: blur(24px) saturate(1.5);
     -webkit-backdrop-filter: blur(24px) saturate(1.5);
     padding: 11px 16px;
@@ -739,6 +739,30 @@
     cursor: pointer; transition: border-color 0.2s, color 0.2s, background 0.2s, transform 0.25s;
   }
   .chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); transform: translateY(-2px) scale(1.03); }
+
+  /* ── COMMAND GRID ── */
+  .cmd-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    margin-top: 12px; width: 100%; max-width: 340px;
+  }
+  .cmd-card {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 14px;
+    padding: 12px; cursor: pointer; text-align: left;
+    transition: border-color 0.25s, background 0.25s, transform 0.2s, box-shadow 0.25s;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .cmd-card:hover {
+    border-color: var(--accent); transform: translateY(-2px);
+    box-shadow: 0 4px 16px var(--accent-glow);
+  }
+  .cmd-card:active { transform: translateY(0) scale(0.97); }
+  .cmd-card-icon { font-size: 20px; line-height: 1; }
+  .cmd-card-title { font-size: 12px; font-weight: 700; color: var(--text); }
+  .cmd-card-desc { font-size: 10px; color: var(--text2); line-height: 1.3; }
+  [data-theme="tiffany"] .cmd-card { background: rgba(10,186,181,0.04); border-color: rgba(10,186,181,0.1); }
+  [data-theme="tiffany"] .cmd-card:hover { background: rgba(10,186,181,0.08); border-color: var(--accent); }
+  [data-theme="light"] .cmd-card { background: rgba(255,255,255,0.5); }
+  [data-theme="light"] .cmd-card:hover { background: rgba(10,186,181,0.06); }
 
   /* ── ADMIN ── */
   .admin-panel { flex: 1; overflow-y: auto; padding: 14px 12px; display: flex; flex-direction: column; gap: 14px; }
@@ -1456,13 +1480,44 @@
         <img src="/logo.jpg" alt="AIchat" style="width:100%;height:100%;object-fit:cover;border-radius:24px;" onerror="this.style.display='none'">
       </div>
       <h2>AIchat | APP</h2>
-      <p>Задай любой вопрос, попроси помочь с кодом или объяснить тему</p>
-      <div class="welcome-chips">
+      <p>Задай вопрос или выбери команду</p>
+      <div class="cmd-grid">
+        <div class="cmd-card" onclick="быстрыйЗапрос('/search последние новости AI')">
+          <span class="cmd-card-icon">🔍</span>
+          <span class="cmd-card-title">Веб-поиск</span>
+          <span class="cmd-card-desc">Поиск в интернете с AI-ответом</span>
+        </div>
+        <div class="cmd-card" onclick="быстрыйЗапрос('/img красивый закат над горами')">
+          <span class="cmd-card-icon">🎨</span>
+          <span class="cmd-card-title">Картинка</span>
+          <span class="cmd-card-desc">Генерация по описанию</span>
+        </div>
+        <div class="cmd-card" onclick="быстрыйЗапрос('/викторина')">
+          <span class="cmd-card-icon">🎮</span>
+          <span class="cmd-card-title">Викторина</span>
+          <span class="cmd-card-desc">Тест на эрудицию</span>
+        </div>
+        <div class="cmd-card" onclick="быстрыйЗапрос('/дебаты AI заменит программистов')">
+          <span class="cmd-card-icon">🎭</span>
+          <span class="cmd-card-title">Дебаты</span>
+          <span class="cmd-card-desc">Два AI спорят на тему</span>
+        </div>
+        <div class="cmd-card" onclick="быстрыйЗапрос('/игра')">
+          <span class="cmd-card-icon">🧩</span>
+          <span class="cmd-card-title">Угадай слово</span>
+          <span class="cmd-card-desc">Отгадай по подсказкам</span>
+        </div>
+        <div class="cmd-card" onclick="быстрыйЗапрос('/stats')">
+          <span class="cmd-card-icon">📊</span>
+          <span class="cmd-card-title">Статистика</span>
+          <span class="cmd-card-desc">Ваши чаты и сообщения</span>
+        </div>
+      </div>
+      <div class="welcome-chips" style="margin-top:10px">
         <span class="chip" onclick="быстрыйЗапрос('Объясни код')">Объясни код</span>
-        <span class="chip" onclick="быстрыйЗапрос('/search последние новости AI')">🔍 Веб-поиск</span>
-        <span class="chip" onclick="быстрыйЗапрос('/img красивый закат')">🎨 Картинка</span>
-        <span class="chip" onclick="быстрыйЗапрос('/викторина')">🎮 Викторина</span>
-        <span class="chip" onclick="быстрыйЗапрос('/дебаты AI заменит программистов')">🎭 Дебаты</span>
+        <span class="chip" onclick="быстрыйЗапрос('Помоги с текстом')">Помоги с текстом</span>
+        <span class="chip" onclick="открытьПоиск()">🔎 Найти в чате</span>
+        <span class="chip" onclick="быстрыйЗапрос('/lang')">EN/RU</span>
       </div>
     </div>
   </div>
@@ -2082,13 +2137,19 @@
         <img src="/logo.jpg" alt="AIchat" style="width:100%;height:100%;object-fit:cover;border-radius:20px;" onerror="this.style.display='none'">
       </div>
       <h2>AIchat | APP</h2>
-      <p>Задай любой вопрос, попроси помочь с кодом или объяснить тему</p>
-      <div class="welcome-chips">
+      <p>Задай вопрос или выбери команду</p>
+      <div class="cmd-grid">
+        <div class="cmd-card" onclick="быстрыйЗапрос('/search последние новости AI')"><span class="cmd-card-icon">🔍</span><span class="cmd-card-title">Веб-поиск</span><span class="cmd-card-desc">Поиск с AI-ответом</span></div>
+        <div class="cmd-card" onclick="быстрыйЗапрос('/img красивый закат')"><span class="cmd-card-icon">🎨</span><span class="cmd-card-title">Картинка</span><span class="cmd-card-desc">Генерация по описанию</span></div>
+        <div class="cmd-card" onclick="быстрыйЗапрос('/викторина')"><span class="cmd-card-icon">🎮</span><span class="cmd-card-title">Викторина</span><span class="cmd-card-desc">Тест на эрудицию</span></div>
+        <div class="cmd-card" onclick="быстрыйЗапрос('/дебаты AI заменит программистов')"><span class="cmd-card-icon">🎭</span><span class="cmd-card-title">Дебаты</span><span class="cmd-card-desc">Два AI спорят</span></div>
+        <div class="cmd-card" onclick="быстрыйЗапрос('/игра')"><span class="cmd-card-icon">🧩</span><span class="cmd-card-title">Угадай слово</span><span class="cmd-card-desc">Отгадай по подсказкам</span></div>
+        <div class="cmd-card" onclick="быстрыйЗапрос('/stats')"><span class="cmd-card-icon">📊</span><span class="cmd-card-title">Статистика</span><span class="cmd-card-desc">Ваши чаты</span></div>
+      </div>
+      <div class="welcome-chips" style="margin-top:10px">
         <span class="chip" onclick="быстрыйЗапрос('Объясни код')">Объясни код</span>
-        <span class="chip" onclick="быстрыйЗапрос('/search последние новости AI')">🔍 Веб-поиск</span>
-        <span class="chip" onclick="быстрыйЗапрос('/img красивый закат')">🎨 Картинка</span>
-        <span class="chip" onclick="быстрыйЗапрос('/викторина')">🎮 Викторина</span>
-        <span class="chip" onclick="быстрыйЗапрос('/дебаты AI заменит программистов')">🎭 Дебаты</span>
+        <span class="chip" onclick="быстрыйЗапрос('Помоги с текстом')">Помоги с текстом</span>
+        <span class="chip" onclick="быстрыйЗапрос('/lang')">EN/RU</span>
       </div>
     </div>`;
     const панель = document.getElementById('чат');
