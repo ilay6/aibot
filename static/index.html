@@ -1602,10 +1602,14 @@
   // ── TTS ──
   function озвучить(кнопка) {
     const synth = window.speechSynthesis;
-    if (!synth) { показатьТост('Озвучка не поддерживается'); return; }
+    if (!synth) { показатьТост('Озвучка не поддерживается браузером'); return; }
+    // Stop if already speaking
     if (synth.speaking || synth.pending) {
       synth.cancel();
-      document.querySelectorAll('.tts-btn.speaking').forEach(b => b.classList.remove('speaking'));
+      document.querySelectorAll('.tts-btn.speaking').forEach(b => {
+        b.classList.remove('speaking');
+        b.innerHTML = ttsIconSvg + ' Озвучить';
+      });
       return;
     }
     const пузырь = кнопка.closest('.bubble');
@@ -1614,31 +1618,55 @@
     клон.querySelector('.follow-ups')?.remove();
     const текст = клон.innerText.trim();
     if (!текст) { показатьТост('Нечего озвучивать'); return; }
-    // Chrome bug: voices may not be loaded yet
+
     const _speak = () => {
+      synth.cancel(); // clear queue before speaking
       const u = new SpeechSynthesisUtterance(текст);
-      // Try to find Russian voice
       const voices = synth.getVoices();
-      const ruVoice = voices.find(v => v.lang.startsWith('ru'));
+      // Try Russian voice, then any Cyrillic-capable voice
+      const ruVoice = voices.find(v => v.lang.startsWith('ru'))
+                   || voices.find(v => /ru/i.test(v.name))
+                   || voices.find(v => v.lang === 'en-US');
       if (ruVoice) u.voice = ruVoice;
       u.lang = 'ru-RU';
       u.rate = 1.0;
       u.pitch = 1.0;
+      u.volume = 1.0;
+
       кнопка.classList.add('speaking');
       кнопка.innerHTML = ttsIconSvg + ' Стоп';
-      u.onend = () => { кнопка.classList.remove('speaking'); кнопка.innerHTML = ttsIconSvg + ' Озвучить'; };
-      u.onerror = () => { кнопка.classList.remove('speaking'); кнопка.innerHTML = ttsIconSvg + ' Озвучить'; показатьТост('Ошибка озвучки'); };
+
+      let keepAlive = null;
+      const _done = () => {
+        if (keepAlive) clearInterval(keepAlive);
+        кнопка.classList.remove('speaking');
+        кнопка.innerHTML = ttsIconSvg + ' Озвучить';
+      };
+
+      u.onend = _done;
+      u.onerror = (ev) => {
+        _done();
+        console.error('TTS error:', ev);
+        показатьТост('Ошибка озвучки');
+      };
+
       synth.speak(u);
-      // Chrome workaround: speech stops after ~15s, need to resume
-      const keepAlive = setInterval(() => {
-        if (!synth.speaking) { clearInterval(keepAlive); return; }
-        synth.pause(); synth.resume();
+
+      // Chrome workaround: speech pauses after ~15s
+      keepAlive = setInterval(() => {
+        if (!synth.speaking) { clearInterval(keepAlive); keepAlive = null; return; }
+        synth.pause();
+        synth.resume();
       }, 10000);
-      u.onend = () => { clearInterval(keepAlive); кнопка.classList.remove('speaking'); кнопка.innerHTML = ttsIconSvg + ' Озвучить'; };
     };
-    if (synth.getVoices().length === 0) {
-      synth.onvoiceschanged = () => { _speak(); synth.onvoiceschanged = null; };
-      setTimeout(_speak, 500); // fallback if event never fires
+
+    // Voices may not be loaded yet (Chrome)
+    const voices = synth.getVoices();
+    if (voices.length === 0) {
+      let fired = false;
+      const handler = () => { if (!fired) { fired = true; synth.onvoiceschanged = null; _speak(); } };
+      synth.onvoiceschanged = handler;
+      setTimeout(handler, 1000); // fallback if event never fires
     } else {
       _speak();
     }
@@ -1766,7 +1794,7 @@
     e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
     _currentPersona = idx;
     const p = ПЕРСОНЫ[idx];
-    document.getElementById('persona-icon').textContent = p.icon;
+    document.getElementById('persona-icon').innerHTML = p.icon;
     document.getElementById('persona-label').textContent = p.name;
     document.querySelectorAll('.persona-dd-item').forEach(i => i.classList.remove('pa-active'));
     el.classList.add('pa-active');
@@ -1774,7 +1802,7 @@
     if (история.length > 0 && история[0].role === 'system') {
       история[0].content = p.prompt;
     }
-    показатьТост(p.icon + ' ' + p.name);
+    показатьТост(p.name);
   }
   document.addEventListener('click', function(e) {
     if (!e.target.closest('.persona-dd')) document.getElementById('persona-dd')?.classList.remove('open');
