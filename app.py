@@ -365,53 +365,6 @@ async def tts(q: str = "", lang: str = "ru"):
         pass
     return {"error": "TTS unavailable"}
 
-@app.get("/api/proxy")
-async def proxy(url: str = ""):
-    """Proxy web pages for the in-app browser tab (strips X-Frame-Options)."""
-    import re as _re
-    if not url:
-        return {"error": "no url"}
-    if not url.startswith(("http://", "https://")):
-        url = "https://" + url
-    http = get_http()
-    try:
-        r = await http.get(url, headers={
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.9,ru;q=0.8",
-        }, timeout=httpx.Timeout(30, connect=10))
-        ct = r.headers.get("content-type", "text/html")
-        from fastapi.responses import Response
-        if "text/html" in ct:
-            from urllib.parse import urlparse
-            parsed = urlparse(str(r.url))
-            base_url = f"{parsed.scheme}://{parsed.netloc}"
-            html = r.text
-            base_tag = f'<base href="{base_url}/" target="_self">'
-            # Inject base tag after <head> (not <header>)
-            head_match = _re.search(r'<head(\s[^>]*)?>',  html, _re.IGNORECASE)
-            if head_match:
-                pos = head_match.end()
-                html = html[:pos] + base_tag + html[pos:]
-            else:
-                html = base_tag + html
-            # Strip SRI integrity attrs and CSP meta tags that block proxied resources
-            html = html.replace('integrity=', 'data-integrity=')
-            html = _re.sub(r'<meta[^>]*http-equiv=["\']Content-Security-Policy["\'][^>]*>', '', html, flags=_re.IGNORECASE)
-            return Response(content=html, media_type="text/html; charset=utf-8",
-                headers={"Cache-Control": "no-cache",
-                         "Access-Control-Allow-Origin": "*",
-                         "Content-Security-Policy": ""})
-        return Response(content=r.content, media_type=ct,
-            headers={"Cache-Control": "public, max-age=3600",
-                     "Access-Control-Allow-Origin": "*"})
-    except Exception as e:
-        from fastapi.responses import HTMLResponse
-        err = str(e)[:200].replace('<','&lt;').replace('>','&gt;')
-        return HTMLResponse(f"""<html><body style="background:#0a0a0a;color:#888;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">
-            <div style="text-align:center"><h2 style="color:#f5c518">Не удалось загрузить</h2><p>{err}</p><p style="color:#555;font-size:12px">Некоторые сайты блокируют загрузку</p></div></body></html>""",
-            headers={"Access-Control-Allow-Origin": "*"})
-
 @app.get("/")
 async def index():
     return FileResponse("static/index.html", headers={"Cache-Control": "no-store, no-cache, must-revalidate"})

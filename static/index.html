@@ -788,26 +788,18 @@
   /* ── BROWSER ── */
   .browser-panel { flex:1; display:flex; flex-direction:column; overflow:hidden; }
   .browser-bar {
-    display:flex; align-items:center; gap:5px; padding:8px 10px;
+    display:flex; align-items:center; gap:8px; padding:10px 12px;
     background:var(--bg2); border-bottom:1px solid var(--border);
     flex-shrink:0;
   }
-  .browser-nav-btn {
-    width:28px; height:28px; border:1px solid var(--border); border-radius:8px;
-    background:none; color:var(--text2); cursor:pointer; display:flex;
-    align-items:center; justify-content:center; transition:all 0.2s;
-    flex-shrink:0;
-  }
-  .browser-nav-btn:hover { color:var(--accent); border-color:var(--accent); background:var(--accent-ring); }
-  .browser-nav-btn:active { transform:scale(0.92); }
   .browser-url {
-    flex:1; min-width:0; padding:6px 12px; border:1px solid var(--border);
-    border-radius:10px; background:var(--bg3); color:var(--text);
-    font-size:12px; outline:none; transition:border-color 0.2s, box-shadow 0.2s;
+    flex:1; min-width:0; padding:8px 14px; border:1px solid var(--border);
+    border-radius:12px; background:var(--bg3); color:var(--text);
+    font-size:13px; outline:none; transition:border-color 0.2s, box-shadow 0.2s;
   }
-  .browser-url:focus { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-ring); }
+  .browser-url:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-ring); }
   .browser-go-btn {
-    width:28px; height:28px; border:none; border-radius:8px;
+    width:34px; height:34px; border:none; border-radius:10px;
     background:var(--accent); color:var(--send-btn-color); cursor:pointer;
     display:flex; align-items:center; justify-content:center; flex-shrink:0;
     transition:opacity 0.2s, transform 0.15s;
@@ -828,25 +820,50 @@
     0% { transform:translateX(-100%); }
     100% { transform:translateX(400%); }
   }
-  .browser-frame-wrap { flex:1; position:relative; overflow:hidden; }
-  .browser-iframe {
-    width:100%; height:100%; border:none; background:#fff;
+  .browser-results {
+    flex:1; overflow-y:auto; padding:12px;
   }
-  .browser-overlay {
-    position:absolute; top:0; left:0; right:0; bottom:0;
+  .browser-home {
     display:flex; flex-direction:column; align-items:center; justify-content:center;
-    background:var(--bg); z-index:2;
+    min-height:60vh; text-align:center;
   }
-  .browser-overlay.hidden { display:none; }
   .browser-quick-links {
-    display:flex; gap:8px; margin-top:16px; flex-wrap:wrap; justify-content:center;
+    display:flex; gap:8px; flex-wrap:wrap; justify-content:center;
   }
   .browser-quick-btn {
-    padding:6px 14px; border:1px solid var(--border); border-radius:10px;
+    padding:7px 16px; border:1px solid var(--border); border-radius:12px;
     background:var(--glass-bg); color:var(--text2); cursor:pointer;
     font-size:12px; transition:all 0.2s;
   }
   .browser-quick-btn:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-ring); }
+  .browser-quick-btn:active { transform:scale(0.95); }
+  /* Search results */
+  .search-result-card {
+    padding:14px; margin-bottom:10px; border:1px solid var(--border);
+    border-radius:12px; background:var(--glass-bg); transition:all 0.2s;
+    cursor:pointer;
+  }
+  .search-result-card:hover { border-color:var(--accent); background:var(--accent-ring); }
+  .search-result-title {
+    font-size:14px; font-weight:600; color:var(--accent); margin-bottom:4px;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .search-result-url {
+    font-size:11px; color:var(--text2); margin-bottom:6px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .search-result-snippet {
+    font-size:12px; color:var(--text); line-height:1.5; opacity:0.85;
+    display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .search-query-label {
+    font-size:12px; color:var(--text2); margin-bottom:12px; padding-bottom:8px;
+    border-bottom:1px solid var(--border);
+  }
+  .search-query-label b { color:var(--text); }
+  .search-no-results {
+    text-align:center; padding:40px 20px; color:var(--text2); font-size:13px;
+  }
 
   /* ── ADMIN ── */
   .admin-panel { flex: 1; overflow-y: auto; padding: 14px 12px; display: flex; flex-direction: column; gap: 14px; }
@@ -1685,34 +1702,23 @@
 <div class="panel" id="браузер">
   <div class="browser-panel">
     <div class="browser-bar">
-      <button class="browser-nav-btn" onclick="браузерНазад()" title="Назад">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-      </button>
-      <button class="browser-nav-btn" onclick="браузерВперёд()" title="Вперёд">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
-      </button>
-      <button class="browser-nav-btn" onclick="браузерОбновить()" title="Обновить">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-      </button>
-      <button class="browser-nav-btn" onclick="браузерДомой()" title="Домой">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-      </button>
-      <input type="text" class="browser-url" id="browser-url" placeholder="Введите URL или поисковый запрос..." onkeydown="if(event.key==='Enter')браузерПерейти()">
-      <button class="browser-go-btn" onclick="браузерПерейти()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--accent)" style="flex-shrink:0"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+      <input type="text" class="browser-url" id="browser-url" placeholder="Поиск в интернете..." onkeydown="if(event.key==='Enter')браузерПоиск()">
+      <button class="browser-go-btn" onclick="браузерПоиск()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
       </button>
     </div>
     <div class="browser-loading-bar" id="browser-loading"><div class="browser-loading-inner"></div></div>
-    <div class="browser-frame-wrap">
-      <iframe id="browser-iframe" class="browser-iframe" src="about:blank"></iframe>
-      <div class="browser-overlay" id="browser-overlay">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="var(--accent)" opacity="0.4"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-        <p style="color:var(--text2);margin-top:12px;font-size:13px">Введите URL и нажмите Enter</p>
+    <div class="browser-results" id="browser-results">
+      <div class="browser-home" id="browser-home">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="var(--accent)" opacity="0.35"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+        <h3 style="color:var(--text);margin:12px 0 4px;font-size:16px">Веб-поиск</h3>
+        <p style="color:var(--text2);font-size:13px;margin:0 0 16px">Введите запрос и получите результаты из интернета</p>
         <div class="browser-quick-links">
-          <button class="browser-quick-btn" onclick="document.getElementById('browser-url').value='https://lite.duckduckgo.com/lite/';браузерПерейти()">DuckDuckGo</button>
-          <button class="browser-quick-btn" onclick="document.getElementById('browser-url').value='https://ru.wikipedia.org';браузерПерейти()">Wikipedia</button>
-          <button class="browser-quick-btn" onclick="document.getElementById('browser-url').value='https://news.ycombinator.com';браузерПерейти()">HackerNews</button>
-          <button class="browser-quick-btn" onclick="document.getElementById('browser-url').value='https://reddit.com';браузерПерейти()">Reddit</button>
+          <button class="browser-quick-btn" onclick="document.getElementById('browser-url').value='последние новости технологий';браузерПоиск()">Новости IT</button>
+          <button class="browser-quick-btn" onclick="document.getElementById('browser-url').value='погода сегодня';браузерПоиск()">Погода</button>
+          <button class="browser-quick-btn" onclick="document.getElementById('browser-url').value='курс доллара';браузерПоиск()">Курс валют</button>
+          <button class="browser-quick-btn" onclick="document.getElementById('browser-url').value='что нового в AI 2025';браузерПоиск()">Новости AI</button>
         </div>
       </div>
     </div>
@@ -3203,62 +3209,47 @@
     добавитьСообщение(html, 'bot');
   }
 
-  // ── BROWSER TAB ──
-  var _browserHistory = [];
-  var _browserHistoryIdx = -1;
-  var _browserLoading = false;
+  // ── BROWSER TAB (search-based) ──
+  var _browserSearching = false;
 
-  function _proxyUrl(url) {
-    return '/api/proxy?url=' + encodeURIComponent(url);
-  }
-
-  function браузерПерейти() {
-    let url = document.getElementById('browser-url').value.trim();
-    if (!url) return;
-    // If it looks like a search query (no dots, no protocol), use DuckDuckGo lite
-    if (!/^https?:\/\//i.test(url) && !/\.\w{2,}/.test(url)) {
-      url = 'https://lite.duckduckgo.com/lite/?q=' + encodeURIComponent(url);
-    } else if (!/^https?:\/\//i.test(url)) {
-      url = 'https://' + url;
+  async function браузерПоиск() {
+    const input = document.getElementById('browser-url');
+    const query = input.value.trim();
+    if (!query || _browserSearching) return;
+    _browserSearching = true;
+    const results = document.getElementById('browser-results');
+    const loading = document.getElementById('browser-loading');
+    loading.classList.add('active');
+    results.innerHTML = '<div class="search-query-label">Поиск: <b>' + query.replace(/</g,'&lt;') + '</b></div><div class="search-no-results">Ищем...</div>';
+    try {
+      const r = await fetch('/api/search', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({query, lang: _lang})
+      });
+      const data = await r.json();
+      let html = '<div class="search-query-label">Результаты: <b>' + query.replace(/</g,'&lt;') + '</b></div>';
+      if (data.results && data.results.length > 0) {
+        data.results.forEach(item => {
+          const title = (item.title||'').replace(/</g,'&lt;');
+          const snippet = (item.snippet||'').replace(/</g,'&lt;');
+          const url = item.url||'';
+          const shortUrl = url.replace(/^https?:\/\//, '').split('/')[0];
+          html += `<div class="search-result-card" onclick="window.open('${url.replace(/'/g,"\\'")}','_blank')">
+            <div class="search-result-title">${title}</div>
+            <div class="search-result-url">${shortUrl}</div>
+            <div class="search-result-snippet">${snippet}</div>
+          </div>`;
+        });
+      } else {
+        html += '<div class="search-no-results">Ничего не найдено. Попробуйте другой запрос.</div>';
+      }
+      results.innerHTML = html;
+    } catch(e) {
+      results.innerHTML = '<div class="search-no-results">Ошибка поиска. Попробуйте ещё раз.</div>';
     }
-    document.getElementById('browser-url').value = url;
-    _browserLoading = true;
-    document.getElementById('browser-loading').classList.add('active');
-    const iframe = document.getElementById('browser-iframe');
-    iframe.onload = () => {
-      _browserLoading = false;
-      document.getElementById('browser-loading').classList.remove('active');
-    };
-    iframe.src = _proxyUrl(url);
-    document.getElementById('browser-overlay').classList.add('hidden');
-    _browserHistory.push(url);
-    _browserHistoryIdx = _browserHistory.length - 1;
-  }
-  function браузерНазад() {
-    if (_browserHistoryIdx > 0) {
-      _browserHistoryIdx--;
-      const url = _browserHistory[_browserHistoryIdx];
-      document.getElementById('browser-url').value = url;
-      document.getElementById('browser-iframe').src = _proxyUrl(url);
-    }
-  }
-  function браузерВперёд() {
-    if (_browserHistoryIdx < _browserHistory.length - 1) {
-      _browserHistoryIdx++;
-      const url = _browserHistory[_browserHistoryIdx];
-      document.getElementById('browser-url').value = url;
-      document.getElementById('browser-iframe').src = _proxyUrl(url);
-    }
-  }
-  function браузерОбновить() {
-    if (_browserHistoryIdx >= 0) {
-      const url = _browserHistory[_browserHistoryIdx];
-      document.getElementById('browser-iframe').src = _proxyUrl(url);
-    }
-  }
-  function браузерДомой() {
-    document.getElementById('browser-url').value = 'https://lite.duckduckgo.com/lite/';
-    браузерПерейти();
+    loading.classList.remove('active');
+    _browserSearching = false;
   }
 
   // ── MULTILINGUAL ──
