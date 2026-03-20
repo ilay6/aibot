@@ -368,6 +368,7 @@ async def tts(q: str = "", lang: str = "ru"):
 @app.get("/api/proxy")
 async def proxy(url: str = ""):
     """Proxy web pages for the in-app browser tab (strips X-Frame-Options)."""
+    import re as _re
     if not url:
         return {"error": "no url"}
     if not url.startswith(("http://", "https://")):
@@ -381,28 +382,33 @@ async def proxy(url: str = ""):
         }, timeout=httpx.Timeout(30, connect=10))
         ct = r.headers.get("content-type", "text/html")
         from fastapi.responses import Response
-        # For HTML pages, inject <base> tag so relative links resolve correctly
         if "text/html" in ct:
             from urllib.parse import urlparse
             parsed = urlparse(str(r.url))
             base_url = f"{parsed.scheme}://{parsed.netloc}"
             html = r.text
-            # Inject base tag for relative URLs
-            if "<head" in html:
-                html = html.replace("<head", f'<head><base href="{base_url}/"', 1)
-            elif "<HEAD" in html:
-                html = html.replace("<HEAD", f'<HEAD><base href="{base_url}/"', 1)
+            base_tag = f'<base href="{base_url}/">'
+            # Inject base tag after <head> (not <head which matches <header>)
+            head_match = _re.search(r'<head(\s[^>]*)?>',  html, _re.IGNORECASE)
+            if head_match:
+                pos = head_match.end()
+                html = html[:pos] + base_tag + html[pos:]
             else:
-                html = f'<base href="{base_url}/">' + html
+                html = base_tag + html
+            # Rewrite internal links to go through proxy
+            html = html.replace('integrity=', 'data-integrity=')
             return Response(content=html, media_type="text/html; charset=utf-8",
-                headers={"Cache-Control": "no-cache"})
-        # Non-HTML content — pass through
+                headers={"Cache-Control": "no-cache",
+                         "Access-Control-Allow-Origin": "*"})
         return Response(content=r.content, media_type=ct,
-            headers={"Cache-Control": "public, max-age=3600"})
+            headers={"Cache-Control": "public, max-age=3600",
+                     "Access-Control-Allow-Origin": "*"})
     except Exception as e:
         from fastapi.responses import HTMLResponse
+        err = str(e)[:200].replace('<','&lt;').replace('>','&gt;')
         return HTMLResponse(f"""<html><body style="background:#0a0a0a;color:#888;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">
-            <div style="text-align:center"><h2 style="color:#f5c518">Не удалось загрузить</h2><p>{str(e)[:200]}</p></div></body></html>""")
+            <div style="text-align:center"><h2 style="color:#f5c518">Не удалось загрузить</h2><p>{err}</p><p style="color:#555;font-size:12px">Некоторые сайты блокируют загрузку</p></div></body></html>""",
+            headers={"Access-Control-Allow-Origin": "*"})
 
 @app.get("/")
 async def index():
