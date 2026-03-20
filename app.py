@@ -322,6 +322,23 @@ async def chats_load(data: SyncData):
     except Exception:
         return {"chats": []}
 
+@app.get("/api/tts")
+async def tts(q: str = "", lang: str = "ru"):
+    """Proxy Google TTS to avoid CORS issues in Telegram WebView."""
+    if not q or len(q) > 200:
+        return {"error": "text too long or empty"}
+    url = f"https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl={lang}&q={quote(q)}"
+    http = get_http()
+    try:
+        r = await http.get(url, headers={"User-Agent": "Mozilla/5.0"})
+        if r.status_code == 200 and "audio" in r.headers.get("content-type", ""):
+            from fastapi.responses import Response
+            return Response(content=r.content, media_type="audio/mpeg",
+                headers={"Cache-Control": "public, max-age=86400"})
+    except Exception:
+        pass
+    return {"error": "TTS unavailable"}
+
 @app.get("/")
 async def index():
     return FileResponse("static/index.html", headers={"Cache-Control": "no-store, no-cache, must-revalidate"})
