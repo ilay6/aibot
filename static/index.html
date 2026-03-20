@@ -110,6 +110,14 @@
     transition: background 0.4s, border-color 0.4s;
     position: relative;
   }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.6;
+  }
   .header-left { display: flex; align-items: center; gap: 10px; }
   .logo {
     width: 36px; height: 36px; border-radius: 11px;
@@ -126,7 +134,13 @@
   [data-theme="light"] .logo {
     box-shadow: 0 0 16px rgba(10,186,181,0.35);
   }
-  .header-title { font-size: 16px; font-weight: 700; }
+  .header-title {
+    font-size: 16px; font-weight: 700;
+    background: linear-gradient(135deg, var(--text) 0%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
   .header-sub { font-size: 11px; color: var(--text2); margin-top: 1px; display: flex; align-items: center; gap: 4px; }
   .online-dot {
     width: 6px; height: 6px; border-radius: 50%;
@@ -268,6 +282,14 @@
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
     transition: background 0.4s, border-color 0.4s;
+    position: relative;
+  }
+  .tabs::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
   }
   .tab {
     flex: 1; padding: 13px 8px;
@@ -367,13 +389,17 @@
     border-color: rgba(10,186,181,0.12);
     box-shadow: 0 1px 8px rgba(10,186,181,0.06);
   }
+  .bubble:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  }
 
   /* ── TYPING ── */
-  .typing { display: flex; gap: 4px; padding: 2px 0; }
-  .typing span { width: 7px; height: 7px; background: var(--text2); border-radius: 50%; animation: blink 1.2s infinite; }
+  .typing { display: flex; gap: 5px; padding: 2px 0; }
+  .typing span { width: 7px; height: 7px; background: var(--accent); border-radius: 50%; animation: typingBounce 1.4s ease infinite; opacity: 0.5; }
   .typing span:nth-child(2) { animation-delay: 0.2s; }
   .typing span:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes blink { 0%,80%,100%{opacity:.3;transform:scale(.8)} 40%{opacity:1;transform:scale(1)} }
+  @keyframes typingBounce { 0%,80%,100%{opacity:.3;transform:scale(.8) translateY(0)} 40%{opacity:1;transform:scale(1) translateY(-4px)} }
 
   /* ── CHAT EMPTY STATE (ChatGPT-style centered) ── */
   #чат { position: relative; }
@@ -513,6 +539,13 @@
   .send-btn:hover { background: var(--accent2); transform: scale(1.1); box-shadow: 0 4px 18px var(--accent-shadow); }
   .send-btn:active { transform: scale(0.92); }
   .send-btn:disabled { background: var(--bg3); color: var(--text2); cursor: default; transform: none; box-shadow: none; }
+  .send-btn:not(:disabled) {
+    animation: sendGlow 3s ease infinite;
+  }
+  @keyframes sendGlow {
+    0%, 100% { box-shadow: 0 2px 8px var(--accent-glow); }
+    50% { box-shadow: 0 2px 20px var(--accent-shadow); }
+  }
 
   /* ── HISTORY ── */
   .history-panel { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
@@ -618,13 +651,26 @@
     animation: fadeInUp 0.5s cubic-bezier(0.16,1,0.3,1) forwards; opacity: 0;
   }
   .welcome-icon {
-    width: 80px; height: 80px; background: var(--accent);
+    width: 80px; height: 80px;
     border-radius: 24px; display: flex; align-items: center; justify-content: center;
     overflow: hidden;
+    position: relative;
+    background: var(--accent);
     box-shadow: 0 0 28px var(--accent-shadow), 0 0 60px var(--accent-glow);
     transition: background 0.4s, box-shadow 0.4s;
     animation: heroGlow 3s ease infinite;
   }
+  .welcome-icon::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 26px;
+    background: conic-gradient(from 0deg, var(--accent), transparent 40%, var(--accent) 60%, transparent);
+    animation: spinGlow 4s linear infinite;
+    z-index: -1;
+    opacity: 0.5;
+  }
+  @keyframes spinGlow { to { transform: rotate(360deg); } }
   [data-theme="tiffany"] .welcome-icon {
     background: rgba(10,186,181,0.85);
     box-shadow: 0 0 35px rgba(10,186,181,0.55), 0 0 70px rgba(10,186,181,0.2);
@@ -647,9 +693,9 @@
   .chip {
     background: var(--bg3); border: 1px solid var(--border);
     border-radius: 20px; padding: 8px 16px; font-size: 13px; color: var(--text2);
-    cursor: pointer; transition: border-color 0.2s, color 0.2s, background 0.2s;
+    cursor: pointer; transition: border-color 0.2s, color 0.2s, background 0.2s, transform 0.25s;
   }
-  .chip:hover { border-color: var(--accent); color: var(--accent); background: rgba(245,197,24,0.06); }
+  .chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); transform: translateY(-2px) scale(1.03); }
 
   /* ── ADMIN ── */
   .admin-panel { flex: 1; overflow-y: auto; padding: 14px 12px; display: flex; flex-direction: column; gap: 14px; }
@@ -707,7 +753,8 @@
 
   /* ── SCROLLBAR ── */
   ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; transition: background 0.2s; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
   ::-webkit-scrollbar-track { background: transparent; }
 
   pre { background: var(--bg3); padding: 12px; border-radius: 10px; margin: 6px 0; overflow-x: auto; font-size: 12px; border: 1px solid var(--border); line-height: 1.6; }
@@ -1601,11 +1648,11 @@
 
   // ── TTS ──
   function озвучить(кнопка) {
-    const synth = window.speechSynthesis;
-    if (!synth) { показатьТост('Озвучка не поддерживается браузером'); return; }
-    // Stop if already speaking
-    if (synth.speaking || synth.pending) {
-      synth.cancel();
+    // Stop if already playing
+    if (window._ttsAudio && !window._ttsAudio.paused) {
+      window._ttsAudio.pause();
+      window._ttsAudio.currentTime = 0;
+      window._ttsAudio = null;
       document.querySelectorAll('.tts-btn.speaking').forEach(b => {
         b.classList.remove('speaking');
         b.innerHTML = ttsIconSvg + ' Озвучить';
@@ -1616,60 +1663,38 @@
     const клон = пузырь.cloneNode(true);
     клон.querySelector('.bubble-footer')?.remove();
     клон.querySelector('.follow-ups')?.remove();
-    const текст = клон.innerText.trim();
+    let текст = клон.innerText.trim();
     if (!текст) { показатьТост('Нечего озвучивать'); return; }
-
-    const _speak = () => {
-      synth.cancel(); // clear queue before speaking
+    // Limit to 200 chars per chunk for Google TTS
+    if (текст.length > 200) текст = текст.substring(0, 200);
+    кнопка.classList.add('speaking');
+    кнопка.innerHTML = ttsIconSvg + ' Стоп';
+    const audio = new Audio('https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ru&q=' + encodeURIComponent(текст));
+    audio.crossOrigin = 'anonymous';
+    window._ttsAudio = audio;
+    audio.onended = () => { кнопка.classList.remove('speaking'); кнопка.innerHTML = ttsIconSvg + ' Озвучить'; window._ttsAudio = null; };
+    audio.onerror = () => {
+      // Fallback to Web Speech API if Google TTS fails
+      кнопка.classList.remove('speaking');
+      кнопка.innerHTML = ttsIconSvg + ' Озвучить';
+      window._ttsAudio = null;
+      const synth = window.speechSynthesis;
+      if (!synth) { показатьТост('Озвучка недоступна'); return; }
+      synth.cancel();
       const u = new SpeechSynthesisUtterance(текст);
-      const voices = synth.getVoices();
-      // Try Russian voice, then any Cyrillic-capable voice
-      const ruVoice = voices.find(v => v.lang.startsWith('ru'))
-                   || voices.find(v => /ru/i.test(v.name))
-                   || voices.find(v => v.lang === 'en-US');
-      if (ruVoice) u.voice = ruVoice;
       u.lang = 'ru-RU';
-      u.rate = 1.0;
-      u.pitch = 1.0;
-      u.volume = 1.0;
-
+      const voices = synth.getVoices();
+      const rv = voices.find(v => v.lang.startsWith('ru'));
+      if (rv) u.voice = rv;
       кнопка.classList.add('speaking');
       кнопка.innerHTML = ttsIconSvg + ' Стоп';
-
-      let keepAlive = null;
-      const _done = () => {
-        if (keepAlive) clearInterval(keepAlive);
-        кнопка.classList.remove('speaking');
-        кнопка.innerHTML = ttsIconSvg + ' Озвучить';
-      };
-
-      u.onend = _done;
-      u.onerror = (ev) => {
-        _done();
-        console.error('TTS error:', ev);
-        показатьТост('Ошибка озвучки');
-      };
-
+      u.onend = () => { кнопка.classList.remove('speaking'); кнопка.innerHTML = ttsIconSvg + ' Озвучить'; };
+      u.onerror = () => { кнопка.classList.remove('speaking'); кнопка.innerHTML = ttsIconSvg + ' Озвучить'; показатьТост('Ошибка озвучки'); };
       synth.speak(u);
-
-      // Chrome workaround: speech pauses after ~15s
-      keepAlive = setInterval(() => {
-        if (!synth.speaking) { clearInterval(keepAlive); keepAlive = null; return; }
-        synth.pause();
-        synth.resume();
-      }, 10000);
     };
-
-    // Voices may not be loaded yet (Chrome)
-    const voices = synth.getVoices();
-    if (voices.length === 0) {
-      let fired = false;
-      const handler = () => { if (!fired) { fired = true; synth.onvoiceschanged = null; _speak(); } };
-      synth.onvoiceschanged = handler;
-      setTimeout(handler, 1000); // fallback if event never fires
-    } else {
-      _speak();
-    }
+    audio.play().catch(() => {
+      audio.onerror();
+    });
   }
 
   // ── REACTIONS ──
