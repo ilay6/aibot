@@ -309,6 +309,45 @@ async def chats_load(data: SyncData):
     except Exception:
         return {"chats": []}
 
+class SearchQuery(BaseModel):
+    query: str
+    lang: str = "ru"
+
+@app.post("/api/search")
+async def web_search(data: SearchQuery):
+    """Search the web via DuckDuckGo and return snippets."""
+    http = get_http()
+    try:
+        r = await http.get(
+            f"https://html.duckduckgo.com/html/?q={quote(data.query)}",
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"},
+            timeout=httpx.Timeout(15, connect=5)
+        )
+        if r.status_code != 200:
+            return {"results": []}
+        import re
+        html = r.text
+        results = []
+        # Parse result blocks
+        for m in re.finditer(r'class="result__a"[^>]*href="([^"]*)"[^>]*>(.*?)</a>.*?class="result__snippet"[^>]*>(.*?)</span>', html, re.DOTALL):
+            url_raw, title, snippet = m.group(1), m.group(2), m.group(3)
+            # Clean HTML tags
+            title = re.sub(r'<[^>]+>', '', title).strip()
+            snippet = re.sub(r'<[^>]+>', '', snippet).strip()
+            # Decode DuckDuckGo redirect URL
+            if 'uddg=' in url_raw:
+                from urllib.parse import unquote
+                url_clean = unquote(url_raw.split('uddg=')[1].split('&')[0])
+            else:
+                url_clean = url_raw
+            if title and snippet:
+                results.append({"title": title, "snippet": snippet, "url": url_clean})
+            if len(results) >= 5:
+                break
+        return {"results": results}
+    except Exception:
+        return {"results": []}
+
 @app.get("/api/tts")
 async def tts(q: str = "", lang: str = "ru"):
     """Proxy Google TTS to avoid CORS issues in Telegram WebView."""

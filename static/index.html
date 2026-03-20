@@ -1212,6 +1212,106 @@
   }
   .export-btn:hover { border-color: var(--accent); color: var(--accent); }
 
+  /* ── CODE BLOCK ── */
+  .code-block-wrap { margin: 6px 0; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+  .code-block-header {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 5px 10px; background: rgba(255,255,255,0.04); border-bottom: 1px solid var(--border);
+  }
+  .code-lang { font-size: 10px; color: var(--accent); font-weight: 700; text-transform: uppercase; }
+  .code-dl-btn, .code-copy-btn {
+    background: none; border: none; color: var(--text2); cursor: pointer;
+    font-size: 10px; font-family: inherit; padding: 2px 6px; border-radius: 4px;
+    transition: color 0.2s, background 0.2s;
+  }
+  .code-dl-btn:hover, .code-copy-btn:hover { color: var(--accent); background: var(--bg3); }
+  .code-block-wrap pre { margin: 0; border: none; border-radius: 0; }
+
+  /* ── CONTEXT MENU ── */
+  .ctx-menu {
+    position: fixed; z-index: 10000;
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 14px;
+    min-width: 160px; padding: 6px 0;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.5);
+    animation: ddIn 0.15s cubic-bezier(0.16,1,0.3,1) forwards;
+    display: none;
+  }
+  .ctx-menu.show { display: block; }
+  .ctx-item {
+    padding: 10px 16px; font-size: 13px; color: var(--text);
+    cursor: pointer; display: flex; align-items: center; gap: 8px;
+    transition: background 0.12s;
+  }
+  .ctx-item:hover { background: var(--glass-bg); }
+  .ctx-item.danger { color: #ff5555; }
+  .ctx-item + .ctx-item { border-top: 1px solid rgba(255,255,255,0.04); }
+
+  /* ── SEARCH OVERLAY ── */
+  .chat-search-bar {
+    display: none; padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+  }
+  .chat-search-bar.show { display: flex; gap: 8px; align-items: center; }
+  .chat-search-bar input {
+    flex: 1; background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text); font-size: 13px;
+    padding: 8px 12px; outline: none; font-family: inherit;
+  }
+  .chat-search-bar input:focus { border-color: var(--accent); }
+  .search-count { font-size: 11px; color: var(--text2); white-space: nowrap; }
+  .search-highlight { background: rgba(245,197,24,0.3); border-radius: 2px; }
+
+  /* ── CUSTOM PROMPT MODAL ── */
+  .prompt-modal {
+    position: fixed; inset: 0; z-index: 10000;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
+    display: none; align-items: center; justify-content: center;
+  }
+  .prompt-modal.show { display: flex; }
+  .prompt-modal-box {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 20px;
+    padding: 20px; max-width: 360px; width: 90%;
+    animation: ddIn 0.25s cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+  .prompt-modal-box h3 { font-size: 16px; margin-bottom: 12px; }
+  .prompt-modal-box textarea {
+    width: 100%; height: 100px; background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 12px; color: var(--text); padding: 10px; font-size: 13px;
+    outline: none; font-family: inherit; resize: vertical;
+  }
+  .prompt-modal-box textarea:focus { border-color: var(--accent); }
+  .prompt-modal-btns { display: flex; gap: 8px; margin-top: 12px; }
+  .prompt-modal-btns button {
+    flex: 1; padding: 10px; border-radius: 10px; border: none;
+    font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer;
+  }
+
+  /* ── ANALYTICS PANEL ── */
+  .analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+  .analytics-card {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px; text-align: center;
+    transition: border-color 0.3s, transform 0.3s;
+  }
+  .analytics-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .analytics-num { font-size: 26px; font-weight: 800; color: var(--accent); }
+  .analytics-label { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+  /* ── GAME/DEBATE ── */
+  .special-mode-banner {
+    padding: 8px 14px; margin: 8px 12px;
+    background: linear-gradient(135deg, var(--accent-glow), rgba(37,99,235,0.1));
+    border: 1px solid var(--accent-ring); border-radius: 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 12px; color: var(--text); font-weight: 600;
+    animation: fadeInUp 0.3s ease forwards;
+  }
+  .special-mode-banner button {
+    background: rgba(255,255,255,0.1); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text2); font-size: 11px; padding: 4px 10px; cursor: pointer; font-family: inherit;
+  }
+
   /* ── THEME ICON TOGGLE ── */
   .theme-icon-dark    { display: block; }
   .theme-icon-tiffany { display: none; }
@@ -1320,8 +1420,33 @@
 <!-- OFFLINE BANNER -->
 <div class="offline-banner" id="offline-banner">Нет соединения</div>
 
+<!-- CONTEXT MENU -->
+<div class="ctx-menu" id="ctx-menu">
+  <div class="ctx-item" onclick="ctxКопировать()">⊐ Копировать текст</div>
+  <div class="ctx-item" onclick="ctxОзвучить()">🔊 Озвучить</div>
+  <div class="ctx-item" onclick="ctxПоиск()">🔍 Поиск в Google</div>
+  <div class="ctx-item danger" onclick="ctxУдалить()">✕ Удалить</div>
+</div>
+
+<!-- CUSTOM PROMPT MODAL -->
+<div class="prompt-modal" id="prompt-modal" onclick="if(event.target===this)закрытьПромптМодал()">
+  <div class="prompt-modal-box">
+    <h3>Свой системный промпт</h3>
+    <textarea id="custom-prompt-input" placeholder="Ты — эксперт по..."></textarea>
+    <div class="prompt-modal-btns">
+      <button style="background:var(--bg3);color:var(--text);border:1px solid var(--border)" onclick="закрытьПромптМодал()">Отмена</button>
+      <button style="background:var(--accent);color:var(--send-btn-color)" onclick="сохранитьПромпт()">Применить</button>
+    </div>
+  </div>
+</div>
+
 <!-- ЧАТ -->
 <div class="panel active empty" id="чат">
+  <div class="chat-search-bar" id="chat-search-bar">
+    <input type="text" id="chat-search-input" placeholder="Поиск по чату..." oninput="поискВЧате(this.value)">
+    <span class="search-count" id="search-count"></span>
+    <button style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:16px" onclick="закрытьПоиск()">✕</button>
+  </div>
   <button class="scroll-down-btn" id="scroll-down-btn" onclick="прокрутитьВниз()" title="Вниз">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
   </button>
@@ -1334,8 +1459,10 @@
       <p>Задай любой вопрос, попроси помочь с кодом или объяснить тему</p>
       <div class="welcome-chips">
         <span class="chip" onclick="быстрыйЗапрос('Объясни код')">Объясни код</span>
-        <span class="chip" onclick="быстрыйЗапрос('Помоги с текстом')">Помоги с текстом</span>
+        <span class="chip" onclick="быстрыйЗапрос('/search последние новости AI')">🔍 Веб-поиск</span>
         <span class="chip" onclick="быстрыйЗапрос('/img красивый закат')">🎨 Картинка</span>
+        <span class="chip" onclick="быстрыйЗапрос('/викторина')">🎮 Викторина</span>
+        <span class="chip" onclick="быстрыйЗапрос('/дебаты AI заменит программистов')">🎭 Дебаты</span>
       </div>
     </div>
   </div>
@@ -1360,6 +1487,7 @@
           <div class="persona-dd-item" onclick="выбратьПерсону(event,2,this)"><span class="persona-emoji">Aa</span> Переводчик</div>
           <div class="persona-dd-item" onclick="выбратьПерсону(event,3,this)"><span class="persona-emoji">T</span> Копирайтер</div>
           <div class="persona-dd-item" onclick="выбратьПерсону(event,4,this)"><span class="persona-emoji">U</span> Учитель</div>
+          <div class="persona-dd-item" onclick="открытьПромптМодал(event)" style="border-top:1px solid var(--border);color:var(--accent)"><span class="persona-emoji" style="font-size:16px">+</span> Свой промпт</div>
         </div>
       </div>
       <span class="char-counter" id="char-counter"></span>
@@ -1752,8 +1880,9 @@
     if (текст.length > 200) текст = текст.substring(0, 200);
     кнопка.classList.add('speaking');
     кнопка.innerHTML = ttsIconSvg + ' Стоп';
-    // Use our server proxy to avoid CORS
-    const audio = new Audio('/api/tts?lang=ru&q=' + encodeURIComponent(текст));
+    // Auto-detect language: Cyrillic → ru, else → en
+    const isRu = /[а-яё]/i.test(текст);
+    const audio = new Audio('/api/tts?lang=' + (isRu ? 'ru' : 'en') + '&q=' + encodeURIComponent(текст));
     window._ttsAudio = audio;
     audio.onended = () => { кнопка.classList.remove('speaking'); кнопка.innerHTML = ttsIconSvg + ' Озвучить'; window._ttsAudio = null; };
     audio.onerror = () => {
@@ -1956,8 +2085,10 @@
       <p>Задай любой вопрос, попроси помочь с кодом или объяснить тему</p>
       <div class="welcome-chips">
         <span class="chip" onclick="быстрыйЗапрос('Объясни код')">Объясни код</span>
-        <span class="chip" onclick="быстрыйЗапрос('Помоги с текстом')">Помоги с текстом</span>
+        <span class="chip" onclick="быстрыйЗапрос('/search последние новости AI')">🔍 Веб-поиск</span>
         <span class="chip" onclick="быстрыйЗапрос('/img красивый закат')">🎨 Картинка</span>
+        <span class="chip" onclick="быстрыйЗапрос('/викторина')">🎮 Викторина</span>
+        <span class="chip" onclick="быстрыйЗапрос('/дебаты AI заменит программистов')">🎭 Дебаты</span>
       </div>
     </div>`;
     const панель = document.getElementById('чат');
@@ -2099,18 +2230,58 @@
   function форматировать(т) {
     const parts = [];
     let s = экранировать(т);
-    // Extract code blocks first so \n inside them won't become <br>
-    s = s.replace(/```[\w]*\n?([\s\S]*?)```/g, (_, code) => {
+    // Extract code blocks
+    s = s.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
       const idx = parts.length;
-      parts.push(`<pre><code>${code.replace(/\n$/, '')}</code></pre>`);
+      const langLabel = lang || 'code';
+      const codeClean = code.replace(/\n$/, '');
+      parts.push(`<div class="code-block-wrap"><div class="code-block-header"><span class="code-lang">${langLabel}</span><button class="code-dl-btn" onclick="скачатьКод(this,'${langLabel}')">⬇ Скачать</button><button class="code-copy-btn" onclick="копироватьКод(this)">⊐ Копировать</button></div><pre><code>${codeClean}</code></pre></div>`);
       return `\x00${idx}\x00`;
     });
-    s = s
-      .replace(/`([^`]+)`/g, '<code style="background:var(--bg3);padding:2px 6px;border-radius:4px;border:1px solid var(--border)">$1</code>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\n/g, '<br>');
-    // Restore code blocks
+    // Inline code
+    s = s.replace(/`([^`]+)`/g, '<code style="background:var(--bg3);padding:2px 6px;border-radius:4px;border:1px solid var(--border)">$1</code>');
+    // Bold, italic, strikethrough
+    s = s.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    s = s.replace(/~~(.*?)~~/g, '<s>$1</s>');
+    // Headings
+    s = s.replace(/^### (.+)$/gm, '<strong style="font-size:15px;display:block;margin:6px 0 2px">$1</strong>');
+    s = s.replace(/^## (.+)$/gm, '<strong style="font-size:16px;display:block;margin:8px 0 3px">$1</strong>');
+    s = s.replace(/^# (.+)$/gm, '<strong style="font-size:17px;display:block;margin:10px 0 4px">$1</strong>');
+    // Unordered lists
+    s = s.replace(/^[•\-\*] (.+)$/gm, '<div style="display:flex;gap:6px;padding:1px 0"><span style="color:var(--accent)">•</span><span>$1</span></div>');
+    // Ordered lists
+    s = s.replace(/^(\d+)\. (.+)$/gm, '<div style="display:flex;gap:6px;padding:1px 0"><span style="color:var(--accent);font-weight:600;min-width:16px">$1.</span><span>$2</span></div>');
+    // Tables
+    s = s.replace(/((?:\|.+\|\n?)+)/g, (table) => {
+      const rows = table.trim().split('\n').filter(r => r.includes('|'));
+      if (rows.length < 2) return table;
+      let html = '<div style="overflow-x:auto;margin:6px 0"><table style="border-collapse:collapse;width:100%;font-size:12px">';
+      rows.forEach((row, i) => {
+        if (row.replace(/[\|\-\s:]/g, '') === '') return; // separator row
+        const cells = row.split('|').filter(c => c.trim() !== '');
+        const tag = i === 0 ? 'th' : 'td';
+        html += '<tr>' + cells.map(c => `<${tag} style="border:1px solid var(--border);padding:5px 8px;text-align:left">${c.trim()}</${tag}>`).join('') + '</tr>';
+      });
+      html += '</table></div>';
+      return html;
+    });
+    s = s.replace(/\n/g, '<br>');
     return s.replace(/\x00(\d+)\x00/g, (_, i) => parts[+i]);
+  }
+  function копироватьКод(btn) {
+    const code = btn.closest('.code-block-wrap').querySelector('code').innerText;
+    navigator.clipboard.writeText(code).then(() => { btn.textContent = '✓ Скопировано'; setTimeout(() => btn.textContent = '⊐ Копировать', 2000); });
+  }
+  function скачатьКод(btn, lang) {
+    const code = btn.closest('.code-block-wrap').querySelector('code').innerText;
+    const ext = {python:'py',javascript:'js',js:'js',py:'py',html:'html',css:'css',java:'java',cpp:'cpp',c:'c',go:'go',rust:'rs',ts:'ts',typescript:'ts',sql:'sql',bash:'sh',sh:'sh',json:'json',xml:'xml',yaml:'yml'}[lang.toLowerCase()] || 'txt';
+    const blob = new Blob([code], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `code.${ext}`;
+    a.click();
+    URL.revokeObjectURL(a.href);
   }
 
   function добавитьСообщение(текст, тип, немедленно, время) {
@@ -2194,42 +2365,14 @@
     msgs.scrollTop = msgs.scrollHeight;
 
     const модель = getModel();
-    const isGPT = модель === 'gpt';
 
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), isGPT ? 60000 : 90000);
+      const timer = setTimeout(() => controller.abort(), 90000);
       const apiPayload = JSON.stringify({ сообщения: история.map(m => ({ role: m.role, content: m.content })), модель });
 
-      if (isGPT) {
-        // GPT: non-stream (Pollinations streaming unreliable)
-        const resp = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: apiPayload,
-          signal: controller.signal
-        });
-        clearTimeout(timer);
-        типингDiv.remove();
-        if (!resp.ok) {
-          история.pop();
-          показатьОшибкуВЧате('Ошибка сервера: ' + resp.status);
-        } else {
-          const данные = await resp.json();
-          const ответ = данные.ответ;
-          if (!ответ) {
-            история.pop();
-            показатьОшибкуВЧате('Пустой ответ от сервера');
-          } else {
-            история.push({ role: 'assistant', content: ответ, time: текущееВремя() });
-            трекнуть(ответ.slice(0, 500), 'assistant');
-            const msgEl = добавитьСообщение(ответ, 'bot');
-            добавитьПодсказки(msgEl.querySelector('.bubble'));
-            сохранитьЧат();
-          }
-        }
-      } else {
-        // Mistral: streaming
+      {
+        // Streaming for ALL models (GPT has server-side fallback)
         const resp = await fetch('/api/chat/stream', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -2591,6 +2734,372 @@
       return;
     }
     return _оригинальнаяОтправка();
+  };
+
+  // ── CHAT SEARCH ──
+  function открытьПоиск() {
+    document.getElementById('chat-search-bar').classList.add('show');
+    document.getElementById('chat-search-input').focus();
+  }
+  function закрытьПоиск() {
+    document.getElementById('chat-search-bar').classList.remove('show');
+    document.getElementById('chat-search-input').value = '';
+    document.querySelectorAll('.search-highlight').forEach(el => {
+      el.replaceWith(document.createTextNode(el.textContent));
+    });
+    document.getElementById('search-count').textContent = '';
+  }
+  function поискВЧате(query) {
+    // Remove old highlights
+    document.querySelectorAll('.search-highlight').forEach(el => {
+      el.replaceWith(document.createTextNode(el.textContent));
+    });
+    if (!query || query.length < 2) { document.getElementById('search-count').textContent = ''; return; }
+    const bubbles = document.querySelectorAll('#сообщения .bubble');
+    let count = 0;
+    const re = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
+    bubbles.forEach(b => {
+      const walker = document.createTreeWalker(b, NodeFilter.SHOW_TEXT);
+      const nodes = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode);
+      nodes.forEach(node => {
+        if (node.parentElement.closest('.bubble-footer,.follow-ups')) return;
+        if (re.test(node.textContent)) {
+          const span = document.createElement('span');
+          span.innerHTML = node.textContent.replace(re, '<mark class="search-highlight">$1</mark>');
+          node.replaceWith(span);
+          count += (node.textContent.match(re) || []).length;
+        }
+      });
+    });
+    document.getElementById('search-count').textContent = count > 0 ? `${count} найдено` : 'не найдено';
+    // Scroll to first highlight
+    const first = document.querySelector('.search-highlight');
+    if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  // Ctrl+F to open search
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+      e.preventDefault();
+      открытьПоиск();
+    }
+    if (e.key === 'Escape') закрытьПоиск();
+  });
+
+  // ── CONTEXT MENU ──
+  var _ctxTarget = null;
+  document.getElementById('сообщения')?.addEventListener('contextmenu', function(e) {
+    const msg = e.target.closest('.msg');
+    if (!msg) return;
+    e.preventDefault();
+    _ctxTarget = msg;
+    const menu = document.getElementById('ctx-menu');
+    menu.style.left = Math.min(e.clientX, window.innerWidth - 180) + 'px';
+    menu.style.top = Math.min(e.clientY, window.innerHeight - 200) + 'px';
+    menu.classList.add('show');
+  });
+  // Long press for mobile
+  let _longPressTimer;
+  document.getElementById('сообщения')?.addEventListener('touchstart', function(e) {
+    const msg = e.target.closest('.msg');
+    if (!msg) return;
+    _longPressTimer = setTimeout(() => {
+      _ctxTarget = msg;
+      const touch = e.touches[0];
+      const menu = document.getElementById('ctx-menu');
+      menu.style.left = Math.min(touch.clientX, window.innerWidth - 180) + 'px';
+      menu.style.top = Math.min(touch.clientY, window.innerHeight - 200) + 'px';
+      menu.classList.add('show');
+    }, 500);
+  });
+  document.addEventListener('touchend', () => clearTimeout(_longPressTimer));
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.ctx-menu')) document.getElementById('ctx-menu').classList.remove('show');
+  });
+  function ctxКопировать() {
+    if (!_ctxTarget) return;
+    const b = _ctxTarget.querySelector('.bubble');
+    const cl = b.cloneNode(true);
+    cl.querySelector('.bubble-footer')?.remove();
+    cl.querySelector('.follow-ups')?.remove();
+    navigator.clipboard.writeText(cl.innerText.trim()).then(() => показатьТост('✓ Скопировано'));
+    document.getElementById('ctx-menu').classList.remove('show');
+  }
+  function ctxОзвучить() {
+    if (!_ctxTarget) return;
+    const btn = _ctxTarget.querySelector('.tts-btn');
+    if (btn) btn.click();
+    document.getElementById('ctx-menu').classList.remove('show');
+  }
+  function ctxПоиск() {
+    if (!_ctxTarget) return;
+    const b = _ctxTarget.querySelector('.bubble');
+    const cl = b.cloneNode(true);
+    cl.querySelector('.bubble-footer')?.remove();
+    const txt = cl.innerText.trim().slice(0, 100);
+    window.open('https://www.google.com/search?q=' + encodeURIComponent(txt), '_blank');
+    document.getElementById('ctx-menu').classList.remove('show');
+  }
+  function ctxУдалить() {
+    if (!_ctxTarget) return;
+    _ctxTarget.remove();
+    document.getElementById('ctx-menu').classList.remove('show');
+    показатьТост('Сообщение удалено');
+  }
+
+  // ── CUSTOM PROMPT ──
+  function открытьПромптМодал(e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    document.getElementById('persona-dd').classList.remove('open');
+    const saved = localStorage.getItem('customPrompt') || '';
+    document.getElementById('custom-prompt-input').value = saved;
+    document.getElementById('prompt-modal').classList.add('show');
+  }
+  function закрытьПромптМодал() {
+    document.getElementById('prompt-modal').classList.remove('show');
+  }
+  function сохранитьПромпт() {
+    const text = document.getElementById('custom-prompt-input').value.trim();
+    if (!text) { показатьТост('Введите промпт'); return; }
+    localStorage.setItem('customPrompt', text);
+    // Add/update custom persona
+    if (ПЕРСОНЫ.length > 5) ПЕРСОНЫ.pop();
+    ПЕРСОНЫ.push({ icon: '✦', name: 'Свой', prompt: text });
+    _currentPersona = ПЕРСОНЫ.length - 1;
+    const iconEl = document.getElementById('persona-icon');
+    iconEl.innerHTML = '✦';
+    iconEl.className = 'persona-emoji';
+    document.getElementById('persona-label').textContent = 'Свой';
+    if (история.length > 0 && история[0].role === 'system') история[0].content = text;
+    закрытьПромптМодал();
+    показатьТост('Промпт применён');
+  }
+
+  // ── WEB SEARCH ──
+  async function вебПоиск(запрос) {
+    показатьТост('🔍 Ищу в интернете...');
+    try {
+      const resp = await fetch('/api/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: запрос })
+      });
+      const data = await resp.json();
+      if (data.results && data.results.length > 0) {
+        let context = 'Результаты поиска по запросу "' + запрос + '":\n\n';
+        data.results.forEach((r, i) => {
+          context += `${i+1}. ${r.title}\n${r.snippet}\nURL: ${r.url}\n\n`;
+        });
+        context += '\nИспользуя эти результаты, ответь на вопрос пользователя. Указывай источники.';
+        история.push({ role: 'system', content: context });
+        return true;
+      }
+    } catch {}
+    показатьТост('Поиск не дал результатов');
+    return false;
+  }
+
+  // ── DEBATE MODE ──
+  var _debateActive = false;
+  async function начатьДебаты(тема) {
+    _debateActive = true;
+    const banner = document.createElement('div');
+    banner.className = 'special-mode-banner';
+    banner.id = 'debate-banner';
+    banner.innerHTML = `🎭 Режим дебатов: "${тема}" <button onclick="остановитьДебаты()">Стоп</button>`;
+    document.getElementById('сообщения').prepend(banner);
+    добавитьСообщение('🎭 Дебаты на тему: ' + тема, 'user');
+    история.push({ role: 'user', content: тема, time: текущееВремя() });
+
+    for (let раунд = 0; раунд < 3 && _debateActive; раунд++) {
+      // Side A (За)
+      const promptA = `Ты участник дебатов. Тема: "${тема}". Ты АРГУМЕНТИРУЕШЬ ЗА. Раунд ${раунд+1}/3. Приведи 2 аргумента. Начни с "🟢 ЗА:"`;
+      const respA = await _fetchDebate(promptA);
+      if (!_debateActive || !respA) break;
+      добавитьСообщение(respA, 'bot');
+      if (раунд >= 2) break;
+      await new Promise(r => setTimeout(r, 1000));
+      // Side B (Против)
+      const promptB = `Ты участник дебатов. Тема: "${тема}". Ты АРГУМЕНТИРУЕШЬ ПРОТИВ. Раунд ${раунд+1}/3. Оппонент сказал: "${respA.slice(0,300)}". Приведи 2 контраргумента. Начни с "🔴 ПРОТИВ:"`;
+      const respB = await _fetchDebate(promptB);
+      if (!_debateActive || !respB) break;
+      добавитьСообщение(respB, 'bot');
+      await new Promise(r => setTimeout(r, 1000));
+    }
+    if (_debateActive) {
+      добавитьСообщение('🏁 Дебаты завершены! Кто убедительнее?', 'bot');
+      _debateActive = false;
+    }
+  }
+  async function _fetchDebate(prompt) {
+    try {
+      const resp = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ сообщения: [{ role: 'user', content: prompt }], модель: getModel() })
+      });
+      const d = await resp.json();
+      return d.ответ || null;
+    } catch { return null; }
+  }
+  function остановитьДебаты() {
+    _debateActive = false;
+    document.getElementById('debate-banner')?.remove();
+    показатьТост('Дебаты остановлены');
+  }
+
+  // ── MINI GAMES ──
+  var _gameActive = false;
+  var _gameAnswer = '';
+  async function начатьИгру(тип) {
+    _gameActive = true;
+    _gameAnswer = '';
+    const banner = document.createElement('div');
+    banner.className = 'special-mode-banner';
+    banner.id = 'game-banner';
+    banner.innerHTML = `🎮 ${тип === 'quiz' ? 'Викторина' : 'Угадай слово'} <button onclick="остановитьИгру()">Стоп</button>`;
+    document.getElementById('сообщения').prepend(banner);
+    const prompt = тип === 'quiz'
+      ? 'Проведи викторину. Задай 1 интересный вопрос с 4 вариантами ответа (А, Б, В, Г). Укажи правильный ответ в конце после "Ответ:". Тематика: наука, история или культура.'
+      : 'Загадай слово и дай 3 подсказки. Не говори ответ. Формат: "Подсказки: 1)... 2)... 3)..." и в конце "Ответ: [слово]" (слово скрой между тегами ||)';
+    try {
+      const resp = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ сообщения: [{ role: 'user', content: prompt }], модель: getModel() })
+      });
+      const d = await resp.json();
+      if (d.ответ) {
+        const match = d.ответ.match(/(?:Ответ|Answer)[:\s]*\|?\|?([^|]+)\|?\|?/i);
+        if (match) _gameAnswer = match[1].trim().toLowerCase();
+        добавитьСообщение(d.ответ.replace(/(?:Ответ|Answer)[:\s]*.*$/i, ''), 'bot');
+      }
+    } catch {}
+  }
+  function остановитьИгру() {
+    _gameActive = false;
+    document.getElementById('game-banner')?.remove();
+    if (_gameAnswer) показатьТост('Ответ: ' + _gameAnswer, 4000);
+    _gameAnswer = '';
+  }
+
+  // ── USER ANALYTICS ──
+  function показатьАналитику() {
+    const чаты = JSON.parse(localStorage.getItem('чаты') || '[]');
+    let totalMsgs = 0, userMsgs = 0, botMsgs = 0;
+    const modelCount = {};
+    чаты.forEach(c => {
+      (c.сообщения || []).forEach(m => {
+        if (m.role === 'system') return;
+        totalMsgs++;
+        if (m.role === 'user') userMsgs++;
+        else botMsgs++;
+      });
+    });
+    const html = `
+      <div style="padding:12px">
+        <h3 style="font-size:15px;margin-bottom:12px">📊 Ваша статистика</h3>
+        <div class="analytics-grid">
+          <div class="analytics-card"><div class="analytics-num">${чаты.length}</div><div class="analytics-label">Чатов</div></div>
+          <div class="analytics-card"><div class="analytics-num">${totalMsgs}</div><div class="analytics-label">Сообщений</div></div>
+          <div class="analytics-card"><div class="analytics-num">${userMsgs}</div><div class="analytics-label">Ваших</div></div>
+          <div class="analytics-card"><div class="analytics-num">${botMsgs}</div><div class="analytics-label">AI ответов</div></div>
+        </div>
+      </div>`;
+    добавитьСообщение(html, 'bot');
+  }
+
+  // ── MULTILINGUAL ──
+  const _i18n = {
+    ru: { send: 'Напиши сообщение...', chat: 'Чат', images: 'Картинки', newChat: 'Новый чат', copy: 'Копировать', tts: 'Озвучить', search: 'Поиск по чатам...', export: 'Экспорт' },
+    en: { send: 'Type a message...', chat: 'Chat', images: 'Images', newChat: 'New chat', copy: 'Copy', tts: 'Listen', search: 'Search chats...', export: 'Export' }
+  };
+  var _lang = localStorage.getItem('appLang') || 'ru';
+  function сменитьЯзык() {
+    _lang = _lang === 'ru' ? 'en' : 'ru';
+    localStorage.setItem('appLang', _lang);
+    const t = _i18n[_lang];
+    document.getElementById('ввод').placeholder = t.send;
+    document.querySelectorAll('.tab')[0].innerHTML = document.querySelectorAll('.tab')[0].querySelector('svg').outerHTML + ' ' + t.chat;
+    document.querySelectorAll('.tab')[1].innerHTML = document.querySelectorAll('.tab')[1].querySelector('svg').outerHTML + ' ' + t.images;
+    показатьТост(_lang === 'ru' ? 'Язык: Русский' : 'Language: English');
+  }
+
+  // ── COMMAND ROUTER (special commands in chat) ──
+  const _origSend = отправить;
+  отправить = async function() {
+    const поле = document.getElementById('ввод');
+    const текст = поле.value.trim();
+    // Web search command
+    if (текст.startsWith('/search ') || текст.startsWith('/поиск ')) {
+      const q = текст.replace(/^\/(search|поиск)\s+/, '').trim();
+      if (!q) return;
+      поле.value = ''; поле.style.height = 'auto'; обновитьСчетчик(0);
+      добавитьСообщение('🔍 ' + q, 'user', false);
+      история.push({ role: 'user', content: q, time: текущееВремя() });
+      const ok = await вебПоиск(q);
+      if (ok) {
+        добавитьПечать();
+        const кнопка = document.getElementById('кнопка');
+        кнопка.disabled = true; кнопка.classList.add('loading');
+        try {
+          const resp = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ сообщения: история.map(m => ({ role: m.role, content: m.content })), модель: getModel() })
+          });
+          document.getElementById('печать')?.remove();
+          const d = await resp.json();
+          if (d.ответ) {
+            история.push({ role: 'assistant', content: d.ответ, time: текущееВремя() });
+            добавитьСообщение(d.ответ, 'bot');
+            сохранитьЧат();
+          }
+        } catch { показатьОшибкуВЧате('Ошибка поиска'); }
+        кнопка.disabled = false; кнопка.classList.remove('loading');
+        // Remove search context from history
+        история = история.filter(m => !(m.role === 'system' && m.content.startsWith('Результаты поиска')));
+      }
+      return;
+    }
+    // Debate command
+    if (текст.startsWith('/debate ') || текст.startsWith('/дебаты ')) {
+      const тема = текст.replace(/^\/(debate|дебаты)\s+/, '').trim();
+      if (!тема) return;
+      поле.value = ''; поле.style.height = 'auto'; обновитьСчетчик(0);
+      начатьДебаты(тема);
+      return;
+    }
+    // Game commands
+    if (текст === '/quiz' || текст === '/викторина') {
+      поле.value = ''; поле.style.height = 'auto'; обновитьСчетчик(0);
+      начатьИгру('quiz');
+      return;
+    }
+    if (текст === '/game' || текст === '/игра') {
+      поле.value = ''; поле.style.height = 'auto'; обновитьСчетчик(0);
+      начатьИгру('word');
+      return;
+    }
+    // Stats command
+    if (текст === '/stats' || текст === '/стат') {
+      поле.value = ''; поле.style.height = 'auto'; обновитьСчетчик(0);
+      показатьАналитику();
+      return;
+    }
+    // Language toggle
+    if (текст === '/lang') {
+      поле.value = ''; поле.style.height = 'auto'; обновитьСчетчик(0);
+      сменитьЯзык();
+      return;
+    }
+    // Search in chat
+    if (текст === '/find' || текст === '/найти') {
+      поле.value = ''; поле.style.height = 'auto'; обновитьСчетчик(0);
+      открытьПоиск();
+      return;
+    }
+    return _origSend();
   };
 
   // ── OFFLINE INDICATOR ──
