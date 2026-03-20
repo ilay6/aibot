@@ -203,7 +203,7 @@ async def картинка(данные: ЗапросКартинки):
         pass
 
     prompt_encoded = quote(eng_prompt)
-    url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?model=flux&width=768&height=768&nologo=true&enhance=true&seed={int(time.time())}"
+    url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=768&height=768&nologo=true&enhance=true&seed={int(time.time())}"
 
     # Try up to 3 times with backoff
     for attempt in range(3):
