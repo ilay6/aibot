@@ -1709,10 +1709,10 @@
         <svg width="48" height="48" viewBox="0 0 24 24" fill="var(--accent)" opacity="0.4"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
         <p style="color:var(--text2);margin-top:12px;font-size:13px">Введите URL и нажмите Enter</p>
         <div class="browser-quick-links">
-          <button class="browser-quick-btn" onclick="document.getElementById('browser-url').value='https://www.google.com';браузерПерейти()">Google</button>
+          <button class="browser-quick-btn" onclick="document.getElementById('browser-url').value='https://lite.duckduckgo.com/lite/';браузерПерейти()">DuckDuckGo</button>
           <button class="browser-quick-btn" onclick="document.getElementById('browser-url').value='https://ru.wikipedia.org';браузерПерейти()">Wikipedia</button>
-          <button class="browser-quick-btn" onclick="document.getElementById('browser-url').value='https://github.com';браузерПерейти()">GitHub</button>
           <button class="browser-quick-btn" onclick="document.getElementById('browser-url').value='https://news.ycombinator.com';браузерПерейти()">HackerNews</button>
+          <button class="browser-quick-btn" onclick="document.getElementById('browser-url').value='https://reddit.com';браузерПерейти()">Reddit</button>
         </div>
       </div>
     </div>
@@ -3215,9 +3215,9 @@
   function браузерПерейти() {
     let url = document.getElementById('browser-url').value.trim();
     if (!url) return;
-    // If it looks like a search query (no dots, no protocol), google it
+    // If it looks like a search query (no dots, no protocol), use DuckDuckGo lite
     if (!/^https?:\/\//i.test(url) && !/\.\w{2,}/.test(url)) {
-      url = 'https://www.google.com/search?q=' + encodeURIComponent(url);
+      url = 'https://lite.duckduckgo.com/lite/?q=' + encodeURIComponent(url);
     } else if (!/^https?:\/\//i.test(url)) {
       url = 'https://' + url;
     }
@@ -3257,7 +3257,7 @@
     }
   }
   function браузерДомой() {
-    document.getElementById('browser-url').value = 'https://www.google.com';
+    document.getElementById('browser-url').value = 'https://lite.duckduckgo.com/lite/';
     браузерПерейти();
   }
 

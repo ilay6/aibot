@@ -387,19 +387,21 @@ async def proxy(url: str = ""):
             parsed = urlparse(str(r.url))
             base_url = f"{parsed.scheme}://{parsed.netloc}"
             html = r.text
-            base_tag = f'<base href="{base_url}/">'
-            # Inject base tag after <head> (not <head which matches <header>)
+            base_tag = f'<base href="{base_url}/" target="_self">'
+            # Inject base tag after <head> (not <header>)
             head_match = _re.search(r'<head(\s[^>]*)?>',  html, _re.IGNORECASE)
             if head_match:
                 pos = head_match.end()
                 html = html[:pos] + base_tag + html[pos:]
             else:
                 html = base_tag + html
-            # Rewrite internal links to go through proxy
+            # Strip SRI integrity attrs and CSP meta tags that block proxied resources
             html = html.replace('integrity=', 'data-integrity=')
+            html = _re.sub(r'<meta[^>]*http-equiv=["\']Content-Security-Policy["\'][^>]*>', '', html, flags=_re.IGNORECASE)
             return Response(content=html, media_type="text/html; charset=utf-8",
                 headers={"Cache-Control": "no-cache",
-                         "Access-Control-Allow-Origin": "*"})
+                         "Access-Control-Allow-Origin": "*",
+                         "Content-Security-Policy": ""})
         return Response(content=r.content, media_type=ct,
             headers={"Cache-Control": "public, max-age=3600",
                      "Access-Control-Allow-Origin": "*"})
