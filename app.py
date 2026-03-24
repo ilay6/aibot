@@ -114,6 +114,10 @@ def init_db():
         referred_tg_id INTEGER UNIQUE,
         created_at TEXT
     )""")
+    con.execute("""CREATE TABLE IF NOT EXISTS whitelist (
+        username TEXT PRIMARY KEY,
+        added_at TEXT
+    )""")
     con.execute("CREATE INDEX IF NOT EXISTS idx_msg_tg ON messages(tg_id)")
     con.execute("CREATE INDEX IF NOT EXISTS idx_msg_id_desc ON messages(id DESC)")
     # Migrations for existing databases
@@ -133,6 +137,20 @@ def init_db():
 init_db()
 
 # ── RATE LIMITING ──
+def _is_whitelisted(tg_id: int) -> bool:
+    """Check if user's username is in the whitelist."""
+    con = sqlite3.connect(DB)
+    row = con.execute("SELECT username FROM users WHERE tg_id=?", (tg_id,)).fetchone()
+    con.close()
+    if not row or not row[0]:
+        return False
+    username = row[0].lstrip("@").lower()
+    con = sqlite3.connect(DB)
+    wl = con.execute("SELECT 1 FROM whitelist WHERE LOWER(username)=?", (username,)).fetchone()
+    con.close()
+    return wl is not None
+
+
 def _is_premium(tg_id: int) -> bool:
     con = sqlite3.connect(DB)
     row = con.execute("SELECT premium_until FROM users WHERE tg_id=?", (tg_id,)).fetchone()
@@ -151,10 +169,12 @@ def _get_ref_count(tg_id: int) -> int:
     return row[0] if row else 0
 
 def check_rate_limit(tg_id: int) -> tuple[bool, int]:
-    """Returns (allowed, remaining). Premium users always allowed (remaining=9999)."""
+    """Returns (allowed, remaining). Premium and whitelisted users always allowed (remaining=9999)."""
     if not tg_id:
         return True, 9999
     if _is_premium(tg_id):
+        return True, 9999
+    if _is_whitelisted(tg_id):
         return True, 9999
     ref_count = _get_ref_count(tg_id)
     limit = FREE_MESSAGES + ref_count * 3  # +3 per referral
@@ -573,14 +593,16 @@ async def user_status(data: InvoiceRequest):
     if not ADMIN_SECRET or data.secret != ADMIN_SECRET:
         return {"error": "forbidden"}
     is_prem = _is_premium(data.tg_id)
+    is_wl = _is_whitelisted(data.tg_id)
     ref_count = _get_ref_count(data.tg_id)
     limit = FREE_MESSAGES + ref_count * 3
     con = sqlite3.connect(DB)
     row = con.execute("SELECT count FROM rate_limits WHERE tg_id=?", (data.tg_id,)).fetchone()
     con.close()
     used = row[0] if row else 0
-    remaining = 9999 if is_prem else max(0, limit - used)
-    return {"is_premium": is_prem, "used": used, "limit": limit, "remaining": remaining, "referrals": ref_count}
+    unlimited = is_prem or is_wl
+    remaining = 9999 if unlimited else max(0, limit - used)
+    return {"is_premium": is_prem or is_wl, "used": used, "limit": limit, "remaining": remaining, "referrals": ref_count}
 
 
 @app.post("/api/premium/invoice")
@@ -717,6 +739,51 @@ async def user_stats(tg_id: int, x_admin_secret: str = Header(None)):
             pass
     limit = RATE_LIMIT_FREE + ref_count * 5
     return {"messages": msg_count, "referrals": ref_count, "is_premium": is_prem, "hourly_limit": limit}
+
+
+# ── WHITELIST ──
+class WhitelistData(BaseModel):
+    username: str
+    secret: str = ""
+
+
+@app.get("/api/admin/whitelist")
+async def get_whitelist(x_admin_secret: str = Header(None)):
+    if not ADMIN_SECRET or x_admin_secret != ADMIN_SECRET:
+        return {"error": "forbidden"}
+    con = sqlite3.connect(DB)
+    rows = con.execute("SELECT username, added_at FROM whitelist ORDER BY added_at DESC").fetchall()
+    con.close()
+    return {"whitelist": [{"username": r[0], "added_at": r[1]} for r in rows]}
+
+
+@app.post("/api/admin/whitelist/add")
+async def add_whitelist(data: WhitelistData):
+    if not ADMIN_SECRET or data.secret != ADMIN_SECRET:
+        return {"error": "forbidden"}
+    username = data.username.strip().lstrip("@").lower()
+    if not username:
+        return {"error": "empty username"}
+    con = sqlite3.connect(DB)
+    con.execute(
+        "INSERT OR IGNORE INTO whitelist (username, added_at) VALUES (?,?)",
+        (username, datetime.now().strftime("%Y-%m-%d %H:%M"))
+    )
+    con.commit()
+    con.close()
+    return {"ok": True, "username": username}
+
+
+@app.post("/api/admin/whitelist/remove")
+async def remove_whitelist(data: WhitelistData):
+    if not ADMIN_SECRET or data.secret != ADMIN_SECRET:
+        return {"error": "forbidden"}
+    username = data.username.strip().lstrip("@").lower()
+    con = sqlite3.connect(DB)
+    con.execute("DELETE FROM whitelist WHERE LOWER(username)=?", (username,))
+    con.commit()
+    con.close()
+    return {"ok": True}
 
 
 # ── STATIC ──

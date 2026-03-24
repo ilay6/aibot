@@ -937,6 +937,34 @@
   .admin-empty { text-align: center; color: var(--text2); font-size: 13px; padding: 20px; }
   .admin-error { text-align: center; color: #ff6b6b; font-size: 13px; padding: 20px; }
   #admin-users, #admin-messages { display: flex; flex-direction: column; gap: 8px; }
+  .whitelist-input-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .whitelist-input {
+    flex: 1; background: var(--bg3); border: 1px solid var(--border);
+    color: var(--text); border-radius: 12px; padding: 8px 12px; font-size: 13px;
+    outline: none; transition: border-color 0.2s;
+  }
+  .whitelist-input:focus { border-color: var(--accent); }
+  .whitelist-add-btn {
+    background: var(--accent); color: var(--send-btn-color);
+    border: none; border-radius: 12px; padding: 8px 14px;
+    font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;
+    transition: opacity 0.2s;
+  }
+  .whitelist-add-btn:active { opacity: 0.7; }
+  .whitelist-row {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 14px; padding: 9px 12px; display: flex; align-items: center; justify-content: space-between;
+    animation: fadeInUp 0.2s ease forwards; opacity: 0;
+  }
+  .whitelist-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .whitelist-date { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .whitelist-remove {
+    background: none; border: 1px solid var(--border); color: var(--text2);
+    border-radius: 8px; padding: 3px 9px; font-size: 11px; cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .whitelist-remove:hover { border-color: #ff6b6b; color: #ff6b6b; }
+  #admin-whitelist { display: flex; flex-direction: column; gap: 6px; }
 
   /* ── SCROLLBAR ── */
   ::-webkit-scrollbar { width: 5px; }
@@ -2027,6 +2055,14 @@
     <div>
       <div class="admin-section-title">Пользователи</div>
       <div id="admin-users"><div class="admin-empty">Нажмите «Обновить данные»</div></div>
+    </div>
+    <div>
+      <div class="admin-section-title">Белый список (бесплатный доступ)</div>
+      <div class="whitelist-input-row">
+        <input class="whitelist-input" id="whitelist-input" placeholder="@username или username" maxlength="64" onkeydown="if(event.key==='Enter')добавитьВВайтлист()">
+        <button class="whitelist-add-btn" onclick="добавитьВВайтлист()">+ Добавить</button>
+      </div>
+      <div id="admin-whitelist"><div class="admin-empty">Загрузка...</div></div>
     </div>
     <div>
       <div class="admin-section-title">Последние сообщения</div>
@@ -3246,11 +3282,60 @@
     блок.scrollTop = блок.scrollHeight;
   }
 
+  async function загрузитьВайтлист() {
+    const el = document.getElementById('admin-whitelist');
+    try {
+      const resp = await fetch('/api/admin/whitelist', { headers: { 'x-admin-secret': ADMIN_SECRET } });
+      const d = await resp.json();
+      if (d.error) { el.innerHTML = '<div class="admin-empty">Ошибка</div>'; return; }
+      el.innerHTML = d.whitelist && d.whitelist.length
+        ? d.whitelist.map((w, i) => `
+          <div class="whitelist-row" style="animation-delay:${i*0.03}s">
+            <div>
+              <div class="whitelist-name">@${экранировать(w.username)}</div>
+              <div class="whitelist-date">${w.added_at || ''}</div>
+            </div>
+            <button class="whitelist-remove" onclick="удалитьИзВайтлиста('${экранировать(w.username)}')">Удалить</button>
+          </div>`).join('')
+        : '<div class="admin-empty">Список пуст</div>';
+    } catch(e) {
+      el.innerHTML = '<div class="admin-empty">Ошибка загрузки</div>';
+    }
+  }
+
+  async function добавитьВВайтлист() {
+    const input = document.getElementById('whitelist-input');
+    const username = (input.value || '').trim().replace(/^@/, '');
+    if (!username) return;
+    try {
+      const resp = await fetch('/api/admin/whitelist/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, secret: ADMIN_SECRET })
+      });
+      const d = await resp.json();
+      if (d.ok) { input.value = ''; загрузитьВайтлист(); }
+      else показатьТост(d.error || 'Ошибка', 3000);
+    } catch(e) { показатьТост('Ошибка', 3000); }
+  }
+
+  async function удалитьИзВайтлиста(username) {
+    try {
+      await fetch('/api/admin/whitelist/remove', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, secret: ADMIN_SECRET })
+      });
+      загрузитьВайтлист();
+    } catch(e) {}
+  }
+
   async function загрузитьАдмин() {
     const errEl = document.getElementById('admin-error');
     errEl.style.display = 'none';
     document.getElementById('admin-users').innerHTML    = '<div class="admin-empty">Загрузка...</div>';
     document.getElementById('admin-messages').innerHTML = '<div class="admin-empty">Загрузка...</div>';
+    загрузитьВайтлист();
     try {
       const resp = await fetch('/api/admin/stats', {
         headers: { 'x-admin-secret': ADMIN_SECRET }
