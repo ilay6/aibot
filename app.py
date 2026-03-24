@@ -21,7 +21,7 @@ import httpx
 
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
 MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions"
-ADMIN_SECRET = os.getenv("ADMIN_SECRET", "")
+ADMIN_SECRET = os.getenv("ADMIN_SECRET", "aibot_secret")
 WEBAPP_URL = os.getenv("WEBAPP_URL", "")
 BOT_USERNAME = os.getenv("BOT_USERNAME", "AIgptchatII_bot")
 PREMIUM_STARS = int(os.getenv("PREMIUM_STARS", "100"))
