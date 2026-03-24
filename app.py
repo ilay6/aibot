@@ -215,6 +215,7 @@ app = FastAPI(lifespan=lifespan)
 
 ALLOWED_MODELS = {"mistral-large-latest", "mistral-small-latest", "codestral-latest", "gpt", "pixtral-large-latest"}
 POLLINATIONS_URL = "https://text.pollinations.ai/openai/chat/completions"
+POLLINATIONS_URL2 = "https://api.pollinations.ai/v1/chat/completions"
 
 
 class ЗапросЧат(BaseModel):
@@ -344,19 +345,21 @@ async def чат_stream(данные: ЗапросЧат):
                     return
             except Exception:
                 await asyncio.sleep(2)
-        # GPT fallback non-stream
+        # GPT fallback: try second Pollinations endpoint non-stream
         if модель == "gpt":
-            try:
-                fallback_payload = {"model": model_name, "messages": msgs}
-                r = await http.post(url, headers=headers, json=fallback_payload)
-                if r.status_code == 200:
-                    text = r.json()["choices"][0]["message"]["content"]
-                    yield f"data: {json.dumps({'d': text})}\n\n"
-                    yield "data: [DONE]\n\n"
-                    return
-            except Exception:
-                pass
-        yield f"data: {json.dumps({'d': 'Слишком много запросов, подождите немного.'})}\n\n"
+            for fallback_url in [POLLINATIONS_URL, POLLINATIONS_URL2]:
+                try:
+                    fallback_payload = {"model": model_name, "messages": msgs}
+                    r = await http.post(fallback_url, headers=headers, json=fallback_payload,
+                                       timeout=httpx.Timeout(30, connect=8))
+                    if r.status_code == 200:
+                        text = r.json()["choices"][0]["message"]["content"]
+                        yield f"data: {json.dumps({'d': text})}\n\n"
+                        yield "data: [DONE]\n\n"
+                        return
+                except Exception:
+                    pass
+        yield f"data: {json.dumps({'d': 'GPT временно недоступен. Попробуйте Mistral Small — он работает стабильнее.'})}\n\n"
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(generate(), media_type="text/event-stream",
