@@ -458,8 +458,9 @@
   /* ── CHAT EMPTY STATE (ChatGPT-style centered) ── */
   #чат { position: relative; }
   #чат.empty {
-    justify-content: center;
+    justify-content: flex-end;
     align-items: center;
+    overflow-y: auto;
   }
   #чат.empty .messages {
     flex: 0 0 auto;
@@ -1994,7 +1995,7 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tg_id: tgUser.id, secret: ADMIN_SECRET })
     }).then(r => r.json()).then(d => {
-      if (d.memory && historia[0]?.role === 'system') {
+      if (d.memory && история[0]?.role === 'system') {
         история[0].content = ПЕРСОНЫ[_currentPersona].prompt + '\n\nИнформация о пользователе: ' + d.memory;
         localStorage.setItem('userMemory', d.memory);
       }

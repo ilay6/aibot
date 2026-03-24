@@ -347,7 +347,7 @@ async def чат_stream(данные: ЗапросЧат):
         # GPT fallback non-stream
         if модель == "gpt":
             try:
-                fallback_payload = {"model": model_name, "messages": данные.сообщения}
+                fallback_payload = {"model": model_name, "messages": msgs}
                 r = await http.post(url, headers=headers, json=fallback_payload)
                 if r.status_code == 200:
                     text = r.json()["choices"][0]["message"]["content"]
