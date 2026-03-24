@@ -1715,7 +1715,7 @@
           <span class="cmd-card-title">Статистика</span>
           <span class="cmd-card-desc">Ваши чаты и сообщения</span>
         </div>
-        <div class="cmd-card cmd-card-premium" id="premium-card" onclick="купитьПремиум()" style="display:none">
+        <div class="cmd-card cmd-card-premium" id="premium-card" onclick="купитьПремиум()">
           <span class="cmd-card-icon" style="color:var(--accent)">⭐</span>
           <span class="cmd-card-title">Premium</span>
           <span class="cmd-card-desc">Безлимитный AI на 30 дней</span>
@@ -2073,34 +2073,6 @@
   восстановитьИзМассива(JSON.parse(localStorage.getItem('чаты') || '[]'));
   отрисоватьИсторию();
 
-  // Потом подтягиваем с сервера (если есть tg-аккаунт)
-  if (tgUser) {
-    fetch('/api/chats/load', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tg_id: tgUser.id, secret: ADMIN_SECRET })
-    }).then(r => r.json()).then(d => {
-      if (d.chats && d.chats.length > 0) {
-        const local = JSON.parse(localStorage.getItem('чаты') || '[]');
-        const localTime = local[0]?.время || 0;
-        const serverTime = d.chats[0]?.время || 0;
-        if (serverTime > localTime) {
-          // Сервер новее — используем его
-          localStorage.setItem('чаты', JSON.stringify(d.chats));
-          восстановитьИзМассива(d.chats);
-          отрисоватьИсторию();
-        } else if (localTime > serverTime) {
-          // Локал новее — пушим на сервер
-          синхрНаСервер(local);
-        }
-      } else {
-        // На сервере пусто — пушим локальные
-        const local = JSON.parse(localStorage.getItem('чаты') || '[]');
-        if (local.length > 0) синхрНаСервер(local);
-      }
-    }).catch(() => {});
-  }
-
   // ── LOAD USER STATUS (messages remaining, premium) ──
   загрузитьСтатусПользователя();
 
@@ -2163,7 +2135,7 @@
       el.textContent = `${remaining} сообщений`;
       el.className = 'msgs-left' + (remaining <= 3 ? ' danger' : remaining <= 7 ? ' warn' : '');
       el.style.display = '';
-      if (card) card.style.display = remaining <= 5 ? '' : 'none';
+      if (card) card.style.display = '';
     }
   }
 
@@ -2524,22 +2496,8 @@
     const trimmed = чаты.slice(0, 30);
     try { localStorage.setItem('чаты', JSON.stringify(trimmed)); }
     catch { чаты.splice(15); try { localStorage.setItem('чаты', JSON.stringify(чаты)); } catch {} }
-    // Синхронизация на сервер
-    синхрНаСервер(trimmed);
   }
 
-  let _syncTimer = null;
-  function синхрНаСервер(чаты) {
-    if (!tgUser) return;
-    clearTimeout(_syncTimer);
-    _syncTimer = setTimeout(() => {
-      fetch('/api/chats/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tg_id: tgUser.id, secret: ADMIN_SECRET, chats: чаты })
-      }).catch(() => {});
-    }, 1500);
-  }
 
   function getGroupLabel(ts) {
     const diff = Date.now() - ts;
@@ -2622,7 +2580,6 @@
     let чаты = JSON.parse(localStorage.getItem('чаты') || '[]');
     чаты = чаты.filter(c => c.id !== id);
     localStorage.setItem('чаты', JSON.stringify(чаты));
-    синхрНаСервер(чаты);
     if (id === текущийЧатId) новыйЧат();
     отрисоватьИсторию();
   }
