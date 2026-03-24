@@ -2140,6 +2140,7 @@
   const tg = window.Telegram?.WebApp;
   if (tg) {
     tg.expand();
+    try { tg.requestFullscreen?.(); } catch {};
     tg.onEvent('invoiceClosed', function(obj) {
       if (obj.status === 'paid') {
         const uid = tg?.initDataUnsafe?.user?.id;
