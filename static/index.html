@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>AIchat | APP</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0d0d0d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="AIchat">
+<link rel="apple-touch-icon" href="/logo.svg">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -704,6 +710,13 @@
   .progress-bar { height: 100%; background: var(--accent); border-radius: 2px; animation: progressAnim 1.8s ease-in-out infinite; }
   @keyframes progressAnim { 0%{width:0%;margin-left:0} 50%{width:70%;margin-left:15%} 100%{width:0%;margin-left:100%} }
   .img-status { text-align: center; color: var(--text2); font-size: 13px; min-height: 18px; }
+  .img-count-btn {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text2); font-size: 13px; font-weight: 600; padding: 4px 12px;
+    cursor: pointer; font-family: inherit; transition: all 0.2s;
+  }
+  .img-count-btn.active { background: var(--accent); color: var(--send-btn-color); border-color: var(--accent); }
+  .img-count-btn:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
   .img-result { width: 100%; }
   .img-result img {
     width: 100%; border-radius: 16px; display: block;
@@ -1360,6 +1373,8 @@
     opacity: 0; transition: opacity 0.15s, color 0.15s; flex-shrink: 0;
   }
   .chat-item:hover .chat-del-btn { opacity: 1; }
+  .chat-item .pin-btn { opacity: 0; }
+  .chat-item:hover .pin-btn { opacity: 0.6; }
   .chat-del-btn:hover { color: #ff5555; }
   .sidebar-empty {
     text-align: center; color: var(--text2); font-size: 13px;
@@ -2025,6 +2040,14 @@
       <div class="img-title">Генерация изображений</div>
       <div class="img-desc">Напиши в чате <b>/img</b> и описание — картинка появится прямо в чате.</div>
       <textarea class="img-input" id="img-ввод" placeholder="Или напиши здесь и нажми кнопку..."></textarea>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+        <span style="font-size:12px;color:var(--text2)">Количество:</span>
+        <div style="display:flex;gap:6px">
+          <button class="img-count-btn active" id="img-cnt-1" onclick="выбратьКоличество(1,this)">1</button>
+          <button class="img-count-btn" id="img-cnt-2" onclick="выбратьКоличество(2,this)">2</button>
+          <button class="img-count-btn" id="img-cnt-4" onclick="выбратьКоличество(4,this)">4</button>
+        </div>
+      </div>
       <button class="gen-btn" id="gen-btn" onclick="сгенерировать()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
         Сгенерировать в чат
@@ -2419,8 +2442,8 @@
       if (banner) banner.classList.remove('visible');
     } else if (remaining !== null && remaining !== undefined) {
       _msgsLeft = remaining;
-      el.textContent = `${remaining} сообщений`;
-      el.className = 'msgs-left' + (remaining <= 3 ? ' danger' : remaining <= 7 ? ' warn' : '');
+      el.textContent = `${remaining}/день`;
+      el.className = 'msgs-left' + (remaining <= 2 ? ' danger' : remaining <= 4 ? ' warn' : '');
       el.style.display = '';
       if (card) card.style.display = '';
       if (banner) {
@@ -2909,9 +2932,34 @@
         <div class="profile-section-title">Реферальная ссылка</div>
         <div class="profile-card">
           <div class="profile-row" style="flex-direction:column;align-items:flex-start;gap:10px">
-            <div class="profile-row-left"><div class="profile-row-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div><div class="profile-row-label">Приглашай друзей — получай бонусы</div></div>
+            <div class="profile-row-left"><div class="profile-row-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div><div class="profile-row-label">Приглашай друзей +3 сообщения/день за каждого</div></div>
             <div class="profile-ref-box" onclick="скопироватьРефку('${refLink}')">${refLink}</div>
             <button class="profile-btn-outline" onclick="скопироватьРефку('${refLink}')" style="display:flex;align-items:center;gap:7px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Скопировать ссылку</button>
+          </div>
+        </div>` : ''}
+
+        <div class="profile-section-title">Промокод</div>
+        <div class="profile-card">
+          <div class="profile-row" style="flex-direction:column;align-items:flex-start;gap:10px">
+            <div class="profile-row-left"><div class="profile-row-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></div><div class="profile-row-label">Введи промокод для дополнительных сообщений</div></div>
+            <div style="display:flex;gap:8px;width:100%">
+              <input id="promo-input" placeholder="PROMO2025" maxlength="20" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:8px 12px;color:var(--text);font-size:13px;font-family:inherit;outline:none" oninput="this.value=this.value.toUpperCase()">
+              <button onclick="активироватьПромокод()" style="background:var(--accent);color:var(--send-btn-color);border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Применить</button>
+            </div>
+            <div id="promo-msg" style="font-size:12px;color:var(--accent);display:none"></div>
+          </div>
+        </div>
+
+        ${isPremium ? `
+        <div class="profile-section-title">Подарить Premium</div>
+        <div class="profile-card">
+          <div class="profile-row" style="flex-direction:column;align-items:flex-start;gap:10px">
+            <div class="profile-row-left"><div class="profile-row-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></div><div class="profile-row-label">Подари другу Premium на 30 дней</div></div>
+            <div style="display:flex;gap:8px;width:100%">
+              <input id="gift-input" placeholder="@username" maxlength="32" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:8px 12px;color:var(--text);font-size:13px;font-family:inherit;outline:none">
+              <button onclick="подаритьПремиум()" style="background:var(--accent);color:var(--send-btn-color);border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Подарить</button>
+            </div>
+            <div id="gift-msg" style="font-size:12px;color:var(--accent);display:none"></div>
           </div>
         </div>` : ''}
       `;
@@ -3042,21 +3090,92 @@
     const порядок = ['Сегодня','Вчера','Последние 7 дней','Этот месяц','Раньше'];
     const группы = {};
     чаты.forEach(ч => { const l = getGroupLabel(ч.время); (группы[l] = группы[l]||[]).push(ч); });
+    const pinned = JSON.parse(localStorage.getItem('pinnedChats') || '[]');
     const chatSvg = `<svg class="chat-icon" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>`;
     const delSvg  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>`;
+    const pinSvg  = `<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2z"/></svg>`;
     let html = '';
-    порядок.forEach(label => {
-      if (!группы[label]) return;
-      html += `<span class="chat-group-label">${label}</span>`;
-      группы[label].forEach(ч => {
+    // Pinned section
+    const pinnedChats = чаты.filter(ч => pinned.includes(ч.id));
+    if (pinnedChats.length) {
+      html += `<span class="chat-group-label">📌 Закреплённые</span>`;
+      pinnedChats.forEach(ч => {
         const active = ч.id === текущийЧатId ? ' chat-active' : '';
         html += `<div class="chat-item${active}" onclick="загрузитьЧат(${ч.id});закрытьБоковую()">
           ${chatSvg}<span class="chat-item-text">${экранировать(ч.preview)}</span>
+          <button class="chat-del-btn" onclick="event.stopPropagation();открепитьЧат(${ч.id})" title="Открепить" style="color:var(--accent)">${pinSvg}</button>
+          <button class="chat-del-btn" onclick="event.stopPropagation();удалитьЧат(${ч.id})" title="Удалить">${delSvg}</button>
+        </div>`;
+      });
+    }
+    const unpinned = чаты.filter(ч => !pinned.includes(ч.id));
+    порядок.forEach(label => {
+      if (!группы[label]) return;
+      const group = группы[label].filter(ч => !pinned.includes(ч.id));
+      if (!group.length) return;
+      html += `<span class="chat-group-label">${label}</span>`;
+      group.forEach(ч => {
+        const active = ч.id === текущийЧатId ? ' chat-active' : '';
+        html += `<div class="chat-item${active}" onclick="загрузитьЧат(${ч.id});закрытьБоковую()">
+          ${chatSvg}<span class="chat-item-text">${экранировать(ч.preview)}</span>
+          <button class="chat-del-btn pin-btn" onclick="event.stopPropagation();закрепитьЧат(${ч.id})" title="Закрепить">${pinSvg}</button>
           <button class="chat-del-btn" onclick="event.stopPropagation();удалитьЧат(${ч.id})" title="Удалить">${delSvg}</button>
         </div>`;
       });
     });
     блок.innerHTML = html;
+  }
+
+  function закрепитьЧат(id) {
+    const p = JSON.parse(localStorage.getItem('pinnedChats') || '[]');
+    if (!p.includes(id)) { p.unshift(id); localStorage.setItem('pinnedChats', JSON.stringify(p)); }
+    отрисоватьИсторию();
+  }
+  function открепитьЧат(id) {
+    const p = JSON.parse(localStorage.getItem('pinnedChats') || '[]');
+    localStorage.setItem('pinnedChats', JSON.stringify(p.filter(x => x !== id)));
+    отрисоватьИсторию();
+  }
+
+  async function активироватьПромокод() {
+    const code = document.getElementById('promo-input')?.value.trim().toUpperCase();
+    const msg = document.getElementById('promo-msg');
+    if (!code || !msg) return;
+    msg.style.display = '';
+    msg.style.color = 'var(--text2)';
+    msg.textContent = 'Проверяем...';
+    try {
+      const r = await fetch('/api/promo/redeem', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({tg_id: tgUser?.id || 0, code, secret: ADMIN_SECRET})
+      });
+      const d = await r.json();
+      if (d.ok) {
+        msg.style.color = 'var(--accent)';
+        msg.textContent = `✓ Активировано! +${d.free_msgs} сообщений`;
+        document.getElementById('promo-input').value = '';
+        setTimeout(загрузитьСтатусПользователя, 500);
+      } else {
+        msg.style.color = '#e74c3c';
+        msg.textContent = d.error || 'Ошибка';
+      }
+    } catch { msg.style.color = '#e74c3c'; msg.textContent = 'Ошибка сети'; }
+  }
+
+  async function подаритьПремиум() {
+    const username = document.getElementById('gift-input')?.value.trim().replace('@','');
+    const msg = document.getElementById('gift-msg');
+    if (!username || !msg) return;
+    msg.style.display = ''; msg.style.color = 'var(--text2)'; msg.textContent = 'Отправляем...';
+    try {
+      const r = await fetch('/api/premium/gift', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({from_tg_id: tgUser?.id || 0, to_username: username, secret: ADMIN_SECRET})
+      });
+      const d = await r.json();
+      if (d.ok) { msg.style.color = 'var(--accent)'; msg.textContent = `✓ Premium подарен @${username}`; document.getElementById('gift-input').value = ''; }
+      else { msg.style.color = '#e74c3c'; msg.textContent = d.error || 'Ошибка'; }
+    } catch { msg.style.color = '#e74c3c'; msg.textContent = 'Ошибка сети'; }
   }
 
   function загрузитьЧат(id) {
@@ -3463,17 +3582,29 @@
     }
   }
 
+  let _imgCount = 1;
+  function выбратьКоличество(n, btn) {
+    _imgCount = n;
+    document.querySelectorAll('.img-count-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
   async function сгенерировать() {
     const запрос = document.getElementById('img-ввод').value.trim();
     if (!запрос) return;
-    // Переключаемся на чат и генерируем там
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.getElementById('чат').classList.add('active');
     document.querySelector('.tab').classList.add('active');
-    document.getElementById('ввод').value = '/img ' + запрос;
     document.getElementById('img-ввод').value = '';
-    отправить();
+    if (_imgCount <= 1) {
+      document.getElementById('ввод').value = '/img ' + запрос;
+      отправить();
+    } else {
+      for (let i = 0; i < _imgCount; i++) {
+        await генерацияВЧат(запрос);
+      }
+    }
   }
 
   async function генерацияВЧат(запрос) {

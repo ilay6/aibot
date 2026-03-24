@@ -25,7 +25,7 @@ ADMIN_SECRET = os.getenv("ADMIN_SECRET", "aibot_secret")
 WEBAPP_URL = os.getenv("WEBAPP_URL", "")
 BOT_USERNAME = os.getenv("BOT_USERNAME", "AIgptchatII_bot")
 PREMIUM_STARS = int(os.getenv("PREMIUM_STARS", "100"))
-FREE_MESSAGES = int(os.getenv("FREE_MESSAGES", "10"))  # total free messages ever
+FREE_MESSAGES = int(os.getenv("FREE_MESSAGES", "7"))   # free messages per day
 DB = os.getenv("DB_PATH", "data.db")
 DATABASE_URL = os.getenv("DATABASE_URL", "")  # Railway PostgreSQL
 IS_PG = bool(DATABASE_URL)
@@ -125,6 +125,10 @@ def init_db():
         referred_tg_id {int_t} UNIQUE, created_at TEXT)""")
     con.execute("""CREATE TABLE IF NOT EXISTS whitelist (
         username TEXT PRIMARY KEY, added_at TEXT)""")
+    con.execute(f"""CREATE TABLE IF NOT EXISTS promo_codes (
+        code TEXT PRIMARY KEY, free_msgs INTEGER DEFAULT 50,
+        max_uses INTEGER DEFAULT 100, used_count INTEGER DEFAULT 0,
+        created_at TEXT)""")
     for idx in [
         "CREATE INDEX IF NOT EXISTS idx_msg_tg ON messages(tg_id)",
         "CREATE INDEX IF NOT EXISTS idx_msg_id_desc ON messages(id DESC)",
@@ -182,7 +186,7 @@ def _get_ref_count(tg_id: int) -> int:
     return row[0] if row else 0
 
 def check_rate_limit(tg_id: int) -> tuple[bool, int]:
-    """Returns (allowed, remaining). Premium and whitelisted users always allowed (remaining=9999)."""
+    """Returns (allowed, remaining). Daily window. Premium/whitelist = unlimited."""
     if not tg_id:
         return True, 9999
     if _is_premium(tg_id):
@@ -190,21 +194,25 @@ def check_rate_limit(tg_id: int) -> tuple[bool, int]:
     if _is_whitelisted(tg_id):
         return True, 9999
     ref_count = _get_ref_count(tg_id)
-    limit = FREE_MESSAGES + ref_count * 3  # +3 per referral
+    daily_limit = FREE_MESSAGES + ref_count * 3  # +3 per referral
+    today = datetime.now().strftime("%Y-%m-%d")
     con = db_connect()
-    row = con.execute("SELECT count FROM rate_limits WHERE tg_id=?", (tg_id,)).fetchone()
-    used = row[0] if row else 0
-    if used >= limit:
+    row = con.execute("SELECT count, window_start FROM rate_limits WHERE tg_id=?", (tg_id,)).fetchone()
+    used = row[0] if (row and row[1] and str(row[1])[:10] == today) else 0
+    if used >= daily_limit:
         con.close()
         return False, 0
-    if row:
+    if row and row[1] and str(row[1])[:10] == today:
         con.execute("UPDATE rate_limits SET count=count+1 WHERE tg_id=?", (tg_id,))
     else:
-        con.execute("INSERT INTO rate_limits (tg_id, count, window_start) VALUES (?,1,?)",
-                    (tg_id, datetime.now().isoformat()))
+        con.execute(
+            """INSERT INTO rate_limits (tg_id, count, window_start) VALUES (?,1,?)
+               ON CONFLICT (tg_id) DO UPDATE SET count=1, window_start=EXCLUDED.window_start""",
+            (tg_id, datetime.now().isoformat())
+        )
     con.commit()
     con.close()
-    return True, max(0, limit - used - 1)
+    return True, max(0, daily_limit - used - 1)
 
 # ── LIFESPAN ──
 @asynccontextmanager
@@ -612,10 +620,11 @@ async def user_status(data: InvoiceRequest):
     is_wl = _is_whitelisted(data.tg_id)
     ref_count = _get_ref_count(data.tg_id)
     limit = FREE_MESSAGES + ref_count * 3
+    today = datetime.now().strftime("%Y-%m-%d")
     con = db_connect()
-    row = con.execute("SELECT count FROM rate_limits WHERE tg_id=?", (data.tg_id,)).fetchone()
+    row = con.execute("SELECT count, window_start FROM rate_limits WHERE tg_id=?", (data.tg_id,)).fetchone()
     con.close()
-    used = row[0] if row else 0
+    used = row[0] if (row and row[1] and str(row[1])[:10] == today) else 0
     unlimited = is_prem or is_wl
     remaining = 9999 if unlimited else max(0, limit - used)
     return {"is_premium": is_prem or is_wl, "used": used, "limit": limit, "remaining": remaining, "referrals": ref_count}
@@ -837,6 +846,92 @@ async def remove_whitelist(data: WhitelistData):
     con.commit()
     con.close()
     return {"ok": True}
+
+
+# ── GIFT PREMIUM ──
+class GiftData(BaseModel):
+    from_tg_id: int
+    to_username: str
+    secret: str = ""
+
+@app.post("/api/premium/gift")
+async def gift_premium(data: GiftData):
+    if not ADMIN_SECRET or data.secret != ADMIN_SECRET:
+        return {"error": "forbidden"}
+    username = data.to_username.strip().lstrip("@").lower()
+    if not username:
+        return {"error": "empty username"}
+    con = db_connect()
+    row = con.execute("SELECT tg_id FROM users WHERE LOWER(username)=?", (username,)).fetchone()
+    if not row:
+        con.close()
+        return {"error": "Пользователь не найден. Он должен открыть бота хотя бы раз."}
+    to_tg_id = row[0]
+    premium_until = (datetime.now() + timedelta(days=30)).isoformat()
+    con.execute(
+        """INSERT INTO users (tg_id, premium_until) VALUES (?,?)
+           ON CONFLICT (tg_id) DO UPDATE SET premium_until=EXCLUDED.premium_until""",
+        (to_tg_id, premium_until)
+    )
+    con.commit()
+    con.close()
+    return {"ok": True}
+
+
+# ── PROMO CODES ──
+class PromoRedeemData(BaseModel):
+    tg_id: int
+    code: str
+    secret: str = ""
+
+class PromoCreateData(BaseModel):
+    code: str
+    free_msgs: int = 50
+    max_uses: int = 100
+    secret: str = ""
+
+@app.post("/api/promo/redeem")
+async def redeem_promo(data: PromoRedeemData):
+    if not ADMIN_SECRET or data.secret != ADMIN_SECRET:
+        return {"error": "forbidden"}
+    code = data.code.strip().upper()
+    con = db_connect()
+    row = con.execute(
+        "SELECT free_msgs, max_uses, used_count FROM promo_codes WHERE code=?", (code,)
+    ).fetchone()
+    if not row:
+        con.close()
+        return {"error": "Промокод не найден"}
+    free_msgs, max_uses, used_count = row
+    if used_count >= max_uses:
+        con.close()
+        return {"error": "Промокод уже исчерпан"}
+    today = datetime.now().strftime("%Y-%m-%d")
+    r = con.execute("SELECT count, window_start FROM rate_limits WHERE tg_id=?", (data.tg_id,)).fetchone()
+    if r and r[1] and str(r[1])[:10] == today:
+        new_count = max(0, r[0] - free_msgs)
+        con.execute("UPDATE rate_limits SET count=? WHERE tg_id=?", (new_count, data.tg_id))
+    con.execute("UPDATE promo_codes SET used_count=used_count+1 WHERE code=?", (code,))
+    con.commit()
+    con.close()
+    return {"ok": True, "free_msgs": free_msgs}
+
+@app.post("/api/promo/create")
+async def create_promo(data: PromoCreateData):
+    if not ADMIN_SECRET or data.secret != ADMIN_SECRET:
+        return {"error": "forbidden"}
+    code = data.code.strip().upper()
+    if not code:
+        return {"error": "empty code"}
+    con = db_connect()
+    con.execute(
+        """INSERT INTO promo_codes (code, free_msgs, max_uses, used_count, created_at) VALUES (?,?,?,0,?)
+           ON CONFLICT DO NOTHING""",
+        (code, data.free_msgs, data.max_uses, datetime.now().strftime("%Y-%m-%d %H:%M"))
+    )
+    con.commit()
+    con.close()
+    return {"ok": True, "code": code}
 
 
 # ── STATIC ──

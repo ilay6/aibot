@@ -1,0 +1,13 @@
+{
+  "name": "AIchat | APP",
+  "short_name": "AIchat",
+  "description": "AI-чат с поддержкой GPT и Mistral",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d0d0d",
+  "theme_color": "#0d0d0d",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
