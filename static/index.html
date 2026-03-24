@@ -13,62 +13,62 @@
 
   /* ── THEMES ── */
   :root {
-    --bg: #060608;
-    --bg2: #0f1012;
-    --bg3: #18191c;
-    --border: #1e2024;
-    --text: #ffffff;
-    --text2: #6b6f7b;
-    --accent: #f5c518;
-    --accent2: #d4a800;
-    --accent-glow: rgba(245,197,24,0.15);
-    --accent-shadow: rgba(245,197,24,0.35);
-    --accent-ring: rgba(245,197,24,0.08);
-    --header-bg: rgba(6,6,8,0.92);
-    --surface-bg: rgba(6,6,8,0.9);
+    --bg: #09090f;
+    --bg2: #10101a;
+    --bg3: #181824;
+    --border: #26263a;
+    --text: #eeeef5;
+    --text2: #6b6b88;
+    --accent: #7c6aff;
+    --accent2: #6254df;
+    --accent-glow: rgba(124,106,255,0.15);
+    --accent-shadow: rgba(124,106,255,0.38);
+    --accent-ring: rgba(124,106,255,0.10);
+    --header-bg: rgba(9,9,15,0.94);
+    --surface-bg: rgba(9,9,15,0.92);
     --glass-bg: rgba(255,255,255,0.04);
-    --glass-border: rgba(255,255,255,0.08);
+    --glass-border: rgba(255,255,255,0.07);
     --glass-inner: rgba(255,255,255,0.06);
-    --send-btn-color: #000;
+    --send-btn-color: #fff;
   }
 
-  /* ── TIFFANY DARK ── */
+  /* ── PURPLE DEEP ── */
   [data-theme="tiffany"] {
-    --bg: #181b1b;
-    --bg2: #1f2323;
-    --bg3: #252b2b;
-    --border: #2e3535;
-    --text: #e8f0f0;
-    --text2: #7a9e9c;
-    --accent: #0ABAB5;
-    --accent2: #089490;
-    --accent-glow: rgba(10,186,181,0.18);
-    --accent-shadow: rgba(10,186,181,0.45);
-    --accent-ring: rgba(10,186,181,0.12);
-    --header-bg: rgba(20,25,25,0.9);
-    --surface-bg: rgba(20,25,25,0.85);
-    --glass-bg: rgba(10,186,181,0.04);
-    --glass-border: rgba(10,186,181,0.15);
+    --bg: #0e0e1a;
+    --bg2: #16162a;
+    --bg3: #1e1e34;
+    --border: #2c2c48;
+    --text: #e8e8f8;
+    --text2: #7070a0;
+    --accent: #a78bfa;
+    --accent2: #8b6ef5;
+    --accent-glow: rgba(167,139,250,0.18);
+    --accent-shadow: rgba(167,139,250,0.42);
+    --accent-ring: rgba(167,139,250,0.12);
+    --header-bg: rgba(14,14,26,0.92);
+    --surface-bg: rgba(14,14,26,0.88);
+    --glass-bg: rgba(167,139,250,0.05);
+    --glass-border: rgba(167,139,250,0.14);
     --glass-inner: rgba(255,255,255,0.05);
     --send-btn-color: #fff;
   }
 
-  /* ── LIGHT TIFFANY ── */
+  /* ── LIGHT ── */
   [data-theme="light"] {
-    --bg: #f5fafa;
+    --bg: #f4f4fa;
     --bg2: #ffffff;
-    --bg3: #eaf2f2;
-    --border: #d0e4e3;
-    --text: #1a2e2d;
-    --text2: #5a8a88;
-    --accent: #0ABAB5;
-    --accent2: #089490;
-    --accent-glow: rgba(10,186,181,0.12);
-    --accent-shadow: rgba(10,186,181,0.28);
-    --accent-ring: rgba(10,186,181,0.1);
-    --header-bg: rgba(245,250,250,0.92);
-    --surface-bg: rgba(245,250,250,0.9);
-    --glass-bg: rgba(255,255,255,0.65);
+    --bg3: #ebebf5;
+    --border: #d4d4e8;
+    --text: #1a1a2e;
+    --text2: #6060a0;
+    --accent: #7c6aff;
+    --accent2: #6254df;
+    --accent-glow: rgba(124,106,255,0.12);
+    --accent-shadow: rgba(124,106,255,0.28);
+    --accent-ring: rgba(124,106,255,0.10);
+    --header-bg: rgba(244,244,250,0.94);
+    --surface-bg: rgba(244,244,250,0.92);
+    --glass-bg: rgba(255,255,255,0.70);
     --glass-border: rgba(255,255,255,0.85);
     --glass-inner: rgba(255,255,255,0.95);
     --send-btn-color: #fff;
@@ -1169,11 +1169,11 @@
   .model-dd-arrow { transition: transform 0.22s; flex-shrink: 0; }
   .model-dd.open .model-dd-arrow { transform: rotate(180deg); }
   .model-dd-list {
-    position: absolute; bottom: calc(100% + 8px); left: 0;
+    position: fixed; left: auto; right: auto;
     background: var(--bg2); border: 1px solid var(--border); border-radius: 16px;
-    overflow: hidden; min-width: 180px;
-    display: none; z-index: 50;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+    overflow: hidden; min-width: 200px;
+    display: none; z-index: 9999;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
     animation: ddIn 0.18s cubic-bezier(0.16,1,0.3,1) forwards;
   }
   [data-theme="light"] .model-dd-list { background: #f0f7f7; }
@@ -2557,7 +2557,17 @@
   function toggleModelDd(e) {
     if (e.target.closest('.model-dd-item')) return;
     e.stopPropagation();
-    document.getElementById('model-dd').classList.toggle('open');
+    const dd = document.getElementById('model-dd');
+    const list = dd.querySelector('.model-dd-list');
+    const rect = dd.getBoundingClientRect();
+    const isOpen = dd.classList.toggle('open');
+    if (isOpen && list) {
+      const listH = list.offsetHeight || 180;
+      const top = rect.top - listH - 8;
+      list.style.left = rect.left + 'px';
+      list.style.top = (top < 8 ? rect.bottom + 8 : top) + 'px';
+      list.style.minWidth = Math.max(200, rect.width) + 'px';
+    }
   }
   function выбратьМодель(e, value, label, el) {
     e.preventDefault();
