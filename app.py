@@ -27,6 +27,34 @@ BOT_USERNAME = os.getenv("BOT_USERNAME", "AIgptchatII_bot")
 PREMIUM_STARS = int(os.getenv("PREMIUM_STARS", "100"))
 FREE_MESSAGES = int(os.getenv("FREE_MESSAGES", "10"))  # total free messages ever
 DB = os.getenv("DB_PATH", "data.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "")  # Railway PostgreSQL
+IS_PG = bool(DATABASE_URL)
+
+# ── DB ABSTRACTION (SQLite locally, PostgreSQL on Railway) ──
+class _PgConn:
+    """Thin psycopg2 wrapper matching sqlite3 Connection interface."""
+    def __init__(self, url: str):
+        import psycopg2
+        self._c = psycopg2.connect(url)
+
+    def execute(self, sql: str, params=()):
+        sql = sql.replace("?", "%s")
+        cur = self._c.cursor()
+        cur.execute(sql, params)
+        return cur
+
+    def commit(self):   self._c.commit()
+    def rollback(self): self._c.rollback()
+    def close(self):    self._c.close()
+
+def db_connect():
+    if IS_PG:
+        return _PgConn(DATABASE_URL)
+    con = db_connect()
+    con.execute("PRAGMA journal_mode=WAL")
+    con.execute("PRAGMA synchronous=NORMAL")
+    con.execute("PRAGMA cache_size=-8000")
+    return con
 
 # ── LRU RESPONSE CACHE ──
 class _LRUCache:
@@ -78,49 +106,34 @@ def get_http() -> httpx.AsyncClient:
 
 # ── DATABASE ──
 def init_db():
-    con = sqlite3.connect(DB)
-    con.execute("PRAGMA journal_mode=WAL")
-    con.execute("PRAGMA synchronous=NORMAL")
-    con.execute("PRAGMA cache_size=-8000")
-    con.execute("""CREATE TABLE IF NOT EXISTS users (
-        tg_id INTEGER PRIMARY KEY,
-        username TEXT DEFAULT '',
-        first_name TEXT DEFAULT '',
-        joined_at TEXT,
-        premium_until TEXT DEFAULT NULL,
-        memory TEXT DEFAULT '',
-        ref_count INTEGER DEFAULT 0
-    )""")
-    con.execute("""CREATE TABLE IF NOT EXISTS messages (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        tg_id INTEGER,
-        text TEXT,
-        ts TEXT,
-        role TEXT DEFAULT 'user'
-    )""")
-    con.execute("""CREATE TABLE IF NOT EXISTS chats (
-        tg_id INTEGER PRIMARY KEY,
-        data TEXT DEFAULT '[]',
-        updated_at TEXT
-    )""")
-    con.execute("""CREATE TABLE IF NOT EXISTS rate_limits (
-        tg_id INTEGER PRIMARY KEY,
-        count INTEGER DEFAULT 0,
-        window_start TEXT
-    )""")
-    con.execute("""CREATE TABLE IF NOT EXISTS referrals (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        referrer_tg_id INTEGER,
-        referred_tg_id INTEGER UNIQUE,
-        created_at TEXT
-    )""")
+    con = db_connect()
+    pk  = "SERIAL PRIMARY KEY" if IS_PG else "INTEGER PRIMARY KEY AUTOINCREMENT"
+    int_t = "BIGINT" if IS_PG else "INTEGER"
+    con.execute(f"""CREATE TABLE IF NOT EXISTS users (
+        tg_id {int_t} PRIMARY KEY, username TEXT DEFAULT '',
+        first_name TEXT DEFAULT '', joined_at TEXT,
+        premium_until TEXT DEFAULT NULL, memory TEXT DEFAULT '',
+        ref_count INTEGER DEFAULT 0)""")
+    con.execute(f"""CREATE TABLE IF NOT EXISTS messages (
+        id {pk}, tg_id {int_t}, text TEXT, ts TEXT, role TEXT DEFAULT 'user')""")
+    con.execute(f"""CREATE TABLE IF NOT EXISTS chats (
+        tg_id {int_t} PRIMARY KEY, data TEXT DEFAULT '[]', updated_at TEXT)""")
+    con.execute(f"""CREATE TABLE IF NOT EXISTS rate_limits (
+        tg_id {int_t} PRIMARY KEY, count INTEGER DEFAULT 0, window_start TEXT)""")
+    con.execute(f"""CREATE TABLE IF NOT EXISTS referrals (
+        id {pk}, referrer_tg_id {int_t},
+        referred_tg_id {int_t} UNIQUE, created_at TEXT)""")
     con.execute("""CREATE TABLE IF NOT EXISTS whitelist (
-        username TEXT PRIMARY KEY,
-        added_at TEXT
-    )""")
-    con.execute("CREATE INDEX IF NOT EXISTS idx_msg_tg ON messages(tg_id)")
-    con.execute("CREATE INDEX IF NOT EXISTS idx_msg_id_desc ON messages(id DESC)")
-    # Migrations for existing databases
+        username TEXT PRIMARY KEY, added_at TEXT)""")
+    for idx in [
+        "CREATE INDEX IF NOT EXISTS idx_msg_tg ON messages(tg_id)",
+        "CREATE INDEX IF NOT EXISTS idx_msg_id_desc ON messages(id DESC)",
+    ]:
+        try: con.execute(idx)
+        except Exception:
+            if IS_PG: con.rollback()
+    con.commit()
+    # Migrations for existing SQLite databases
     for sql in [
         "ALTER TABLE messages ADD COLUMN role TEXT DEFAULT 'user'",
         "ALTER TABLE users ADD COLUMN premium_until TEXT DEFAULT NULL",
@@ -129,9 +142,9 @@ def init_db():
     ]:
         try:
             con.execute(sql)
+            con.commit()
         except Exception:
-            pass
-    con.commit()
+            if IS_PG: con.rollback()
     con.close()
 
 init_db()
@@ -139,20 +152,20 @@ init_db()
 # ── RATE LIMITING ──
 def _is_whitelisted(tg_id: int) -> bool:
     """Check if user's username is in the whitelist."""
-    con = sqlite3.connect(DB)
+    con = db_connect()
     row = con.execute("SELECT username FROM users WHERE tg_id=?", (tg_id,)).fetchone()
     con.close()
     if not row or not row[0]:
         return False
     username = row[0].lstrip("@").lower()
-    con = sqlite3.connect(DB)
+    con = db_connect()
     wl = con.execute("SELECT 1 FROM whitelist WHERE LOWER(username)=?", (username,)).fetchone()
     con.close()
     return wl is not None
 
 
 def _is_premium(tg_id: int) -> bool:
-    con = sqlite3.connect(DB)
+    con = db_connect()
     row = con.execute("SELECT premium_until FROM users WHERE tg_id=?", (tg_id,)).fetchone()
     con.close()
     if row and row[0]:
@@ -163,7 +176,7 @@ def _is_premium(tg_id: int) -> bool:
     return False
 
 def _get_ref_count(tg_id: int) -> int:
-    con = sqlite3.connect(DB)
+    con = db_connect()
     row = con.execute("SELECT COUNT(*) FROM referrals WHERE referrer_tg_id=?", (tg_id,)).fetchone()
     con.close()
     return row[0] if row else 0
@@ -178,7 +191,7 @@ def check_rate_limit(tg_id: int) -> tuple[bool, int]:
         return True, 9999
     ref_count = _get_ref_count(tg_id)
     limit = FREE_MESSAGES + ref_count * 3  # +3 per referral
-    con = sqlite3.connect(DB)
+    con = db_connect()
     row = con.execute("SELECT count FROM rate_limits WHERE tg_id=?", (tg_id,)).fetchone()
     used = row[0] if row else 0
     if used >= limit:
@@ -414,7 +427,7 @@ async def картинка(данные: ЗапросКартинки):
 async def track(data: TrackData):
     if not ADMIN_SECRET or data.secret != ADMIN_SECRET:
         return {"ok": False}
-    con = sqlite3.connect(DB)
+    con = db_connect()
     con.execute(
         """INSERT INTO users (tg_id, username, first_name, joined_at) VALUES (?,?,?,?)
            ON CONFLICT(tg_id) DO UPDATE SET username=excluded.username, first_name=excluded.first_name""",
@@ -434,7 +447,7 @@ async def track(data: TrackData):
 async def admin_stats(x_admin_secret: str = Header(None)):
     if not ADMIN_SECRET or x_admin_secret != ADMIN_SECRET:
         return {"error": "forbidden"}
-    con = sqlite3.connect(DB)
+    con = db_connect()
     total_users = con.execute("SELECT COUNT(*) FROM users").fetchone()[0]
     total_msgs = con.execute("SELECT COUNT(*) FROM messages").fetchone()[0]
     users = con.execute("""
@@ -473,7 +486,7 @@ class SyncData(BaseModel):
 async def chats_save(data: SyncData):
     if not ADMIN_SECRET or data.secret != ADMIN_SECRET:
         return {"ok": False}
-    con = sqlite3.connect(DB)
+    con = db_connect()
     trimmed = []
     for c in data.chats[:30]:
         msgs = []
@@ -484,7 +497,8 @@ async def chats_save(data: SyncData):
             msgs.append({"role": m.get("role", "user"), "content": content, "time": m.get("time", "")})
         trimmed.append({"id": c.get("id"), "сообщения": msgs, "время": c.get("время"), "preview": c.get("preview", "")[:60]})
     con.execute(
-        "INSERT OR REPLACE INTO chats (tg_id, data, updated_at) VALUES (?,?,?)",
+        """INSERT INTO chats (tg_id, data, updated_at) VALUES (?,?,?)
+           ON CONFLICT (tg_id) DO UPDATE SET data=EXCLUDED.data, updated_at=EXCLUDED.updated_at""",
         (data.tg_id, json.dumps(trimmed, ensure_ascii=False)[:500000], datetime.now().strftime("%Y-%m-%d %H:%M"))
     )
     con.commit()
@@ -496,7 +510,7 @@ async def chats_save(data: SyncData):
 async def chats_load(data: SyncData):
     if not ADMIN_SECRET or data.secret != ADMIN_SECRET:
         return {"chats": []}
-    con = sqlite3.connect(DB)
+    con = db_connect()
     row = con.execute("SELECT data FROM chats WHERE tg_id=?", (data.tg_id,)).fetchone()
     con.close()
     if not row:
@@ -598,7 +612,7 @@ async def user_status(data: InvoiceRequest):
     is_wl = _is_whitelisted(data.tg_id)
     ref_count = _get_ref_count(data.tg_id)
     limit = FREE_MESSAGES + ref_count * 3
-    con = sqlite3.connect(DB)
+    con = db_connect()
     row = con.execute("SELECT count FROM rate_limits WHERE tg_id=?", (data.tg_id,)).fetchone()
     con.close()
     used = row[0] if row else 0
@@ -640,7 +654,7 @@ async def grant_premium(data: PremiumData):
     if not ADMIN_SECRET or data.secret != ADMIN_SECRET:
         return {"ok": False}
     premium_until = (datetime.now() + timedelta(days=30)).isoformat()
-    con = sqlite3.connect(DB)
+    con = db_connect()
     con.execute(
         """INSERT INTO users (tg_id, username, first_name, joined_at, premium_until) VALUES (?,?,?,?,?)
            ON CONFLICT(tg_id) DO UPDATE SET premium_until=excluded.premium_until,
@@ -657,7 +671,7 @@ async def premium_status(tg_id: int, x_admin_secret: str = Header(None)):
     if not ADMIN_SECRET or x_admin_secret != ADMIN_SECRET:
         return {"error": "forbidden"}
     is_prem = _is_premium(tg_id)
-    con = sqlite3.connect(DB)
+    con = db_connect()
     row = con.execute("SELECT premium_until FROM users WHERE tg_id=?", (tg_id,)).fetchone()
     con.close()
     return {"is_premium": is_prem, "premium_until": row[0] if row else None}
@@ -674,10 +688,11 @@ class ReferralData(BaseModel):
 async def add_referral(data: ReferralData):
     if not ADMIN_SECRET or data.secret != ADMIN_SECRET:
         return {"ok": False}
-    con = sqlite3.connect(DB)
+    con = db_connect()
     try:
         con.execute(
-            "INSERT OR IGNORE INTO referrals (referrer_tg_id, referred_tg_id, created_at) VALUES (?,?,?)",
+            """INSERT INTO referrals (referrer_tg_id, referred_tg_id, created_at) VALUES (?,?,?)
+               ON CONFLICT DO NOTHING""",
             (data.referrer_tg_id, data.referred_tg_id, datetime.now().strftime("%Y-%m-%d %H:%M"))
         )
         con.execute("UPDATE users SET ref_count = ref_count + 1 WHERE tg_id=?", (data.referrer_tg_id,))
@@ -706,7 +721,7 @@ class MemoryData(BaseModel):
 async def save_memory(data: MemoryData):
     if not ADMIN_SECRET or data.secret != ADMIN_SECRET:
         return {"ok": False}
-    con = sqlite3.connect(DB)
+    con = db_connect()
     con.execute("UPDATE users SET memory=? WHERE tg_id=?", (data.memory[:2000], data.tg_id))
     con.commit()
     con.close()
@@ -717,7 +732,7 @@ async def save_memory(data: MemoryData):
 async def load_memory(data: MemoryData):
     if not ADMIN_SECRET or data.secret != ADMIN_SECRET:
         return {"memory": ""}
-    con = sqlite3.connect(DB)
+    con = db_connect()
     row = con.execute("SELECT memory FROM users WHERE tg_id=?", (data.tg_id,)).fetchone()
     con.close()
     return {"memory": row[0] if row and row[0] else ""}
@@ -763,7 +778,7 @@ async def user_photo(tg_id: int):
 async def user_stats(tg_id: int, x_admin_secret: str = Header(None)):
     if not ADMIN_SECRET or x_admin_secret != ADMIN_SECRET:
         return {"error": "forbidden"}
-    con = sqlite3.connect(DB)
+    con = db_connect()
     msg_count = con.execute("SELECT COUNT(*) FROM messages WHERE tg_id=? AND role='user'", (tg_id,)).fetchone()[0]
     user = con.execute("SELECT premium_until FROM users WHERE tg_id=?", (tg_id,)).fetchone()
     ref_count = _get_ref_count(tg_id)
@@ -788,7 +803,7 @@ class WhitelistData(BaseModel):
 async def get_whitelist(x_admin_secret: str = Header(None)):
     if not ADMIN_SECRET or x_admin_secret != ADMIN_SECRET:
         return {"error": "forbidden"}
-    con = sqlite3.connect(DB)
+    con = db_connect()
     rows = con.execute("SELECT username, added_at FROM whitelist ORDER BY added_at DESC").fetchall()
     con.close()
     return {"whitelist": [{"username": r[0], "added_at": r[1]} for r in rows]}
@@ -801,9 +816,10 @@ async def add_whitelist(data: WhitelistData):
     username = data.username.strip().lstrip("@").lower()
     if not username:
         return {"error": "empty username"}
-    con = sqlite3.connect(DB)
+    con = db_connect()
     con.execute(
-        "INSERT OR IGNORE INTO whitelist (username, added_at) VALUES (?,?)",
+        """INSERT INTO whitelist (username, added_at) VALUES (?,?)
+           ON CONFLICT DO NOTHING""",
         (username, datetime.now().strftime("%Y-%m-%d %H:%M"))
     )
     con.commit()
@@ -816,7 +832,7 @@ async def remove_whitelist(data: WhitelistData):
     if not ADMIN_SECRET or data.secret != ADMIN_SECRET:
         return {"error": "forbidden"}
     username = data.username.strip().lstrip("@").lower()
-    con = sqlite3.connect(DB)
+    con = db_connect()
     con.execute("DELETE FROM whitelist WHERE LOWER(username)=?", (username,))
     con.commit()
     con.close()
