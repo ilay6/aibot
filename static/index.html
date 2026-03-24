@@ -1932,7 +1932,7 @@
           <span class="cmd-card-desc">Ваши чаты и сообщения</span>
         </div>
         <div class="cmd-card cmd-card-premium" id="premium-card" onclick="купитьПремиум()">
-          <span class="cmd-card-icon" style="color:var(--accent)">⭐</span>
+          <span class="cmd-card-icon" style="color:var(--accent);display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
           <span class="cmd-card-title">Premium</span>
           <span class="cmd-card-desc">Безлимитный AI на 30 дней</span>
         </div>
@@ -1940,7 +1940,7 @@
       <div class="welcome-chips" style="margin-top:10px">
         <span class="chip" onclick="быстрыйЗапрос('Объясни код')">Объясни код</span>
         <span class="chip" onclick="быстрыйЗапрос('Помоги с текстом')">Помоги с текстом</span>
-        <span class="chip" onclick="открытьПоиск()">🔎 Найти в чате</span>
+        <span class="chip" onclick="открытьПоиск()" style="display:inline-flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg> Найти в чате</span>
         <span class="chip" onclick="быстрыйЗапрос('/lang')">EN/RU</span>
       </div>
     </div>
