@@ -1582,12 +1582,13 @@
   }
   .profile-avatar {
     width: 80px; height: 80px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    background: linear-gradient(135deg, var(--bg3), var(--bg2));
     display: flex; align-items: center; justify-content: center;
-    font-size: 32px; font-weight: 800; color: #000;
-    box-shadow: 0 0 0 4px var(--accent-ring), 0 8px 24px var(--accent-shadow);
-    flex-shrink: 0;
+    font-size: 32px; font-weight: 800; color: var(--text);
+    box-shadow: 0 0 0 3px var(--border2), 0 8px 24px var(--accent-shadow);
+    flex-shrink: 0; overflow: hidden;
   }
+  .profile-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; }
   .profile-name { font-size: 20px; font-weight: 700; color: var(--text); text-align: center; }
   .profile-username { font-size: 13px; color: var(--text2); text-align: center; }
   .profile-badge {
@@ -1777,7 +1778,7 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
     </button>
     <div class="logo">
-      <img src="/logo.jpg" alt="AIchat" onerror="this.style.display='none';this.parentElement.style.background='var(--accent)'">
+      <img src="/logo.svg" alt="AIchat" onerror="this.style.display='none';this.parentElement.style.background='var(--accent)'">
     </div>
     <div>
       <div class="header-title">AIchat | APP</div>
@@ -1887,7 +1888,7 @@
   <div class="messages" id="сообщения">
     <div class="welcome" id="приветствие">
       <div class="welcome-icon">
-        <img src="/logo.jpg" alt="AIchat" style="width:100%;height:100%;object-fit:cover;border-radius:24px;" onerror="this.style.display='none'">
+        <img src="/logo.svg" alt="AIchat" style="width:100%;height:100%;object-fit:cover;border-radius:24px;" onerror="this.style.display='none'">
       </div>
       <h2>AIchat | APP</h2>
       <p>Задай вопрос или выбери команду</p>
@@ -2737,11 +2738,15 @@
     const initials = name.charAt(0).toUpperCase();
     const BOT_UN = typeof BOT_USERNAME !== 'undefined' ? BOT_USERNAME : 'AIgptchatII_bot';
     const refLink = tgUser ? `https://t.me/${BOT_UN}?start=ref_${tgUser.id}` : '';
+    const photoUrl = tg?.initDataUnsafe?.user?.photo_url || '';
+    const avatarInner = photoUrl
+      ? `<img src="${photoUrl}" alt="${initials}" onerror="this.parentElement.innerHTML='${initials}'">`
+      : initials;
 
     // Сначала показываем базовую инфу
     el.innerHTML = `
       <div class="profile-avatar-wrap">
-        <div class="profile-avatar">${initials}</div>
+        <div class="profile-avatar">${avatarInner}</div>
         <div class="profile-name">${name}</div>
         ${username ? `<div class="profile-username">${username}</div>` : ''}
         <div class="profile-badge free" id="profile-badge">Загрузка...</div>
@@ -2895,7 +2900,7 @@
     const блок = document.getElementById('сообщения');
     блок.innerHTML = `<div class="welcome" id="приветствие">
       <div class="welcome-icon">
-        <img src="/logo.jpg" alt="AIchat" style="width:100%;height:100%;object-fit:cover;border-radius:20px;" onerror="this.style.display='none'">
+        <img src="/logo.svg" alt="AIchat" style="width:100%;height:100%;object-fit:cover;border-radius:20px;" onerror="this.style.display='none'">
       </div>
       <h2>AIchat | APP</h2>
       <p>Задай вопрос или выбери команду</p>

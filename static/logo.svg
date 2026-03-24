@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="640" height="640">
+  <rect width="640" height="640" fill="#0d0d0d"/>
+  <text
+    x="320" y="420"
+    text-anchor="middle"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="340"
+    font-weight="400"
+    fill="#ffffff"
+    letter-spacing="-10"
+  >Ai</text>
+</svg>
