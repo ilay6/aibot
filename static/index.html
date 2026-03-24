@@ -2265,11 +2265,11 @@
   // Redraw grid on theme change
   function redrawGridOnTheme() { setTimeout(drawGrid, 50); }
 
-  // Hide bottom nav when keyboard opens
+  // Hide bottom nav when keyboard opens (not on fullscreen changes)
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', () => {
-      const ratio = window.visualViewport.height / window.screen.height;
-      document.body.classList.toggle('kbd-open', ratio < 0.75);
+      const kbdOpen = window.innerHeight - window.visualViewport.height > 150;
+      document.body.classList.toggle('kbd-open', kbdOpen);
     });
   }
 
