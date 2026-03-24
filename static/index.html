@@ -1727,6 +1727,14 @@
   }
   .premium-banner-btn:active { transform: scale(0.93); }
   .premium-banner-btn:hover { background: var(--accent); color: var(--send-btn-color); }
+  .premium-banner-close {
+    flex-shrink: 0; width: 22px; height: 22px; border-radius: 6px;
+    background: none; border: none; color: var(--text2);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, color 0.15s;
+    margin-left: -4px;
+  }
+  .premium-banner-close:hover { background: var(--bg3); color: var(--text); }
 
   /* wide mode: hide bottom nav */
   body.wide-mode #bottom-nav { display: none; }
@@ -1954,6 +1962,9 @@
       <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M5 15l7-7 7 7"/></svg>
       Upgrade
     </button>
+    <button class="premium-banner-close" onclick="event.stopPropagation();скрытьБаннер()" title="Скрыть">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
   </div>
 
   <div class="input-area">
@@ -2180,6 +2191,11 @@
   // Sync with browser fullscreen events
   document.addEventListener('fullscreenchange', () => применитьРежимЭкрана(!!document.fullscreenElement));
 
+  // Auto wide-mode on desktop
+  if (window.innerWidth > 820) {
+    применитьРежимЭкрана(true);
+  }
+
   const ADMIN_ID = 739848745;
   const ADMIN_SECRET = "aibot_secret";
   const BOT_USERNAME = "AIgptchatII_bot";
@@ -2332,6 +2348,9 @@
   восстановитьИзМассива(JSON.parse(localStorage.getItem('чаты') || '[]'));
   отрисоватьИсторию();
 
+  // Затем подгружаем с сервера (синхронизация между устройствами)
+  загрузитьЧатыССервера();
+
   // ── LOAD USER STATUS (messages remaining, premium) ──
   загрузитьСтатусПользователя();
 
@@ -2347,6 +2366,12 @@
         localStorage.setItem('userMemory', d.memory);
       }
     }).catch(() => {});
+  }
+
+  function скрытьБаннер() {
+    const banner = document.getElementById('premium-banner');
+    if (banner) banner.classList.remove('visible');
+    localStorage.setItem('bannerHidden', Date.now());
   }
 
   async function купитьПремиум() {
@@ -2399,15 +2424,20 @@
       el.style.display = '';
       if (card) card.style.display = '';
       if (banner) {
-        banner.classList.add('visible');
         if (bannerTitle) bannerTitle.textContent = remaining <= 0
           ? 'Лимит исчерпан — подключите Premium'
           : `Осталось бесплатных: ${remaining}`;
-        // Red tint when out of messages
         banner.style.background = remaining <= 0
           ? 'linear-gradient(135deg,rgba(231,76,60,0.18),rgba(231,76,60,0.08))'
           : '';
         banner.style.borderColor = remaining <= 0 ? 'rgba(231,76,60,0.35)' : '';
+        // Show regardless if limit reached, otherwise respect hidden state
+        const hiddenAt = parseInt(localStorage.getItem('bannerHidden') || '0');
+        const freshHide = hiddenAt && (Date.now() - hiddenAt < 24 * 3600 * 1000);
+        if (remaining <= 0 || !freshHide) {
+          if (remaining <= 0) localStorage.removeItem('bannerHidden');
+          banner.classList.add('visible');
+        }
       }
     }
   }
@@ -2944,6 +2974,42 @@
     const trimmed = чаты.slice(0, 30);
     try { localStorage.setItem('чаты', JSON.stringify(trimmed)); }
     catch { чаты.splice(15); try { localStorage.setItem('чаты', JSON.stringify(чаты)); } catch {} }
+    // Sync to server (debounced)
+    clearTimeout(window._syncT);
+    window._syncT = setTimeout(синхронизироватьНаСервер, 1500);
+  }
+
+  async function синхронизироватьНаСервер() {
+    if (!tgUser) return;
+    const чаты = JSON.parse(localStorage.getItem('чаты') || '[]');
+    try {
+      await fetch('/api/chats/save', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({tg_id: tgUser.id, secret: ADMIN_SECRET, chats: чаты})
+      });
+    } catch {}
+  }
+
+  async function загрузитьЧатыССервера() {
+    if (!tgUser) return;
+    try {
+      const r = await fetch('/api/chats/load', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({tg_id: tgUser.id, secret: ADMIN_SECRET})
+      });
+      const d = await r.json();
+      if (!d.chats || d.chats.length === 0) return;
+      // Merge: server is source of truth, keep local-only chats
+      const local = JSON.parse(localStorage.getItem('чаты') || '[]');
+      const serverIds = new Set(d.chats.map(c => c.id));
+      const localOnly = local.filter(c => !serverIds.has(c.id));
+      const merged = [...d.chats, ...localOnly].sort((a, b) => (b.время||0) - (a.время||0)).slice(0, 30);
+      localStorage.setItem('чаты', JSON.stringify(merged));
+      восстановитьИзМассива(merged);
+      отрисоватьИсторию();
+    } catch {}
   }
 
 
