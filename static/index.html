@@ -2739,9 +2739,9 @@
     const initials = name.charAt(0).toUpperCase();
     const BOT_UN = typeof BOT_USERNAME !== 'undefined' ? BOT_USERNAME : 'AIgptchatII_bot';
     const refLink = tgUser ? `https://t.me/${BOT_UN}?start=ref_${tgUser.id}` : '';
-    const photoUrl = tg?.initDataUnsafe?.user?.photo_url || '';
-    const avatarInner = photoUrl
-      ? `<img src="${photoUrl}" alt="${initials}" onerror="this.parentElement.innerHTML='${initials}'">`
+    const photoUrl = tgUser ? `/api/user/photo/${tgUser.id}` : '';
+    const avatarInner = tgUser
+      ? `<img src="${photoUrl}" alt="${initials}" onerror="this.style.display='none';this.parentElement.insertAdjacentText('beforeend','${initials}')">`
       : initials;
 
     // Сначала показываем базовую инфу

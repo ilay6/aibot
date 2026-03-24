@@ -721,6 +721,41 @@ async def load_memory(data: MemoryData):
     return {"memory": row[0] if row and row[0] else ""}
 
 
+# ── USER PHOTO ──
+@app.get("/api/user/photo/{tg_id}")
+async def user_photo(tg_id: int):
+    token = os.getenv("TELEGRAM_BOT_TOKEN", "")
+    if not token:
+        return Response(status_code=404)
+    http = get_http()
+    try:
+        r = await http.get(
+            f"https://api.telegram.org/bot{token}/getUserProfilePhotos",
+            params={"user_id": tg_id, "limit": 1}
+        )
+        data = r.json()
+        photos = data.get("result", {}).get("photos", [])
+        if not photos:
+            return Response(status_code=404)
+        # pick largest size
+        file_id = photos[0][-1]["file_id"]
+        r2 = await http.get(
+            f"https://api.telegram.org/bot{token}/getFile",
+            params={"file_id": file_id}
+        )
+        file_path = r2.json().get("result", {}).get("file_path", "")
+        if not file_path:
+            return Response(status_code=404)
+        photo_url = f"https://api.telegram.org/file/bot{token}/{file_path}"
+        r3 = await http.get(photo_url)
+        if r3.status_code == 200:
+            return Response(content=r3.content, media_type="image/jpeg",
+                headers={"Cache-Control": "public, max-age=3600"})
+    except Exception:
+        pass
+    return Response(status_code=404)
+
+
 # ── USER STATS ──
 @app.get("/api/stats/{tg_id}")
 async def user_stats(tg_id: int, x_admin_secret: str = Header(None)):
