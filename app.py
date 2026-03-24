@@ -580,7 +580,7 @@ async def user_status(data: InvoiceRequest):
     con.close()
     used = row[0] if row else 0
     remaining = 9999 if is_prem else max(0, limit - used)
-    return {"is_premium": is_prem, "used": used, "limit": limit, "remaining": remaining}
+    return {"is_premium": is_prem, "used": used, "limit": limit, "remaining": remaining, "referrals": ref_count}
 
 
 @app.post("/api/premium/invoice")
