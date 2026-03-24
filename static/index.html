@@ -2174,7 +2174,16 @@
   }
 
   function переключитьПолныйЭкран() {
-    применитьРежимЭкрана(!_isFullscreen);
+    const goFull = !_isFullscreen;
+    _isFullscreen = goFull;
+    document.getElementById('fs-icon-expand').style.display = goFull ? 'none' : '';
+    document.getElementById('fs-icon-shrink').style.display = goFull ? '' : 'none';
+    if (tg?.requestFullscreen) {
+      if (goFull) tg.requestFullscreen(); else tg.exitFullscreen?.();
+    } else {
+      if (goFull) document.documentElement.requestFullscreen?.();
+      else document.exitFullscreen?.();
+    }
   }
 
   // Auto wide-mode on desktop only at initial load
