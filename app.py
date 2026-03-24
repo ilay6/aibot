@@ -25,8 +25,7 @@ ADMIN_SECRET = os.getenv("ADMIN_SECRET", "")
 WEBAPP_URL = os.getenv("WEBAPP_URL", "")
 BOT_USERNAME = os.getenv("BOT_USERNAME", "AIgptchatII_bot")
 PREMIUM_STARS = int(os.getenv("PREMIUM_STARS", "100"))
-RATE_LIMIT_FREE = int(os.getenv("RATE_LIMIT_FREE", "30"))
-RATE_LIMIT_WINDOW = 3600
+FREE_MESSAGES = int(os.getenv("FREE_MESSAGES", "10"))  # total free messages ever
 DB = "data.db"
 
 # ── LRU RESPONSE CACHE ──
@@ -152,37 +151,27 @@ def _get_ref_count(tg_id: int) -> int:
     return row[0] if row else 0
 
 def check_rate_limit(tg_id: int) -> tuple[bool, int]:
-    """Returns (allowed, seconds_until_reset). Premium users always allowed."""
+    """Returns (allowed, remaining). Premium users always allowed (remaining=9999)."""
     if not tg_id:
-        return True, 0
+        return True, 9999
     if _is_premium(tg_id):
-        return True, 0
+        return True, 9999
     ref_count = _get_ref_count(tg_id)
-    limit = RATE_LIMIT_FREE + ref_count * 5  # +5 per referral
-    now = datetime.now()
+    limit = FREE_MESSAGES + ref_count * 3  # +3 per referral
     con = sqlite3.connect(DB)
-    row = con.execute("SELECT count, window_start FROM rate_limits WHERE tg_id=?", (tg_id,)).fetchone()
+    row = con.execute("SELECT count FROM rate_limits WHERE tg_id=?", (tg_id,)).fetchone()
+    used = row[0] if row else 0
+    if used >= limit:
+        con.close()
+        return False, 0
     if row:
-        count, ws = row
-        try:
-            window_start = datetime.fromisoformat(ws)
-        except Exception:
-            window_start = now
-        elapsed = (now - window_start).total_seconds()
-        if elapsed >= RATE_LIMIT_WINDOW:
-            con.execute("UPDATE rate_limits SET count=1, window_start=? WHERE tg_id=?", (now.isoformat(), tg_id))
-            con.commit()
-            con.close()
-            return True, 0
-        if count >= limit:
-            con.close()
-            return False, int(RATE_LIMIT_WINDOW - elapsed)
         con.execute("UPDATE rate_limits SET count=count+1 WHERE tg_id=?", (tg_id,))
     else:
-        con.execute("INSERT INTO rate_limits (tg_id, count, window_start) VALUES (?,1,?)", (tg_id, now.isoformat()))
+        con.execute("INSERT INTO rate_limits (tg_id, count, window_start) VALUES (?,1,?)",
+                    (tg_id, datetime.now().isoformat()))
     con.commit()
     con.close()
-    return True, 0
+    return True, max(0, limit - used - 1)
 
 # ── LIFESPAN ──
 @asynccontextmanager
@@ -256,10 +245,9 @@ def _fix_messages_for_gpt(msgs: list) -> list:
 @app.post("/api/chat")
 async def чат(данные: ЗапросЧат):
     # Rate limit
-    allowed, wait_secs = check_rate_limit(данные.tg_id)
+    allowed, remaining = check_rate_limit(данные.tg_id)
     if not allowed:
-        mins = wait_secs // 60 + 1
-        return {"ответ": f"⏳ Лимит исчерпан (~{mins} мин.). Пригласи друзей /ref для +5 сообщений или купи Premium /premium в боте."}
+        return {"ответ": "", "paywall": True}
 
     модель = данные.модель if данные.модель in ALLOWED_MODELS else "mistral-large-latest"
     url, headers, model_name = _get_api(модель)
@@ -298,14 +286,12 @@ async def чат(данные: ЗапросЧат):
 @app.post("/api/chat/stream")
 async def чат_stream(данные: ЗапросЧат):
     # Rate limit
-    allowed, wait_secs = check_rate_limit(данные.tg_id)
+    allowed, remaining = check_rate_limit(данные.tg_id)
     if not allowed:
-        mins = wait_secs // 60 + 1
-        msg = f"⏳ Лимит исчерпан (~{mins} мин.). Пригласи друзей /ref для +5 сообщений или купи Premium /premium в боте."
-        async def _rate_limited():
-            yield f"data: {json.dumps({'d': msg})}\n\n"
+        async def _paywall():
+            yield f"data: {json.dumps({'paywall': True})}\n\n"
             yield "data: [DONE]\n\n"
-        return StreamingResponse(_rate_limited(), media_type="text/event-stream",
+        return StreamingResponse(_paywall(), media_type="text/event-stream",
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
     модель = данные.модель if данные.модель in ALLOWED_MODELS else "mistral-large-latest"
@@ -580,6 +566,21 @@ class PremiumData(BaseModel):
 class InvoiceRequest(BaseModel):
     tg_id: int
     secret: str = ""
+
+
+@app.post("/api/user/status")
+async def user_status(data: InvoiceRequest):
+    if not ADMIN_SECRET or data.secret != ADMIN_SECRET:
+        return {"error": "forbidden"}
+    is_prem = _is_premium(data.tg_id)
+    ref_count = _get_ref_count(data.tg_id)
+    limit = FREE_MESSAGES + ref_count * 3
+    con = sqlite3.connect(DB)
+    row = con.execute("SELECT count FROM rate_limits WHERE tg_id=?", (data.tg_id,)).fetchone()
+    con.close()
+    used = row[0] if row else 0
+    remaining = 9999 if is_prem else max(0, limit - used)
+    return {"is_premium": is_prem, "used": used, "limit": limit, "remaining": remaining}
 
 
 @app.post("/api/premium/invoice")

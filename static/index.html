@@ -1012,6 +1012,78 @@
   }
   .confirm-delete:hover { background: #e74c3c; }
 
+  /* ── PAYWALL MODAL ── */
+  .paywall-overlay {
+    position: fixed; inset: 0; z-index: 10001;
+    background: rgba(0,0,0,0.72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.35s ease; pointer-events: none;
+  }
+  .paywall-overlay.show { opacity: 1; pointer-events: auto; }
+  .paywall-card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 24px;
+    padding: 28px 24px 24px; max-width: 300px; width: 90%; text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px var(--glass-border);
+    transform: scale(0.88) translateY(16px); opacity: 0;
+    transition: transform 0.45s cubic-bezier(0.16,1,0.3,1), opacity 0.35s ease;
+    position: relative;
+  }
+  .paywall-overlay.show .paywall-card { transform: scale(1) translateY(0); opacity: 1; }
+  .paywall-close {
+    position: absolute; top: 14px; right: 14px;
+    background: var(--glass-bg); border: 1px solid var(--border); border-radius: 50%;
+    width: 28px; height: 28px; cursor: pointer; font-size: 14px; color: var(--text2);
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .paywall-close:hover { background: var(--glass-inner); transform: scale(1.08); }
+  .paywall-star {
+    font-size: 44px; line-height: 1; margin-bottom: 14px;
+    filter: drop-shadow(0 0 14px rgba(245,197,24,0.5));
+  }
+  .paywall-title {
+    font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 6px;
+  }
+  .paywall-sub {
+    font-size: 13px; color: var(--text2); margin-bottom: 18px; line-height: 1.6;
+  }
+  .paywall-features {
+    list-style: none; text-align: left; margin-bottom: 20px;
+    display: flex; flex-direction: column; gap: 7px;
+  }
+  .paywall-features li {
+    font-size: 13px; color: var(--text); display: flex; align-items: center; gap: 8px;
+  }
+  .paywall-features li::before { content: "✅"; font-size: 12px; }
+  .paywall-btn {
+    width: 100%; padding: 14px; border-radius: 16px; border: none;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: var(--send-btn-color); font-size: 15px; font-weight: 700;
+    font-family: inherit; cursor: pointer;
+    box-shadow: 0 4px 20px var(--accent-shadow);
+    transition: transform 0.15s, box-shadow 0.2s;
+  }
+  .paywall-btn:active { transform: scale(0.97); }
+  .paywall-btn:hover { box-shadow: 0 6px 28px var(--accent-shadow); }
+
+  /* ── MESSAGES LEFT BADGE ── */
+  .msgs-left {
+    font-size: 11px; color: var(--text2); padding: 2px 8px;
+    border-radius: 8px; background: var(--glass-bg); border: 1px solid var(--border);
+    white-space: nowrap; cursor: default;
+    transition: color 0.3s, border-color 0.3s;
+  }
+  .msgs-left.warn { color: #e67e22; border-color: rgba(230,126,34,0.3); }
+  .msgs-left.danger { color: #e74c3c; border-color: rgba(231,76,60,0.3); }
+  .msgs-left.premium { color: var(--accent); border-color: var(--accent-glow); }
+
+  /* ── PREMIUM CMD CARD ── */
+  .cmd-card-premium {
+    background: linear-gradient(135deg, rgba(245,197,24,0.12), rgba(245,197,24,0.04));
+    border-color: rgba(245,197,24,0.25) !important;
+  }
+  .cmd-card-premium .cmd-card-title { color: var(--accent) !important; }
+
   .offline-banner {
     display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
     background: #c0392b; color: #fff; text-align: center;
@@ -1555,6 +1627,23 @@
   </div>
 </div>
 
+<!-- PAYWALL MODAL -->
+<div class="paywall-overlay" id="paywall-overlay" onclick="if(event.target===this)закрытьПэйволл()">
+  <div class="paywall-card">
+    <button class="paywall-close" onclick="закрытьПэйволл()">✕</button>
+    <div class="paywall-star">⭐</div>
+    <div class="paywall-title">Лимит исчерпан</div>
+    <div class="paywall-sub">Вы использовали все бесплатные сообщения.<br>Получите Premium для безлимитного доступа.</div>
+    <ul class="paywall-features">
+      <li>Безлимитный чат 30 дней</li>
+      <li>Все AI модели без ограничений</li>
+      <li>Генерация изображений</li>
+      <li>Приоритетная обработка</li>
+    </ul>
+    <button class="paywall-btn" onclick="закрытьПэйволл();купитьПремиум()">⭐ Купить Premium</button>
+  </div>
+</div>
+
 <!-- OFFLINE BANNER -->
 <div class="offline-banner" id="offline-banner">Нет соединения</div>
 
@@ -1626,6 +1715,11 @@
           <span class="cmd-card-title">Статистика</span>
           <span class="cmd-card-desc">Ваши чаты и сообщения</span>
         </div>
+        <div class="cmd-card cmd-card-premium" id="premium-card" onclick="купитьПремиум()" style="display:none">
+          <span class="cmd-card-icon" style="color:var(--accent)">⭐</span>
+          <span class="cmd-card-title">Premium</span>
+          <span class="cmd-card-desc">Безлимитный AI на 30 дней</span>
+        </div>
       </div>
       <div class="welcome-chips" style="margin-top:10px">
         <span class="chip" onclick="быстрыйЗапрос('Объясни код')">Объясни код</span>
@@ -1660,6 +1754,7 @@
         </div>
       </div>
       <span class="char-counter" id="char-counter"></span>
+      <span class="msgs-left" id="msgs-left" style="display:none"></span>
     </div>
     <div class="input-wrap">
       <textarea id="ввод" placeholder="Напиши сообщение..." rows="1"
@@ -1770,6 +1865,8 @@
         }
         показатьТост('🌟 Premium активирован!', 5000);
         добавитьСообщение('🌟 **Premium активирован!**\n\n✅ 30 дней безлимитного чата\n✅ Все модели без ограничений\n\nСпасибо за поддержку! 🙏', 'bot');
+        закрытьПэйволл();
+        setTimeout(загрузитьСтатусПользователя, 1000);
       }
     });
   }
@@ -2004,6 +2101,9 @@
     }).catch(() => {});
   }
 
+  // ── LOAD USER STATUS (messages remaining, premium) ──
+  загрузитьСтатусПользователя();
+
   // ── USER MEMORY: load and inject into system prompt ──
   if (tgUser) {
     fetch('/api/memory/load', {
@@ -2039,6 +2139,45 @@
     } catch (e) {
       показатьТост('Ошибка соединения');
     }
+  }
+
+  function показатьПэйволл() {
+    document.getElementById('paywall-overlay').classList.add('show');
+  }
+  function закрытьПэйволл() {
+    document.getElementById('paywall-overlay').classList.remove('show');
+  }
+
+  let _msgsLeft = null;
+  function обновитьСчетчикСообщений(remaining, isPremium) {
+    const el = document.getElementById('msgs-left');
+    const card = document.getElementById('premium-card');
+    if (!el) return;
+    if (isPremium) {
+      el.textContent = '⭐ Premium';
+      el.className = 'msgs-left premium';
+      el.style.display = '';
+      if (card) card.style.display = 'none';
+    } else if (remaining !== null && remaining !== undefined) {
+      _msgsLeft = remaining;
+      el.textContent = `${remaining} сообщений`;
+      el.className = 'msgs-left' + (remaining <= 3 ? ' danger' : remaining <= 7 ? ' warn' : '');
+      el.style.display = '';
+      if (card) card.style.display = remaining <= 5 ? '' : 'none';
+    }
+  }
+
+  async function загрузитьСтатусПользователя() {
+    if (!tgUser) return;
+    try {
+      const r = await fetch('/api/user/status', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({tg_id: tgUser.id, secret: ADMIN_SECRET})
+      });
+      const d = await r.json();
+      обновитьСчетчикСообщений(d.remaining, d.is_premium);
+    } catch {}
   }
 
   function сохранитьПамять(text) {
@@ -2682,8 +2821,16 @@
               const data = line.slice(6);
               if (data === '[DONE]') { streamDone = true; break; }
               try {
-                const chunk = JSON.parse(data).d;
-                if (chunk) полныйОтвет += chunk;
+                const parsed = JSON.parse(data);
+                if (parsed.paywall) {
+                  streamDone = true;
+                  div.remove();
+                  история.pop();
+                  кнопка.disabled = false; кнопка.classList.remove('loading');
+                  показатьПэйволл();
+                  return;
+                }
+                if (parsed.d) полныйОтвет += parsed.d;
               } catch {}
             }
             if (полныйОтвет) {
@@ -2703,6 +2850,7 @@
             трекнуть(полныйОтвет.slice(0, 500), 'assistant');
             сохранитьЧат();
             добавитьПодсказки(пузырь);
+            загрузитьСтатусПользователя();
           }
         }
       }
