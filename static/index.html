@@ -177,7 +177,7 @@
     font-size:10px; font-weight:700; letter-spacing:0.5px; color:var(--accent);
     width:auto; padding:0 10px;
   }
-  @media (max-width: 600px) {
+  @media (max-width: 820px) {
     .hdr-btn-fs { display:none !important; }
   }
 
@@ -2190,10 +2190,13 @@
   // Sync with browser fullscreen events
   document.addEventListener('fullscreenchange', () => применитьРежимЭкрана(!!document.fullscreenElement));
 
-  // Auto wide-mode on desktop
-  if (window.innerWidth > 820) {
-    применитьРежимЭкрана(true);
+  // Auto wide-mode on desktop, responsive to resize
+  function проверитьШиринуЭкрана() {
+    const isWide = window.innerWidth > 820;
+    if (isWide !== _isFullscreen) применитьРежимЭкрана(isWide);
   }
+  проверитьШиринуЭкрана();
+  window.addEventListener('resize', проверитьШиринуЭкрана);
 
   const ADMIN_ID = 739848745;
   const ADMIN_SECRET = "aibot_secret";
@@ -2293,6 +2296,8 @@
 
   // ── ICONS (нужны до восстановления чата) ──
   const copyIconSvg = `<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>`;
+  const likeIconSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>`;
+  const dislikeIconSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>`;
   const doneIconSvg  = `<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`;
   const ttsIconSvg = `<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>`;
   const userIcon = `<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>`;
@@ -3182,7 +3187,7 @@
       div.innerHTML = `<div class="avatar">${getUserAvatarContent()}</div><div class="bubble">${content}<div class="bubble-footer"><span class="msg-time">${время}</span></div></div>`;
     } else {
       const strТекст = Array.isArray(текст) ? (текст.find(c => c.type === 'text')?.text || '') : текст;
-      div.innerHTML = `<div class="avatar">${botIcon}</div><div class="bubble">${форматировать(strТекст)}<div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button><button class="tts-btn" onclick="озвучить(this)">${ttsIconSvg} Озвучить</button><span class="reaction-btns"><button class="react-btn" onclick="реакция(this,'up')">👍</button><button class="react-btn" onclick="реакция(this,'down')">👎</button></span></div></div>`;
+      div.innerHTML = `<div class="avatar">${botIcon}</div><div class="bubble">${форматировать(strТекст)}<div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button><button class="tts-btn" onclick="озвучить(this)">${ttsIconSvg} Озвучить</button><span class="reaction-btns"><button class="react-btn" onclick="реакция(this,'up')">${likeIconSvg}</button><button class="react-btn" onclick="реакция(this,'down')">${dislikeIconSvg}</button></span></div></div>`;
     }
     блок.appendChild(div);
     блок.scrollTop = блок.scrollHeight;
@@ -3269,7 +3274,7 @@
           div.className = 'msg bot';
           const пузырь = document.createElement('div');
           пузырь.className = 'bubble';
-          const footer = `<div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button><button class="tts-btn" onclick="озвучить(this)">${ttsIconSvg} Озвучить</button><span class="reaction-btns"><button class="react-btn" onclick="реакция(this,'up')">👍</button><button class="react-btn" onclick="реакция(this,'down')">👎</button></span></div>`;
+          const footer = `<div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button><button class="tts-btn" onclick="озвучить(this)">${ttsIconSvg} Озвучить</button><span class="reaction-btns"><button class="react-btn" onclick="реакция(this,'up')">${likeIconSvg}</button><button class="react-btn" onclick="реакция(this,'down')">${dislikeIconSvg}</button></span></div>`;
           div.innerHTML = `<div class="avatar">${botIcon}</div>`;
           div.appendChild(пузырь);
           msgs.appendChild(div);
@@ -3342,7 +3347,7 @@
     div.className = 'msg bot';
     const пузырь = document.createElement('div');
     пузырь.className = 'bubble';
-    пузырь.innerHTML = `<div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button><button class="tts-btn" onclick="озвучить(this)">${ttsIconSvg} Озвучить</button><span class="reaction-btns"><button class="react-btn" onclick="реакция(this,'up')">👍</button><button class="react-btn" onclick="реакция(this,'down')">👎</button></span></div>`;
+    пузырь.innerHTML = `<div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button><button class="tts-btn" onclick="озвучить(this)">${ttsIconSvg} Озвучить</button><span class="reaction-btns"><button class="react-btn" onclick="реакция(this,'up')">${likeIconSvg}</button><button class="react-btn" onclick="реакция(this,'down')">${dislikeIconSvg}</button></span></div>`;
     div.innerHTML = `<div class="avatar">${botIcon}</div>`;
     div.appendChild(пузырь);
     блок.appendChild(div);
@@ -3351,7 +3356,7 @@
     const слова = текст.split('');
     let накоплен = '';
     const задержка = Math.max(4, Math.min(20, Math.round(2000 / слова.length)));
-    const footer = `<div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button><button class="tts-btn" onclick="озвучить(this)">${ttsIconSvg} Озвучить</button><span class="reaction-btns"><button class="react-btn" onclick="реакция(this,'up')">👍</button><button class="react-btn" onclick="реакция(this,'down')">👎</button></span></div>`;
+    const footer = `<div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button><button class="tts-btn" onclick="озвучить(this)">${ttsIconSvg} Озвучить</button><span class="reaction-btns"><button class="react-btn" onclick="реакция(this,'up')">${likeIconSvg}</button><button class="react-btn" onclick="реакция(this,'down')">${dislikeIconSvg}</button></span></div>`;
 
     for (const символ of слова) {
       накоплен += символ;
