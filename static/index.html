@@ -1867,10 +1867,10 @@
 
 <!-- CONTEXT MENU -->
 <div class="ctx-menu" id="ctx-menu">
-  <div class="ctx-item" onclick="ctxКопировать()">⊐ Копировать текст</div>
-  <div class="ctx-item" onclick="ctxОзвучить()">🔊 Озвучить</div>
-  <div class="ctx-item" onclick="ctxПоиск()">🔍 Поиск в Google</div>
-  <div class="ctx-item danger" onclick="ctxУдалить()">✕ Удалить</div>
+  <div class="ctx-item" onclick="ctxКопировать()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Копировать текст</div>
+  <div class="ctx-item" onclick="ctxОзвучить()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg> Озвучить</div>
+  <div class="ctx-item" onclick="ctxПоиск()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg> Поиск в Google</div>
+  <div class="ctx-item danger" onclick="ctxУдалить()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg> Удалить</div>
 </div>
 
 <!-- CUSTOM PROMPT MODAL -->
@@ -2075,7 +2075,7 @@
       <div class="stat-card"><div class="stat-num" id="stat-users">—</div><div class="stat-label">Пользователей</div></div>
       <div class="stat-card"><div class="stat-num" id="stat-msgs">—</div><div class="stat-label">Сообщений</div></div>
     </div>
-    <button class="admin-refresh" onclick="загрузитьАдмин()">↻ Обновить данные</button>
+    <button class="admin-refresh" onclick="загрузитьАдмин()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Обновить</button>
     <div id="admin-error" style="display:none" class="admin-error"></div>
     <div>
       <div class="admin-section-title">Пользователи</div>
@@ -2374,7 +2374,7 @@
       показатьТост('Доступно только в Telegram');
       return;
     }
-    показатьТост('⭐ Загружаю счёт...');
+    показатьТост('Загружаю счёт...');
     try {
       const resp = await fetch('/api/premium/invoice', {
         method: 'POST',
@@ -2604,9 +2604,9 @@
   function экспортЧата() {
     const msgs = история.filter(m => m.role !== 'system');
     if (msgs.length === 0) { показатьТост('Нет сообщений для экспорта'); return; }
-    let text = '💬 AIchat — Экспорт диалога\n' + '═'.repeat(30) + '\n\n';
+    let text = 'AIchat — Экспорт диалога\n' + '─'.repeat(30) + '\n\n';
     msgs.forEach(m => {
-      const role = m.role === 'user' ? '👤 Вы' : '🤖 AI';
+      const role = m.role === 'user' ? 'Вы' : 'AI';
       const content = typeof m.content === 'string' ? m.content : (m.content?.find?.(c => c.type === 'text')?.text || '[Изображение]');
       text += `${role} (${m.time || ''}):\n${content}\n\n`;
     });
@@ -2731,7 +2731,7 @@
     const p = document.createElement('div');
     p.className = 'bubble';
     p.style.cssText = 'background:#c0392b;color:#fff;';
-    p.innerHTML = `${экранировать(текст)}<br><button onclick="this.closest('.msg').remove();повторитьПоследнее()" style="margin-top:6px;padding:4px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.15);color:#fff;cursor:pointer;font-size:12px;font-family:inherit">↻ Повторить</button>`;
+    p.innerHTML = `${экранировать(текст)}<br><button onclick="this.closest('.msg').remove();повторитьПоследнее()" style="margin-top:6px;padding:4px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.15);color:#fff;cursor:pointer;font-size:12px;font-family:inherit">Повторить</button>`;
     div.appendChild(p);
     msgs.appendChild(div);
     msgs.scrollTop = msgs.scrollHeight;
@@ -3109,7 +3109,7 @@
       const idx = parts.length;
       const langLabel = lang || 'code';
       const codeClean = code.replace(/\n$/, '');
-      parts.push(`<div class="code-block-wrap"><div class="code-block-header"><span class="code-lang">${langLabel}</span><button class="code-dl-btn" onclick="скачатьКод(this,'${langLabel}')">⬇ Скачать</button><button class="code-copy-btn" onclick="копироватьКод(this)">⊐ Копировать</button></div><pre><code>${codeClean}</code></pre></div>`);
+      parts.push(`<div class="code-block-wrap"><div class="code-block-header"><span class="code-lang">${langLabel}</span><button class="code-dl-btn" onclick="скачатьКод(this,'${langLabel}')"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Скачать</button><button class="code-copy-btn" onclick="копироватьКод(this)"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Копировать</button></div><pre><code>${codeClean}</code></pre></div>`);
       return `\x00${idx}\x00`;
     });
     // Inline code
@@ -3145,7 +3145,7 @@
   }
   function копироватьКод(btn) {
     const code = btn.closest('.code-block-wrap').querySelector('code').innerText;
-    navigator.clipboard.writeText(code).then(() => { btn.textContent = '✓ Скопировано'; setTimeout(() => btn.textContent = '⊐ Копировать', 2000); });
+    navigator.clipboard.writeText(code).then(() => { btn.textContent = 'Скопировано'; setTimeout(() => btn.textContent = 'Копировать', 2000); });
   }
   function скачатьКод(btn, lang) {
     const code = btn.closest('.code-block-wrap').querySelector('code').innerText;
@@ -3421,7 +3421,7 @@
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       const d = await resp.json();
       if (d.error) {
-        errEl.textContent = '⚠️ ' + d.error + ' — убедитесь что ADMIN_SECRET задан в переменных Railway';
+        errEl.textContent = '' + d.error + ' — убедитесь что ADMIN_SECRET задан в переменных Railway';
         errEl.style.display = 'block';
         document.getElementById('admin-users').innerHTML    = '<div class="admin-empty">—</div>';
         document.getElementById('admin-messages').innerHTML = '<div class="admin-empty">—</div>';
@@ -3442,7 +3442,7 @@
       document.getElementById('admin-messages').innerHTML = d.recent_messages && d.recent_messages.length
         ? d.recent_messages.map((m, i) => {
           const isBot = m.role === 'assistant';
-          const label = isBot ? '🤖 AI' : экранировать(m.name || '?') + (m.username ? ' @'+экранировать(m.username) : '');
+          const label = isBot ? 'AI' : экранировать(m.name || '?') + (m.username ? ' @'+экранировать(m.username) : '');
           return `<div class="admin-msg" style="animation-delay:${i*0.02}s${isBot ? ';border-left:2px solid var(--accent);opacity:0.75' : ''}">
             <div class="admin-msg-author">${label}</div>
             <div class="admin-msg-text">${экранировать(m.text || '')}</div>
@@ -3451,7 +3451,7 @@
         }).join('')
         : '<div class="admin-empty">Нет сообщений</div>';
     } catch(e) {
-      errEl.textContent = '⚠️ Ошибка загрузки: ' + e.message;
+      errEl.textContent = 'Ошибка загрузки: ' + e.message;
       errEl.style.display = 'block';
       document.getElementById('admin-users').innerHTML    = '<div class="admin-empty">—</div>';
       document.getElementById('admin-messages').innerHTML = '<div class="admin-empty">—</div>';
@@ -3477,9 +3477,9 @@
     document.getElementById('чат').classList.remove('empty');
 
     // Сообщение пользователя
-    добавитьСообщение('🎨 ' + запрос, 'user', false);
-    история.push({ role: 'user', content: '🎨 ' + запрос, time: текущееВремя() });
-    трекнуть('🎨 ' + запрос, 'user');
+    добавитьСообщение(запрос, 'user', false);
+    история.push({ role: 'user', content: запрос, time: текущееВремя() });
+    трекнуть(запрос, 'user');
 
     // Typing
     const типинг = document.createElement('div');
@@ -3630,8 +3630,9 @@
         { type: 'image_url', image_url: { url: imgData } }
       ], time: текущееВремя() });
 
-      const типингDiv = document.createElement('p');
-      типингDiv.innerHTML = `<div class="typing"><span></span><span></span><span></span></div>`;
+      const типингDiv = document.createElement('div');
+      типингDiv.className = 'msg bot';
+      типингDiv.innerHTML = `<div class="avatar">${botIcon}</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
       msgs.appendChild(типингDiv);
       msgs.scrollTop = msgs.scrollHeight;
 
@@ -3809,7 +3810,7 @@
 
   // ── WEB SEARCH ──
   async function вебПоиск(запрос) {
-    показатьТост('🔍 Ищу в интернете...');
+    показатьТост('Ищу в интернете...');
     try {
       const resp = await fetch('/api/search', {
         method: 'POST',
@@ -4013,7 +4014,7 @@
       const q = текст.replace(/^\/(search|поиск)\s+/, '').trim();
       if (!q) return;
       поле.value = ''; поле.style.height = 'auto'; обновитьСчетчик(0);
-      добавитьСообщение('🔍 ' + q, 'user', false);
+      добавитьСообщение(q, 'user', false);
       история.push({ role: 'user', content: q, time: текущееВремя() });
       const ok = await вебПоиск(q);
       if (ok) {

@@ -772,7 +772,7 @@ async def user_stats(tg_id: int, x_admin_secret: str = Header(None)):
             is_prem = datetime.now() < datetime.fromisoformat(user[0])
         except Exception:
             pass
-    limit = RATE_LIMIT_FREE + ref_count * 5
+    limit = FREE_MESSAGES + ref_count * 3
     return {"messages": msg_count, "referrals": ref_count, "is_premium": is_prem, "hourly_limit": limit}
 
 
