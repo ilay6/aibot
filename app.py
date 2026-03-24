@@ -223,8 +223,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 ALLOWED_MODELS = {"mistral-large-latest", "mistral-small-latest", "codestral-latest", "gpt", "pixtral-large-latest"}
-POLLINATIONS_URL = "https://text.pollinations.ai/openai/chat/completions"
-POLLINATIONS_URL2 = "https://api.pollinations.ai/v1/chat/completions"
+POLLINATIONS_URL = "https://gen.pollinations.ai/v1/chat/completions"
+POLLINATIONS_API_KEY = os.getenv("POLLINATIONS_API_KEY", "")
 
 
 class ЗапросЧат(BaseModel):
@@ -248,7 +248,10 @@ class TrackData(BaseModel):
 
 def _get_api(модель: str):
     if модель == "gpt":
-        return POLLINATIONS_URL, {}, "openai"
+        headers = {}
+        if POLLINATIONS_API_KEY:
+            headers["Authorization"] = f"Bearer {POLLINATIONS_API_KEY}"
+        return POLLINATIONS_URL, headers, "openai"
     return MISTRAL_URL, {"Authorization": f"Bearer {MISTRAL_API_KEY}"}, модель
 
 
@@ -351,20 +354,19 @@ async def чат_stream(данные: ЗапросЧат):
                     return
             except Exception:
                 await asyncio.sleep(2)
-        # GPT fallback: try second Pollinations endpoint non-stream
+        # GPT fallback: non-streaming request to Pollinations
         if модель == "gpt":
-            for fallback_url in [POLLINATIONS_URL, POLLINATIONS_URL2]:
-                try:
-                    fallback_payload = {"model": model_name, "messages": msgs}
-                    r = await http.post(fallback_url, headers=headers, json=fallback_payload,
-                                       timeout=httpx.Timeout(30, connect=8))
-                    if r.status_code == 200:
-                        text = r.json()["choices"][0]["message"]["content"]
-                        yield f"data: {json.dumps({'d': text})}\n\n"
-                        yield "data: [DONE]\n\n"
-                        return
-                except Exception:
-                    pass
+            try:
+                fallback_payload = {"model": model_name, "messages": msgs}
+                r = await http.post(POLLINATIONS_URL, headers=headers, json=fallback_payload,
+                                   timeout=httpx.Timeout(30, connect=8))
+                if r.status_code == 200:
+                    text = r.json()["choices"][0]["message"]["content"]
+                    yield f"data: {json.dumps({'d': text})}\n\n"
+                    yield "data: [DONE]\n\n"
+                    return
+            except Exception:
+                pass
         yield f"data: {json.dumps({'d': 'GPT временно недоступен. Попробуйте Mistral Small — он работает стабильнее.'})}\n\n"
         yield "data: [DONE]\n\n"
 
