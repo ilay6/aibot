@@ -26,7 +26,7 @@ WEBAPP_URL = os.getenv("WEBAPP_URL", "")
 BOT_USERNAME = os.getenv("BOT_USERNAME", "AIgptchatII_bot")
 PREMIUM_STARS = int(os.getenv("PREMIUM_STARS", "100"))
 FREE_MESSAGES = int(os.getenv("FREE_MESSAGES", "10"))  # total free messages ever
-DB = "data.db"
+DB = os.getenv("DB_PATH", "data.db")
 
 # ── LRU RESPONSE CACHE ──
 class _LRUCache:
