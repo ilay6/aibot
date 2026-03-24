@@ -88,6 +88,7 @@
     flex-direction: column;
     overflow: hidden;
     position: relative;
+    padding-top: var(--tg-content-safe-area-inset-top, 0px);
     transition: background 0.5s cubic-bezier(0.16,1,0.3,1), color 0.5s cubic-bezier(0.16,1,0.3,1);
   }
 
@@ -2180,18 +2181,13 @@
     _isFullscreen = goFull;
     document.getElementById('fs-icon-expand').style.display = goFull ? 'none' : '';
     document.getElementById('fs-icon-shrink').style.display = goFull ? '' : 'none';
-    if (_isMobile) {
-      // На телефоне — только Telegram fullscreen, layout не трогаем
-      if (tg?.requestFullscreen) {
-        if (goFull) tg.requestFullscreen(); else tg.exitFullscreen?.();
-      }
+    if (tg?.requestFullscreen) {
+      // Telegram fullscreen API — работает и на ПК, и на телефоне
+      if (goFull) tg.requestFullscreen(); else tg.exitFullscreen?.();
     } else {
-      // На ПК — только wide-mode (боковая панель)
-      document.body.classList.toggle('wide-mode', goFull);
-      if (goFull) {
-        document.getElementById('sidebar').classList.remove('open');
-        document.getElementById('sidebar-overlay').classList.remove('show');
-      }
+      // Fallback (браузер без Telegram): нативный fullscreen
+      if (goFull) document.documentElement.requestFullscreen?.();
+      else document.exitFullscreen?.();
     }
   }
 
