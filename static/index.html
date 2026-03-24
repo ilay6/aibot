@@ -1756,7 +1756,23 @@
   function getModel() { return _selectedModel; }
 
   const tg = window.Telegram?.WebApp;
-  if (tg) { tg.expand(); }
+  if (tg) {
+    tg.expand();
+    tg.onEvent('invoiceClosed', function(obj) {
+      if (obj.status === 'paid') {
+        const uid = tg?.initDataUnsafe?.user?.id;
+        if (uid) {
+          fetch('/api/premium/grant', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({tg_id: uid, secret: ADMIN_SECRET})
+          }).catch(() => {});
+        }
+        показатьТост('🌟 Premium активирован!', 5000);
+        добавитьСообщение('🌟 **Premium активирован!**\n\n✅ 30 дней безлимитного чата\n✅ Все модели без ограничений\n\nСпасибо за поддержку! 🙏', 'bot');
+      }
+    });
+  }
 
   // ── FULLSCREEN / WIDE MODE ──
   let _isFullscreen = false;
@@ -2000,6 +2016,29 @@
         localStorage.setItem('userMemory', d.memory);
       }
     }).catch(() => {});
+  }
+
+  async function купитьПремиум() {
+    if (!tgUser || !tg) {
+      показатьТост('Доступно только в Telegram');
+      return;
+    }
+    показатьТост('⭐ Загружаю счёт...');
+    try {
+      const resp = await fetch('/api/premium/invoice', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({tg_id: tgUser.id, secret: ADMIN_SECRET})
+      });
+      const data = await resp.json();
+      if (data.url) {
+        tg.openInvoice(data.url);
+      } else {
+        показатьТост('Ошибка: ' + (data.error || 'попробуйте позже'));
+      }
+    } catch (e) {
+      показатьТост('Ошибка соединения');
+    }
   }
 
   function сохранитьПамять(text) {
@@ -3378,7 +3417,7 @@
     // Premium
     if (текст === '/premium' || текст === '/премиум') {
       поле.value = ''; поле.style.height = 'auto'; обновитьСчетчик(0);
-      добавитьСообщение(`⭐ **Premium подписка**\n\n✅ Безлимитный чат 30 дней\n✅ Все модели без ограничений\n\nЧтобы купить — открой бота в Telegram и напиши /premium там.\n\nСтоимость: 100 ⭐ Telegram Stars`, 'bot');
+      купитьПремиум();
       return;
     }
     // Referral

@@ -577,6 +577,39 @@ class PremiumData(BaseModel):
     secret: str = ""
 
 
+class InvoiceRequest(BaseModel):
+    tg_id: int
+    secret: str = ""
+
+
+@app.post("/api/premium/invoice")
+async def create_invoice(data: InvoiceRequest):
+    if not ADMIN_SECRET or data.secret != ADMIN_SECRET:
+        return {"error": "forbidden"}
+    token = os.getenv("TELEGRAM_BOT_TOKEN", "")
+    if not token:
+        return {"error": "no bot token"}
+    http = get_http()
+    try:
+        r = await http.post(
+            f"https://api.telegram.org/bot{token}/createInvoiceLink",
+            json={
+                "title": "⭐ Premium подписка",
+                "description": "Безлимитный AI-чат на 30 дней. Без ограничений на количество сообщений.",
+                "payload": f"premium_{data.tg_id}",
+                "provider_token": "",
+                "currency": "XTR",
+                "prices": [{"label": "Premium 30 дней", "amount": PREMIUM_STARS}]
+            }
+        )
+        result = r.json()
+        if r.status_code == 200 and result.get("ok"):
+            return {"url": result["result"]}
+        return {"error": result.get("description", "failed")}
+    except Exception as e:
+        return {"error": str(e)}
+
+
 @app.post("/api/premium/grant")
 async def grant_premium(data: PremiumData):
     if not ADMIN_SECRET or data.secret != ADMIN_SECRET:
