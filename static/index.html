@@ -11,67 +11,70 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-  /* ── CURSOR DARK (default) ── */
+  /* ── MONO DARK (default) ── */
   :root {
-    --bg: #141414;
-    --bg2: #1c1c1c;
-    --bg3: #242424;
-    --border: #2e2e2e;
-    --text: #e8e8e8;
-    --text2: #7a7a7a;
-    --accent: #4f8fff;
-    --accent2: #3a7aee;
-    --accent-glow: rgba(79,143,255,0.15);
-    --accent-shadow: rgba(79,143,255,0.35);
-    --accent-ring: rgba(79,143,255,0.10);
-    --header-bg: rgba(20,20,20,0.96);
-    --surface-bg: rgba(20,20,20,0.94);
+    --bg: #111111;
+    --bg2: #1a1a1a;
+    --bg3: #222222;
+    --border: #2c2c2c;
+    --border2: #383838;
+    --text: #f0f0f0;
+    --text2: #6a6a6a;
+    --accent: #ffffff;
+    --accent2: #d0d0d0;
+    --accent-glow: rgba(255,255,255,0.07);
+    --accent-shadow: rgba(255,255,255,0.12);
+    --accent-ring: rgba(255,255,255,0.05);
+    --header-bg: rgba(17,17,17,0.97);
+    --surface-bg: rgba(17,17,17,0.95);
     --glass-bg: rgba(255,255,255,0.04);
     --glass-border: rgba(255,255,255,0.07);
-    --glass-inner: rgba(255,255,255,0.05);
-    --send-btn-color: #fff;
+    --glass-inner: rgba(255,255,255,0.06);
+    --send-btn-color: #111;
   }
 
-  /* ── CURSOR MIDNIGHT ── */
+  /* ── MONO DEEP ── */
   [data-theme="tiffany"] {
-    --bg: #0d0d0d;
-    --bg2: #161616;
-    --bg3: #1e1e1e;
-    --border: #282828;
-    --text: #f0f0f0;
-    --text2: #666666;
-    --accent: #6e9fff;
-    --accent2: #5a8ff0;
-    --accent-glow: rgba(110,159,255,0.14);
-    --accent-shadow: rgba(110,159,255,0.32);
-    --accent-ring: rgba(110,159,255,0.09);
-    --header-bg: rgba(13,13,13,0.97);
-    --surface-bg: rgba(13,13,13,0.95);
+    --bg: #0a0a0a;
+    --bg2: #131313;
+    --bg3: #1c1c1c;
+    --border: #252525;
+    --border2: #303030;
+    --text: #f5f5f5;
+    --text2: #585858;
+    --accent: #ffffff;
+    --accent2: #c8c8c8;
+    --accent-glow: rgba(255,255,255,0.06);
+    --accent-shadow: rgba(255,255,255,0.10);
+    --accent-ring: rgba(255,255,255,0.04);
+    --header-bg: rgba(10,10,10,0.98);
+    --surface-bg: rgba(10,10,10,0.96);
     --glass-bg: rgba(255,255,255,0.03);
     --glass-border: rgba(255,255,255,0.06);
     --glass-inner: rgba(255,255,255,0.04);
-    --send-btn-color: #fff;
+    --send-btn-color: #0a0a0a;
   }
 
-  /* ── CURSOR LIGHT ── */
+  /* ── MONO LIGHT ── */
   [data-theme="light"] {
-    --bg: #f5f5f5;
+    --bg: #f8f8f8;
     --bg2: #ffffff;
-    --bg3: #ebebeb;
-    --border: #e0e0e0;
-    --text: #1a1a1a;
-    --text2: #777777;
-    --accent: #4f8fff;
-    --accent2: #3a7aee;
-    --accent-glow: rgba(79,143,255,0.12);
-    --accent-shadow: rgba(79,143,255,0.28);
-    --accent-ring: rgba(79,143,255,0.10);
-    --header-bg: rgba(245,245,245,0.96);
-    --surface-bg: rgba(245,245,245,0.94);
-    --glass-bg: rgba(255,255,255,0.70);
-    --glass-border: rgba(0,0,0,0.08);
+    --bg3: #f0f0f0;
+    --border: #e4e4e4;
+    --border2: #d4d4d4;
+    --text: #111111;
+    --text2: #888888;
+    --accent: #111111;
+    --accent2: #333333;
+    --accent-glow: rgba(0,0,0,0.06);
+    --accent-shadow: rgba(0,0,0,0.14);
+    --accent-ring: rgba(0,0,0,0.05);
+    --header-bg: rgba(248,248,248,0.97);
+    --surface-bg: rgba(248,248,248,0.95);
+    --glass-bg: rgba(0,0,0,0.03);
+    --glass-border: rgba(0,0,0,0.07);
     --glass-inner: rgba(255,255,255,0.90);
-    --send-btn-color: #fff;
+    --send-btn-color: #ffffff;
   }
 
   body {
@@ -1024,12 +1027,7 @@
   /* ── SVG STAR ── */
   .star-svg {
     display: inline-block;
-    filter: drop-shadow(0 0 8px rgba(79,143,255,0.6)) drop-shadow(0 0 20px rgba(79,143,255,0.25));
-    animation: star-pulse 3s ease-in-out infinite;
-  }
-  @keyframes star-pulse {
-    0%,100% { filter: drop-shadow(0 0 6px rgba(79,143,255,0.6)) drop-shadow(0 0 16px rgba(79,143,255,0.2)); transform: scale(1); }
-    50%      { filter: drop-shadow(0 0 12px rgba(79,143,255,0.9)) drop-shadow(0 0 28px rgba(79,143,255,0.4)); transform: scale(1.05); }
+    opacity: 0.85;
   }
 
   /* ── PAYWALL MODAL ── */
@@ -1050,11 +1048,7 @@
     transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), opacity 0.3s ease;
     position: relative; overflow: hidden;
   }
-  .paywall-card::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
-    pointer-events: none;
-  }
+  .paywall-card::before { display: none; }
   .paywall-overlay.show .paywall-card { transform: scale(1) translateY(0); opacity: 1; }
   .paywall-close {
     position: absolute; top: 14px; right: 14px;
@@ -1786,27 +1780,21 @@
   <div class="paywall-card">
     <button class="paywall-close" onclick="закрытьПэйволл()">✕</button>
     <div class="paywall-star">
-      <svg class="star-svg" width="56" height="56" viewBox="0 0 24 24" fill="none">
-        <defs>
-          <linearGradient id="sg1" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#a8c8ff"/>
-            <stop offset="100%" stop-color="#4f8fff"/>
-          </linearGradient>
-        </defs>
-        <path d="M12 2l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 17l-5.9 3.2 1.2-6.6L2.5 9l6.6-.9L12 2z" fill="url(#sg1)" stroke="rgba(79,143,255,0.3)" stroke-width="0.5"/>
+      <svg class="star-svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="1.2" stroke-linejoin="round">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
       </svg>
     </div>
     <div class="paywall-title">Premium доступ</div>
     <div class="paywall-sub">Вы использовали все бесплатные сообщения.<br>Разблокируйте безлимитный AI.</div>
     <ul class="paywall-features">
-      <li><span class="feat-icon">∞</span>Безлимитный чат 30 дней</li>
-      <li><span class="feat-icon">🤖</span>Все AI модели</li>
-      <li><span class="feat-icon">🎨</span>Генерация изображений</li>
-      <li><span class="feat-icon">⚡</span>Приоритетная обработка</li>
+      <li><span class="feat-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>Безлимитный чат 30 дней</li>
+      <li><span class="feat-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 12h6M9 15h4"/></svg></span>Все AI модели</li>
+      <li><span class="feat-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></span>Генерация изображений</li>
+      <li><span class="feat-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>Приоритетная обработка</li>
     </ul>
     <button class="paywall-btn" onclick="закрытьПэйволл();купитьПремиум()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:6px"><path d="M12 2l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 17l-5.9 3.2 1.2-6.6L2.5 9l6.6-.9L12 2z"/></svg>
-      Получить Premium
+      Upgrade to Premium
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
     </button>
   </div>
 </div>
@@ -1899,14 +1887,8 @@
   <!-- PREMIUM BANNER -->
   <div class="premium-banner" id="premium-banner" onclick="купитьПремиум()">
     <div class="premium-banner-star">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-        <defs>
-          <linearGradient id="bs1" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#a8c8ff"/>
-            <stop offset="100%" stop-color="#4f8fff"/>
-          </linearGradient>
-        </defs>
-        <path d="M12 2l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 17l-5.9 3.2 1.2-6.6L2.5 9l6.6-.9L12 2z" fill="url(#bs1)"/>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="1.5" stroke-linejoin="round">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
       </svg>
     </div>
     <div class="premium-banner-text">
@@ -2093,8 +2075,8 @@
             body: JSON.stringify({tg_id: uid, secret: ADMIN_SECRET})
           }).catch(() => {});
         }
-        показатьТост('🌟 Premium активирован!', 5000);
-        добавитьСообщение('🌟 **Premium активирован!**\n\n✅ 30 дней безлимитного чата\n✅ Все модели без ограничений\n\nСпасибо за поддержку! 🙏', 'bot');
+        показатьТост('Premium активирован', 5000);
+        добавитьСообщение('**Premium активирован**\n\n— 30 дней безлимитного чата\n— Все модели без ограничений\n— Приоритетная обработка', 'bot');
         закрытьПэйволл();
         setTimeout(загрузитьСтатусПользователя, 1000);
       }
@@ -2174,15 +2156,33 @@
     { y: 0.88, amp: 32,  freq: 0.004,  speed: 0.50, phase: 3.0 },
   ];
 
-  var _cachedGrad = null, _cachedAccent = '', _cachedW = 0;
   let _resizeTimer;
-  function resizeCanvas() {
+  function drawGrid() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    _cachedGrad = null;
+    const W = canvas.width, H = canvas.height;
+    const theme = document.documentElement.getAttribute('data-theme') || '';
+    const lineColor = theme === 'light' ? 'rgba(0,0,0,0.055)' : 'rgba(255,255,255,0.04)';
+    const cellSize = 48;
+    ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let x = 0; x <= W; x += cellSize) { ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, H); }
+    for (let y = 0; y <= H; y += cellSize) { ctx.moveTo(0, y + 0.5); ctx.lineTo(W, y + 0.5); }
+    ctx.stroke();
+    // Fade edges with radial mask effect (draw over with bg color)
+    const fade = ctx.createRadialGradient(W/2, H/2, W*0.25, W/2, H/2, W*0.75);
+    const bgColor = theme === 'light' ? 'rgba(248,248,248,0)' : 'rgba(17,17,17,0)';
+    const bgEdge  = theme === 'light' ? 'rgba(248,248,248,0.88)' : 'rgba(17,17,17,0.88)';
+    fade.addColorStop(0, bgColor); fade.addColorStop(1, bgEdge);
+    ctx.fillStyle = fade; ctx.fillRect(0, 0, W, H);
   }
-  resizeCanvas();
-  window.addEventListener('resize', () => { clearTimeout(_resizeTimer); _resizeTimer = setTimeout(resizeCanvas, 150); });
+  drawGrid();
+  window.addEventListener('resize', () => { clearTimeout(_resizeTimer); _resizeTimer = setTimeout(drawGrid, 150); });
+
+  // Redraw grid on theme change
+  function redrawGridOnTheme() { setTimeout(drawGrid, 50); }
 
   // Hide bottom nav when keyboard opens
   if (window.visualViewport) {
@@ -2192,49 +2192,6 @@
     });
   }
 
-  function getAccentHex() {
-    const t = document.documentElement.getAttribute('data-theme') || '';
-    return (t === 'tiffany' || t === 'light') ? '#0ABAB5' : '#f5c518';
-  }
-  function getGrad(accent, W) {
-    if (_cachedGrad && _cachedAccent === accent && _cachedW === W) return _cachedGrad;
-    const g = ctx.createLinearGradient(0, 0, W, 0);
-    g.addColorStop(0, 'transparent'); g.addColorStop(0.15, accent);
-    g.addColorStop(0.85, accent); g.addColorStop(1, 'transparent');
-    _cachedGrad = g; _cachedAccent = accent; _cachedW = W;
-    return g;
-  }
-
-  let _lastFrame = 0;
-  const FRAME_MS = 33; // ~30fps
-  function drawWaves(ts) {
-    requestAnimationFrame(drawWaves);
-    if (ts - _lastFrame < FRAME_MS) return;
-    _lastFrame = ts;
-    const t = ts * 0.001;
-    const accent = getAccentHex();
-    const H = canvas.height, W = canvas.width;
-    ctx.clearRect(0, 0, W, H);
-    const grad = getGrad(accent, W);
-
-    for (let i = 0; i < WAVES.length; i++) {
-      const wave = WAVES[i];
-      ctx.beginPath();
-      for (let x = 0; x <= W + 4; x += 4) {
-        const y = H * wave.y
-          + Math.sin(x * wave.freq + t * wave.speed + wave.phase) * wave.amp
-          + Math.sin(x * wave.freq * 1.8 + t * wave.speed * 0.55 + wave.phase + 1.5) * (wave.amp * 0.28);
-        x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-      }
-      ctx.strokeStyle = grad;
-      ctx.globalAlpha = i & 1 ? 0.18 : 0.28;
-      ctx.lineWidth = i % 3 === 0 ? 1.8 : 1.2;
-      ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
-  }
-  requestAnimationFrame(drawWaves);
-
   // ── THEME ──
   const ТЕМЫ = ['', 'tiffany', 'light'];
   let текущаяТема = ТЕМЫ.indexOf(localStorage.getItem('тема') || '');
@@ -2243,8 +2200,9 @@
   function применитьТему() {
     const тема = ТЕМЫ[текущаяТема];
     document.documentElement.setAttribute('data-theme', тема);
+    redrawGridOnTheme();
     if (tg) {
-      const цвета = { '': '#0a0a0a', 'tiffany': '#181b1b', 'light': '#f5fafa' };
+      const цвета = { '': '#111111', 'tiffany': '#0a0a0a', 'light': '#f8f8f8' };
       tg.setHeaderColor(цвета[тема]);
     }
   }
