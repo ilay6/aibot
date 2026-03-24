@@ -1624,6 +1624,35 @@
     transition: width 0.6s cubic-bezier(0.16,1,0.3,1);
   }
 
+  /* ── PREMIUM BANNER ── */
+  .premium-banner {
+    display: none; flex-shrink: 0;
+    margin: 0 12px 8px;
+    padding: 10px 14px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(245,197,24,0.18) 0%, rgba(245,197,24,0.08) 100%);
+    border: 1px solid rgba(245,197,24,0.3);
+    align-items: center; gap: 10px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    max-width: 820px; width: calc(100% - 24px); box-sizing: border-box; margin-left: auto; margin-right: auto;
+  }
+  .premium-banner.visible { display: flex; }
+  .premium-banner:active { transform: scale(0.985); }
+  .premium-banner-icon { font-size: 20px; flex-shrink: 0; line-height: 1; }
+  .premium-banner-text { flex: 1; min-width: 0; }
+  .premium-banner-title { font-size: 13px; font-weight: 700; color: var(--accent); }
+  .premium-banner-sub { font-size: 11px; color: var(--text2); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .premium-banner-btn {
+    flex-shrink: 0; padding: 7px 14px; border-radius: 10px; border: none;
+    background: var(--accent); color: #000; font-size: 12px; font-weight: 700;
+    font-family: inherit; cursor: pointer; white-space: nowrap;
+    box-shadow: 0 2px 10px var(--accent-shadow);
+    transition: background 0.2s, transform 0.15s;
+  }
+  .premium-banner-btn:active { transform: scale(0.93); }
+
   /* wide mode: hide bottom nav */
   body.wide-mode #bottom-nav { display: none; }
   /* hide bottom nav when keyboard open */
@@ -1827,6 +1856,16 @@
       </div>
     </div>
   </div>
+  <!-- PREMIUM BANNER -->
+  <div class="premium-banner" id="premium-banner" onclick="купитьПремиум()">
+    <div class="premium-banner-icon">⭐</div>
+    <div class="premium-banner-text">
+      <div class="premium-banner-title" id="premium-banner-title">Осталось сообщений: —</div>
+      <div class="premium-banner-sub">Premium — безлимит на 30 дней</div>
+    </div>
+    <button class="premium-banner-btn" onclick="event.stopPropagation();купитьПремиум()">Купить</button>
+  </div>
+
   <div class="input-area">
     <div class="input-top">
       <div class="model-dd" id="model-dd" onclick="toggleModelDd(event)">
@@ -2270,18 +2309,32 @@
   function обновитьСчетчикСообщений(remaining, isPremium) {
     const el = document.getElementById('msgs-left');
     const card = document.getElementById('premium-card');
+    const banner = document.getElementById('premium-banner');
+    const bannerTitle = document.getElementById('premium-banner-title');
     if (!el) return;
     if (isPremium) {
       el.textContent = '⭐ Premium';
       el.className = 'msgs-left premium';
       el.style.display = '';
       if (card) card.style.display = 'none';
+      if (banner) banner.classList.remove('visible');
     } else if (remaining !== null && remaining !== undefined) {
       _msgsLeft = remaining;
       el.textContent = `${remaining} сообщений`;
       el.className = 'msgs-left' + (remaining <= 3 ? ' danger' : remaining <= 7 ? ' warn' : '');
       el.style.display = '';
       if (card) card.style.display = '';
+      if (banner) {
+        banner.classList.add('visible');
+        if (bannerTitle) bannerTitle.textContent = remaining <= 0
+          ? 'Лимит исчерпан — подключите Premium'
+          : `Осталось бесплатных: ${remaining}`;
+        // Red tint when out of messages
+        banner.style.background = remaining <= 0
+          ? 'linear-gradient(135deg,rgba(231,76,60,0.18),rgba(231,76,60,0.08))'
+          : '';
+        banner.style.borderColor = remaining <= 0 ? 'rgba(231,76,60,0.35)' : '';
+      }
     }
   }
 
