@@ -2175,9 +2175,7 @@
 
   function переключитьПолныйЭкран() {
     const goFull = !_isFullscreen;
-    _isFullscreen = goFull;
-    document.getElementById('fs-icon-expand').style.display = goFull ? 'none' : '';
-    document.getElementById('fs-icon-shrink').style.display = goFull ? '' : 'none';
+    применитьРежимЭкрана(goFull);
     if (tg?.requestFullscreen) {
       if (goFull) tg.requestFullscreen(); else tg.exitFullscreen?.();
     } else {
