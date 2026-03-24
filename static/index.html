@@ -1452,14 +1452,14 @@
     display: flex; gap: 2px; margin-left: 4px;
   }
   .react-btn {
-    background: none; border: none; cursor: pointer; padding: 2px 4px;
-    font-size: 12px; opacity: 0.4; transition: opacity 0.2s, transform 0.15s;
-    border-radius: 4px;
+    background: none; border: none; cursor: pointer; padding: 3px 5px;
+    color: var(--text2); opacity: 0.6; transition: opacity 0.2s, transform 0.15s, color 0.2s;
+    border-radius: 5px; display: flex; align-items: center;
   }
-  .msg.bot:hover .react-btn { opacity: 0.7; }
-  @media (hover: none) { .react-btn { opacity: 0.5; } }
-  .react-btn:hover { opacity: 1; transform: scale(1.3); }
-  .react-btn.reacted { opacity: 1; background: var(--bg3); }
+  .msg.bot:hover .react-btn { opacity: 1; }
+  @media (hover: none) { .react-btn { opacity: 0.8; } }
+  .react-btn:hover { opacity: 1; transform: scale(1.2); color: var(--text); }
+  .react-btn.reacted { opacity: 1; background: var(--bg3); color: var(--accent); }
 
   /* ── EXPORT BUTTON ── */
   .export-btn {
@@ -2583,7 +2583,7 @@
     const footer = btn.closest('.bubble-footer');
     footer.querySelectorAll('.react-btn').forEach(b => b.classList.remove('reacted'));
     btn.classList.add('reacted');
-    показатьТост(тип === 'up' ? '👍 Спасибо за отзыв!' : '👎 Учтём!');
+    показатьТост(тип === 'up' ? 'Спасибо за отзыв!' : 'Учтём!');
     if (tgUser) {
       fetch('/api/track', {
         method: 'POST',
@@ -2916,9 +2916,9 @@
         <div class="profile-section-title">Реферальная ссылка</div>
         <div class="profile-card">
           <div class="profile-row" style="flex-direction:column;align-items:flex-start;gap:10px">
-            <div class="profile-row-left"><div class="profile-row-icon">🔗</div><div class="profile-row-label">Приглашай друзей — получай бонусы</div></div>
+            <div class="profile-row-left"><div class="profile-row-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div><div class="profile-row-label">Приглашай друзей — получай бонусы</div></div>
             <div class="profile-ref-box" onclick="скопироватьРефку('${refLink}')">${refLink}</div>
-            <button class="profile-btn-outline" onclick="скопироватьРефку('${refLink}')">📋 Скопировать ссылку</button>
+            <button class="profile-btn-outline" onclick="скопироватьРефку('${refLink}')" style="display:flex;align-items:center;gap:7px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Скопировать ссылку</button>
           </div>
         </div>` : ''}
       `;
