@@ -2173,19 +2173,30 @@
     }
   }
 
+  const _isMobile = window.innerWidth <= 820;
+
   function переключитьПолныйЭкран() {
     const goFull = !_isFullscreen;
-    применитьРежимЭкрана(goFull);
-    if (tg?.requestFullscreen) {
-      if (goFull) tg.requestFullscreen(); else tg.exitFullscreen?.();
+    _isFullscreen = goFull;
+    document.getElementById('fs-icon-expand').style.display = goFull ? 'none' : '';
+    document.getElementById('fs-icon-shrink').style.display = goFull ? '' : 'none';
+    if (_isMobile) {
+      // На телефоне — только Telegram fullscreen, layout не трогаем
+      if (tg?.requestFullscreen) {
+        if (goFull) tg.requestFullscreen(); else tg.exitFullscreen?.();
+      }
     } else {
-      if (goFull) document.documentElement.requestFullscreen?.();
-      else document.exitFullscreen?.();
+      // На ПК — только wide-mode (боковая панель)
+      document.body.classList.toggle('wide-mode', goFull);
+      if (goFull) {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('sidebar-overlay').classList.remove('show');
+      }
     }
   }
 
-  // Auto wide-mode on desktop only at initial load
-  if (window.innerWidth > 820) применитьРежимЭкрана(true);
+  // Auto wide-mode on desktop only
+  if (!_isMobile) применитьРежимЭкрана(true);
 
   const ADMIN_ID = 739848745;
   const ADMIN_SECRET = "aibot_secret";
