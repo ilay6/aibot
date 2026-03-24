@@ -2159,7 +2159,7 @@
     });
   }
 
-  // ── FULLSCREEN / WIDE MODE ──
+  // ── WIDE MODE (sidebar layout toggle) ──
   let _isFullscreen = false;
 
   function применитьРежимЭкрана(full) {
@@ -2167,7 +2167,6 @@
     document.body.classList.toggle('wide-mode', full);
     document.getElementById('fs-icon-expand').style.display = full ? 'none' : '';
     document.getElementById('fs-icon-shrink').style.display = full ? '' : 'none';
-    // Close sidebar overlay in wide mode (it becomes inline)
     if (full) {
       document.getElementById('sidebar').classList.remove('open');
       document.getElementById('sidebar-overlay').classList.remove('show');
@@ -2175,31 +2174,11 @@
   }
 
   function переключитьПолныйЭкран() {
-    const goFull = !_isFullscreen;
-    if (tg && tg.requestFullscreen) {
-      if (goFull) tg.requestFullscreen(); else tg.exitFullscreen();
-    } else if (!tg) {
-      if (goFull) {
-        (document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen)?.call(document.documentElement);
-      } else {
-        (document.exitFullscreen || document.webkitExitFullscreen)?.call(document);
-      }
-    } else if (tg && tg.expand) {
-      tg.expand();
-    }
-    применитьРежимЭкрана(goFull);
+    применитьРежимЭкрана(!_isFullscreen);
   }
 
-  // Sync with browser fullscreen events
-  document.addEventListener('fullscreenchange', () => применитьРежимЭкрана(!!document.fullscreenElement));
-
-  // Auto wide-mode on desktop, responsive to resize
-  function проверитьШиринуЭкрана() {
-    const isWide = window.innerWidth > 820;
-    if (isWide !== _isFullscreen) применитьРежимЭкрана(isWide);
-  }
-  проверитьШиринуЭкрана();
-  window.addEventListener('resize', проверитьШиринуЭкрана);
+  // Auto wide-mode on desktop only at initial load
+  if (window.innerWidth > 820) применитьРежимЭкрана(true);
 
   const ADMIN_ID = 739848745;
   const ADMIN_SECRET = "aibot_secret";
