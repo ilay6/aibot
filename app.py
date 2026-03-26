@@ -491,42 +491,38 @@ async def картинка(данные: ЗапросКартинки):
 
     last_err = ""
 
-    # ── Hugging Face (бесплатно, FLUX.1-schnell) ──
+    # ── Hugging Face (бесплатно) ──
     if HF_TOKEN:
         hf_models = [
             "black-forest-labs/FLUX.1-schnell",
+            "black-forest-labs/FLUX.1-dev",
             "stabilityai/stable-diffusion-xl-base-1.0",
         ]
+        hf_hdrs = {"Authorization": f"Bearer {HF_TOKEN}", "Content-Type": "application/json"}
         for model in hf_models:
-            try:
-                r = await http.post(
-                    f"https://api-inference.huggingface.co/models/{model}",
-                    headers={"Authorization": f"Bearer {HF_TOKEN}", "Content-Type": "application/json"},
-                    json={"inputs": eng_prompt, "parameters": {"seed": seed % 2147483647, "width": 768, "height": 768}},
-                    timeout=httpx.Timeout(120, connect=15)
-                )
-                ct = r.headers.get("content-type", "")
-                if r.status_code == 200 and "image" in ct:
-                    b64 = base64.b64encode(r.content).decode()
-                    mime = ct.split(";")[0].strip() or "image/jpeg"
-                    return await _save_history(b64, mime)
-                if r.status_code == 503:
-                    # Модель загружается — ждём и пробуем ещё раз
-                    await asyncio.sleep(10)
-                    r2 = await http.post(
+            for attempt in range(3):
+                try:
+                    r = await http.post(
                         f"https://api-inference.huggingface.co/models/{model}",
-                        headers={"Authorization": f"Bearer {HF_TOKEN}", "Content-Type": "application/json"},
-                        json={"inputs": eng_prompt, "parameters": {"seed": seed % 2147483647, "width": 768, "height": 768}},
+                        headers=hf_hdrs,
+                        json={"inputs": eng_prompt},
                         timeout=httpx.Timeout(120, connect=15)
                     )
-                    ct2 = r2.headers.get("content-type", "")
-                    if r2.status_code == 200 and "image" in ct2:
-                        b64 = base64.b64encode(r2.content).decode()
-                        mime = ct2.split(";")[0].strip() or "image/jpeg"
+                    ct = r.headers.get("content-type", "")
+                    if r.status_code == 200 and "image" in ct:
+                        b64 = base64.b64encode(r.content).decode()
+                        mime = ct.split(";")[0].strip() or "image/jpeg"
                         return await _save_history(b64, mime)
-                last_err = f"HF {model}: HTTP {r.status_code}, {r.text[:150]}"
-            except Exception as e:
-                last_err = f"HF {model}: {e}"
+                    if r.status_code == 503:
+                        # Модель загружается, ждём
+                        wait = int(r.headers.get("X-Wait-For-Model", "20"))
+                        await asyncio.sleep(min(wait, 30))
+                        continue
+                    last_err = f"HF {model}: HTTP {r.status_code}, {r.text[:200]}"
+                    break  # другая ошибка — пробуем следующую модель
+                except Exception as e:
+                    last_err = f"HF {model}: {e}"
+                    break
 
     # ── Fallback: Pollinations (бесплатный режим) ──
     prompt_encoded = quote(eng_prompt)
