@@ -498,6 +498,19 @@
     z-index: 20;
     padding-top: 8px;
   }
+  .bottom-bar::before {
+    content: '';
+    position: absolute;
+    top: -44px; left: 0; right: 0; height: 44px;
+    background: linear-gradient(to bottom, transparent, rgba(13,13,13,0.95));
+    pointer-events: none;
+  }
+  [data-theme="tiffany"] .bottom-bar::before {
+    background: linear-gradient(to bottom, transparent, rgba(10,10,10,0.95));
+  }
+  [data-theme="light"] .bottom-bar::before {
+    background: linear-gradient(to bottom, transparent, rgba(242,242,242,0.97));
+  }
   #чат.empty .bottom-bar {
     position: static;
     backdrop-filter: none;
