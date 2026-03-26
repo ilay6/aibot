@@ -139,6 +139,8 @@ def init_db():
     con.execute(f"""CREATE TABLE IF NOT EXISTS image_history (
         id {pk}, tg_id {int_t}, prompt TEXT, eng_prompt TEXT,
         seed INTEGER, created_at TEXT)""")
+    con.execute(f"""CREATE TABLE IF NOT EXISTS daily_bonus (
+        tg_id {int_t} PRIMARY KEY, last_claimed TEXT)""")
     for idx in [
         "CREATE INDEX IF NOT EXISTS idx_msg_tg ON messages(tg_id)",
         "CREATE INDEX IF NOT EXISTS idx_msg_id_desc ON messages(id DESC)",
@@ -297,6 +299,8 @@ class ЗапросКартинки(BaseModel):
     запрос: str
     tg_id: int = 0
     seed: int = 0  # 0 = random
+    width: int = 768
+    height: int = 768
 
 
 class TrackData(BaseModel):
@@ -437,6 +441,29 @@ async def чат_stream(данные: ЗапросЧат):
 
 
 
+@app.post("/api/daily-bonus/{tg_id}")
+async def daily_bonus(tg_id: int):
+    if not tg_id:
+        return {"ok": False}
+    today = datetime.now().strftime("%Y-%m-%d")
+    con = db_connect()
+    row = con.execute("SELECT last_claimed FROM daily_bonus WHERE tg_id=?", (tg_id,)).fetchone()
+    if row and row[0] == today:
+        con.close()
+        return {"ok": False, "already_claimed": True}
+    # Дать +2 сообщения (уменьшить счётчик rate_limits)
+    r = con.execute("SELECT count, window_start FROM rate_limits WHERE tg_id=?", (tg_id,)).fetchone()
+    if r and r[1] and str(r[1])[:10] == today:
+        con.execute("UPDATE rate_limits SET count=? WHERE tg_id=?", (max(0, r[0] - 2), tg_id))
+    con.execute(
+        """INSERT INTO daily_bonus (tg_id, last_claimed) VALUES (?,?)
+           ON CONFLICT (tg_id) DO UPDATE SET last_claimed=EXCLUDED.last_claimed""",
+        (tg_id, today)
+    )
+    con.commit(); con.close()
+    return {"ok": True, "bonus": 2}
+
+
 @app.get("/api/image/remaining/{tg_id}")
 async def img_remaining(tg_id: int):
     if _is_premium(tg_id) or _is_whitelisted(tg_id):
@@ -511,7 +538,7 @@ async def картинка(данные: ЗапросКартинки):
                     r = await http.post(
                         f"https://router.huggingface.co/hf-inference/models/{model}",
                         headers=hf_hdrs,
-                        json={"inputs": eng_prompt},
+                        json={"inputs": eng_prompt, "parameters": {"width": данные.width, "height": данные.height}},
                         timeout=httpx.Timeout(120, connect=15)
                     )
                     ct = r.headers.get("content-type", "")
