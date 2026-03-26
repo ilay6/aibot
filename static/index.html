@@ -496,22 +496,7 @@
     bottom: 0; left: 0; right: 0;
     background: transparent;
     z-index: 20;
-    padding-top: 8px;
-  }
-  /* short fade right at the top edge of bottom-bar */
-  .bottom-bar::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; height: 20px;
-    background: linear-gradient(to bottom, transparent, #111111);
-    pointer-events: none;
-    z-index: 1;
-  }
-  [data-theme="tiffany"] .bottom-bar::before {
-    background: linear-gradient(to bottom, transparent, #0a0a0a);
-  }
-  [data-theme="light"] .bottom-bar::before {
-    background: linear-gradient(to bottom, transparent, #f2f2f2);
+    padding-top: 0;
   }
   #чат.empty .bottom-bar {
     position: static;
@@ -1356,6 +1341,16 @@
   }
   [data-theme="tiffany"] .input-top { background: #0a0a0a; }
   [data-theme="light"] .input-top { background: #f2f2f2; }
+  /* fade прямо над строкой чипсов */
+  .input-top::before {
+    content: '';
+    position: absolute;
+    bottom: 100%; left: 0; right: 0; height: 32px;
+    background: linear-gradient(to bottom, transparent, #111111);
+    pointer-events: none;
+  }
+  [data-theme="tiffany"] .input-top::before { background: linear-gradient(to bottom, transparent, #0a0a0a); }
+  [data-theme="light"] .input-top::before { background: linear-gradient(to bottom, transparent, #f2f2f2); }
   .char-counter {
     font-size: 10px; color: var(--text2); opacity: 0;
     transition: opacity 0.2s, color 0.2s; flex-shrink: 0;
