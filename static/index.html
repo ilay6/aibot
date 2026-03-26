@@ -712,29 +712,25 @@
   .img-status { text-align: center; color: var(--text2); font-size: 13px; min-height: 18px; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .img-history-section { padding: 0 4px 32px; }
-  .img-hist-item {
-    display: flex; gap: 12px; background: var(--bg2);
-    border: 1px solid var(--border); border-radius: 14px;
-    padding: 10px; margin-bottom: 10px; align-items: flex-start;
+  .img-hist-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
   }
-  .img-hist-preview {
-    width: 90px; height: 90px; flex-shrink: 0;
-    background: var(--bg3); border-radius: 10px; overflow: hidden;
-    display: flex; align-items: center; justify-content: center;
+  .img-hist-cell {
+    cursor: pointer; border-radius: 12px; overflow: hidden;
+    background: var(--bg2); border: 1px solid var(--border);
+    transition: transform 0.15s;
   }
-  .img-hist-loading { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
-  .img-hist-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-  .img-hist-prompt { font-size: 13px; color: var(--text); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .img-hist-date { font-size: 11px; color: var(--text2); }
-  .img-hist-btns { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
-  .img-hist-load-btn {
-    background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
-    color: var(--text); font-size: 12px; padding: 5px 10px; cursor: pointer; font-family: inherit;
+  .img-hist-cell:active { transform: scale(0.96); }
+  .img-hist-thumb {
+    width: 100%; aspect-ratio: 1; background: var(--bg3);
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
   }
-  .img-hist-regen-btn {
-    background: transparent; border: 1px solid var(--border); border-radius: 8px;
-    color: var(--text2); font-size: 12px; padding: 5px 10px; cursor: pointer; font-family: inherit;
+  .img-hist-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .img-hist-cell-label {
+    font-size: 10px; color: var(--text2); padding: 5px 6px 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3;
   }
+  .img-hist-cell-date { font-size: 9px; color: var(--text2); padding: 0 6px 6px; opacity: 0.6; }
   .gen-img-card {
     background: var(--bg2); border: 1px solid var(--border); border-radius: 16px;
     overflow: hidden; margin-bottom: 16px;
@@ -2869,35 +2865,27 @@
     const section = document.getElementById('img-history-section');
     const list = document.getElementById('img-history-list');
     try {
-      const r = await fetch(`/api/images/history/${tgUser.id}`, {
-        headers: {'x-admin-secret': ADMIN_SECRET}
-      });
+      const r = await fetch(`/api/images/history/${tgUser.id}`, { headers: {'x-admin-secret': ADMIN_SECRET} });
       const d = await r.json();
-      if (!d.history || !d.history.length) return;
+      if (!d.history || !d.history.length) { section.style.display = 'none'; return; }
       section.style.display = '';
-      list.innerHTML = d.history.map(h => `
-        <div class="img-hist-item" id="hist-${h.id}">
-          <div class="img-hist-preview" id="hist-prev-${h.id}">
-            <div class="img-hist-loading">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
-            </div>
+      list.innerHTML = `<div class="img-hist-grid">${d.history.map(h => `
+        <div class="img-hist-cell" id="hcell-${h.id}" onclick="раскрытьКартинкуИстории(${h.id},'${encodeURIComponent(h.eng_prompt)}',${h.seed},'${экранировать(h.prompt)}')">
+          <div class="img-hist-thumb" id="hthumb-${h.id}">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
           </div>
-          <div class="img-hist-info">
-            <div class="img-hist-prompt">${экранировать(h.prompt)}</div>
-            <div class="img-hist-date">${h.created_at || ''}</div>
-            <div class="img-hist-btns">
-              <button onclick="загрузитьКартинкуИстории(${h.id},'${encodeURIComponent(h.eng_prompt)}',${h.seed})" class="img-hist-load-btn">Загрузить</button>
-              <button onclick="повторитьГенерацию('${экранировать(h.prompt)}')" class="img-hist-regen-btn">Перегенерировать</button>
-            </div>
-          </div>
-        </div>`).join('');
+          <div class="img-hist-cell-label">${экранировать(h.prompt.slice(0,40))}${h.prompt.length>40?'…':''}</div>
+          <div class="img-hist-cell-date">${(h.created_at||'').slice(0,10)}</div>
+        </div>`).join('')}
+      </div>`;
     } catch {}
   }
 
-  async function загрузитьКартинкуИстории(id, engPrompt, seed) {
-    const prevEl = document.getElementById(`hist-prev-${id}`);
-    if (!prevEl) return;
-    prevEl.innerHTML = `<div class="img-hist-loading"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.2-8.55"/></svg></div>`;
+  async function раскрытьКартинкуИстории(id, engPrompt, seed, prompt) {
+    const thumb = document.getElementById(`hthumb-${id}`);
+    if (!thumb || thumb.dataset.loaded) return;
+    thumb.dataset.loaded = '1';
+    thumb.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.2-8.55"/></svg></div>`;
     try {
       const r = await fetch('/api/image', {
         method: 'POST', headers: {'Content-Type':'application/json'},
@@ -2905,14 +2893,32 @@
       });
       const d = await r.json();
       if (d.image) {
-        const imgId = `hist-img-${id}`;
-        prevEl.innerHTML = `<img src="${d.image}" style="width:100%;border-radius:10px;cursor:zoom-in" onclick="открытьКартинку('${imgId}')"><img src="${d.image}" id="${imgId}" style="display:none">`;
-        prevEl.nextElementSibling?.querySelector('.img-hist-load-btn')?.remove();
-        // Add download button
-        const btns = prevEl.parentElement?.querySelector('.img-hist-btns');
-        if (btns) btns.insertAdjacentHTML('afterbegin', `<button onclick="скачатьКартинку('${imgId}')" class="img-hist-load-btn" style="background:var(--accent);color:var(--send-btn-color)">Скачать</button>`);
-      }
-    } catch {}
+        const imgId = `himg-${id}`;
+        thumb.innerHTML = `<img src="${d.image}" style="width:100%;height:100%;object-fit:cover"><img src="${d.image}" id="${imgId}" style="display:none">`;
+        // Show overlay with full image + download
+        const cell = document.getElementById(`hcell-${id}`);
+        if (cell) cell.onclick = () => показатьКартинкуПолностью(imgId, prompt);
+      } else { thumb.dataset.loaded = ''; }
+    } catch { thumb.dataset.loaded = ''; }
+  }
+
+  function показатьКартинкуПолностью(imgId, prompt) {
+    const img = document.getElementById(imgId);
+    if (!img) return;
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px';
+    overlay.innerHTML = `
+      <img src="${img.src}" style="max-width:100%;max-height:70vh;border-radius:14px;object-fit:contain">
+      <div style="color:var(--text2);font-size:13px;text-align:center;max-width:300px">${экранировать(prompt)}</div>
+      <div style="display:flex;gap:10px">
+        <button id="ovl-dl" style="background:var(--accent);color:var(--send-btn-color);border:none;border-radius:12px;padding:12px 24px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">
+          Скачать</button>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:12px 24px;font-size:15px;cursor:pointer;font-family:inherit">
+          Закрыть</button>
+      </div>`;
+    overlay.querySelector('#ovl-dl').onclick = () => скачатьКартинку(imgId);
+    overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+    document.body.appendChild(overlay);
   }
 
   function повторитьГенерацию(prompt) {
@@ -3764,30 +3770,31 @@
     }
   }
 
+  const _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
   async function скачатьКартинку(id) {
     const img = document.getElementById(id);
     if (!img) return;
     try {
       const blob = await (await fetch(img.src)).blob();
-      // iOS: use Web Share API to save to Camera Roll
-      if (navigator.share) {
+      if (_isIOS && navigator.share) {
+        // iOS only: share sheet → "Добавить в Фото"
         const file = new File([blob], 'ai-image.jpg', {type: blob.type || 'image/jpeg'});
         if (navigator.canShare && navigator.canShare({files:[file]})) {
-          await navigator.share({files:[file]});
-          return;
+          await navigator.share({files:[file]}); return;
         }
       }
-      // Desktop: blob URL download (no path dialog)
+      // macOS / Android / Desktop: прямое скачивание в папку Загрузки
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = `ai-${Date.now()}.jpg`;
+      a.href = url; a.download = `ai-image-${Date.now()}.jpg`;
       document.body.appendChild(a); a.click();
       document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-    } catch {
-      // Last fallback
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      показатьТост('Сохранено в Загрузки');
+    } catch(e) {
       const a = document.createElement('a');
-      a.href = img.src; a.download = `ai-${Date.now()}.jpg`; a.click();
+      a.href = img.src; a.download = `ai-image-${Date.now()}.jpg`; a.click();
     }
   }
 
