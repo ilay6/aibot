@@ -435,6 +435,15 @@ async def чат_stream(данные: ЗапросЧат):
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
+@app.get("/api/debug/env")
+async def debug_env():
+    return {
+        "HF_TOKEN_set": bool(HF_TOKEN),
+        "HF_TOKEN_prefix": HF_TOKEN[:8] if HF_TOKEN else None,
+        "POLLINATIONS_API_KEY_set": bool(POLLINATIONS_API_KEY),
+        "MISTRAL_set": bool(MISTRAL_API_KEY),
+    }
+
 @app.get("/api/image/remaining/{tg_id}")
 async def img_remaining(tg_id: int):
     if _is_premium(tg_id) or _is_whitelisted(tg_id):
