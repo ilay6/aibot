@@ -2375,7 +2375,12 @@
   const BOT_USERNAME = "AIgptchatII_bot";
   const MAX_CHARS = 2000;
 
-  const tgUser = tg?.initDataUnsafe?.user;
+  const tgUser = tg?.initDataUnsafe?.user || (() => {
+    try { return JSON.parse(localStorage.getItem('tgUser') || 'null'); } catch { return null; }
+  })();
+  if (tg?.initDataUnsafe?.user) {
+    try { localStorage.setItem('tgUser', JSON.stringify(tg.initDataUnsafe.user)); } catch {}
+  }
 
   // Ежедневный бонус (с задержкой чтобы не мешал загрузке)
   setTimeout(проверитьБонус, 2000);
