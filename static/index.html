@@ -494,18 +494,18 @@
   .bottom-bar {
     position: absolute;
     bottom: 0; left: 0; right: 0;
-    background: #111111;
+    background: transparent;
     z-index: 20;
     padding-top: 8px;
   }
-  [data-theme="tiffany"] .bottom-bar { background: #0a0a0a; }
-  [data-theme="light"] .bottom-bar { background: #f2f2f2; }
+  /* short fade right at the top edge of bottom-bar */
   .bottom-bar::before {
     content: '';
     position: absolute;
-    top: -48px; left: 0; right: 0; height: 48px;
+    top: 0; left: 0; right: 0; height: 20px;
     background: linear-gradient(to bottom, transparent, #111111);
     pointer-events: none;
+    z-index: 1;
   }
   [data-theme="tiffany"] .bottom-bar::before {
     background: linear-gradient(to bottom, transparent, #0a0a0a);
@@ -1352,7 +1352,10 @@
   .input-top {
     display: flex; justify-content: space-between; align-items: center;
     padding: 0 4px 4px; gap: 6px;
+    background: #111111; position: relative; z-index: 2;
   }
+  [data-theme="tiffany"] .input-top { background: #0a0a0a; }
+  [data-theme="light"] .input-top { background: #f2f2f2; }
   .char-counter {
     font-size: 10px; color: var(--text2); opacity: 0;
     transition: opacity 0.2s, color 0.2s; flex-shrink: 0;
