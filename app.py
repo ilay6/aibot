@@ -256,6 +256,8 @@ def check_img_rate_limit(tg_id: int, increment: bool = True) -> tuple[bool, int]
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: webhook or polling
+    print(f"[startup] HF_TOKEN={'set ('+os.getenv('HF_TOKEN','')[:8]+')' if os.getenv('HF_TOKEN') else 'NOT SET'}")
+    print(f"[startup] POLLINATIONS_KEY={'set' if os.getenv('POLLINATIONS_API_KEY') else 'not set'}")
     try:
         from bot import bot, dp
         if bot and WEBAPP_URL:
@@ -435,14 +437,6 @@ async def чат_stream(данные: ЗапросЧат):
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
-@app.get("/api/debug/env")
-async def debug_env():
-    return {
-        "HF_TOKEN_set": bool(HF_TOKEN),
-        "HF_TOKEN_prefix": HF_TOKEN[:8] if HF_TOKEN else None,
-        "POLLINATIONS_API_KEY_set": bool(POLLINATIONS_API_KEY),
-        "MISTRAL_set": bool(MISTRAL_API_KEY),
-    }
 
 @app.get("/api/image/remaining/{tg_id}")
 async def img_remaining(tg_id: int):
@@ -499,15 +493,18 @@ async def картинка(данные: ЗапросКартинки):
         return {"image": f"data:{mime};base64,{img_b64}", "seed": seed, "eng_prompt": eng_prompt, "remaining": rem}
 
     last_err = ""
+    _hf_token = os.getenv("HF_TOKEN", "").strip()
 
     # ── Hugging Face (бесплатно) ──
-    if HF_TOKEN:
+    if not _hf_token:
+        last_err = "HF_TOKEN не задан в переменных Railway"
+    if _hf_token:
         hf_models = [
             "black-forest-labs/FLUX.1-schnell",
             "black-forest-labs/FLUX.1-dev",
             "stabilityai/stable-diffusion-xl-base-1.0",
         ]
-        hf_hdrs = {"Authorization": f"Bearer {HF_TOKEN}", "Content-Type": "application/json"}
+        hf_hdrs = {"Authorization": f"Bearer {_hf_token}", "Content-Type": "application/json"}
         for model in hf_models:
             for attempt in range(3):
                 try:
