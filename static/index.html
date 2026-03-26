@@ -710,6 +710,31 @@
   .progress-bar { height: 100%; background: var(--accent); border-radius: 2px; animation: progressAnim 1.8s ease-in-out infinite; }
   @keyframes progressAnim { 0%{width:0%;margin-left:0} 50%{width:70%;margin-left:15%} 100%{width:0%;margin-left:100%} }
   .img-status { text-align: center; color: var(--text2); font-size: 13px; min-height: 18px; }
+  .gen-img-card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 16px;
+    overflow: hidden; margin-bottom: 16px;
+  }
+  .gen-img-preview {
+    width: 100%; display: block; cursor: zoom-in;
+    max-height: 70vw; object-fit: cover;
+  }
+  .gen-img-actions {
+    display: flex; gap: 8px; padding: 10px 12px;
+  }
+  .gen-dl-btn {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px;
+    background: var(--accent); color: var(--send-btn-color); border: none;
+    border-radius: 10px; padding: 10px; font-size: 14px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
+  .gen-share-btn {
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    background: var(--bg3); color: var(--text); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 14px; font-size: 14px; font-weight: 500;
+    cursor: pointer; font-family: inherit;
+  }
+  .gen-dl-btn:active { opacity: 0.8; }
+  .gen-share-btn:active { opacity: 0.8; }
   .img-count-btn {
     background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
     color: var(--text2); font-size: 13px; font-weight: 600; padding: 4px 12px;
@@ -2038,7 +2063,7 @@
         <svg width="34" height="34" viewBox="0 0 24 24" fill="var(--accent)"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
       </div>
       <div class="img-title">Генерация изображений</div>
-      <div class="img-desc">Напиши в чате <b>/img</b> и описание — картинка появится прямо в чате.</div>
+      <div class="img-desc" id="img-limit-info"></div>
       <textarea class="img-input" id="img-ввод" placeholder="Или напиши здесь и нажми кнопку..."></textarea>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
         <span style="font-size:12px;color:var(--text2)">Количество:</span>
@@ -2428,7 +2453,9 @@
   }
 
   let _msgsLeft = null;
+  let _isPremiumUser = false;
   function обновитьСчетчикСообщений(remaining, isPremium) {
+    _isPremiumUser = !!isPremium;
     const el = document.getElementById('msgs-left');
     const card = document.getElementById('premium-card');
     const banner = document.getElementById('premium-banner');
@@ -2781,6 +2808,19 @@
     кнопка.classList.add('active');
     if (id === 'админ') загрузитьАдмин();
     if (id === 'профиль') загрузитьПрофиль();
+    if (id === 'картинки') обновитьИнфоКартинок();
+  }
+
+  function обновитьИнфоКартинок() {
+    const el = document.getElementById('img-limit-info');
+    if (!el) return;
+    if (_isPremiumUser) {
+      el.innerHTML = 'Безлимитная генерация изображений. <b>Premium активен.</b>';
+    } else {
+      const used = _imgUsedToday();
+      const left = Math.max(0, IMG_FREE_LIMIT - used);
+      el.innerHTML = `Осталось сегодня: <b>${left} из ${IMG_FREE_LIMIT}</b> изображений. <span style="color:var(--accent);cursor:pointer" onclick="купитьПремиум()">Premium — безлимит</span>`;
+    }
   }
 
   async function загрузитьПрофиль() {
@@ -3582,6 +3622,56 @@
     }
   }
 
+  function скачатьКартинку(id) {
+    const img = document.getElementById(id);
+    if (!img) return;
+    const a = document.createElement('a');
+    a.href = img.src;
+    a.download = `ai-image-${Date.now()}.jpg`;
+    a.click();
+  }
+
+  async function поделитьсяКартинкой(id) {
+    const img = document.getElementById(id);
+    if (!img) return;
+    try {
+      const blob = await (await fetch(img.src)).blob();
+      const file = new File([blob], 'ai-image.jpg', {type: 'image/jpeg'});
+      if (navigator.share && navigator.canShare({files:[file]})) {
+        await navigator.share({files:[file], title:'AI Image'});
+        return;
+      }
+    } catch {}
+    // Fallback: open in new tab
+    const w = window.open();
+    w.document.write(`<img src="${img.src}" style="max-width:100%">`);
+  }
+
+  function открытьКартинку(id) {
+    const img = document.getElementById(id);
+    if (!img) return;
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out';
+    overlay.innerHTML = `<img src="${img.src}" style="max-width:95vw;max-height:95vh;border-radius:12px;object-fit:contain">`;
+    overlay.onclick = () => overlay.remove();
+    document.body.appendChild(overlay);
+  }
+
+  // Image generation daily limit
+  const IMG_FREE_LIMIT = 3;
+  function _imgUsedToday() {
+    const today = new Date().toDateString();
+    const saved = JSON.parse(localStorage.getItem('imgUsage') || '{"date":"","count":0}');
+    if (saved.date !== today) return 0;
+    return saved.count;
+  }
+  function _imgIncrToday() {
+    const today = new Date().toDateString();
+    const saved = JSON.parse(localStorage.getItem('imgUsage') || '{"date":"","count":0}');
+    const count = saved.date === today ? saved.count + 1 : 1;
+    localStorage.setItem('imgUsage', JSON.stringify({date: today, count}));
+  }
+
   let _imgCount = 1;
   function выбратьКоличество(n, btn) {
     _imgCount = n;
@@ -3597,6 +3687,23 @@
     const результат = document.getElementById('img-результат');
     const прогресс = document.getElementById('progress-wrap');
 
+    // Limit: 3 images/day for free users
+    if (!_isPremiumUser) {
+      const used = _imgUsedToday();
+      const total = used + _imgCount;
+      if (used >= IMG_FREE_LIMIT) {
+        статус.textContent = `Лимит ${IMG_FREE_LIMIT} изображений в день исчерпан. Нужен Premium.`;
+        статус.style.color = '#e74c3c';
+        return;
+      }
+      if (total > IMG_FREE_LIMIT) {
+        const allowed = IMG_FREE_LIMIT - used;
+        статус.textContent = `Можно ещё ${allowed} из ${IMG_FREE_LIMIT}. Уменьши количество или купи Premium.`;
+        статус.style.color = '#e67e22';
+        return;
+      }
+    }
+    статус.style.color = '';
     btn.disabled = true;
     btn.style.opacity = '0.6';
     результат.innerHTML = '';
@@ -3614,14 +3721,26 @@
         const d = await r.json();
         if (d.image) {
           успех++;
+          const imgId = `gen-img-${Date.now()}-${i}`;
           const wrap = document.createElement('div');
-          wrap.style.cssText = 'position:relative;margin-bottom:12px';
-          wrap.innerHTML = `<img src="${d.image}" style="width:100%;border-radius:14px;display:block">
-            <a href="${d.image}" download="ai-image-${Date.now()}.jpg" style="position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,0.6);color:#fff;border-radius:8px;padding:5px 10px;font-size:12px;text-decoration:none;backdrop-filter:blur(4px)">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Скачать</a>`;
+          wrap.className = 'gen-img-card';
+          wrap.innerHTML = `
+            <img src="${d.image}" class="gen-img-preview" onclick="открытьКартинку('${imgId}')">
+            <div class="gen-img-actions">
+              <button class="gen-dl-btn" onclick="скачатьКартинку('${imgId}')">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Скачать
+              </button>
+              <button class="gen-share-btn" onclick="поделитьсяКартинкой('${imgId}')">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                Поделиться
+              </button>
+            </div>
+            <img src="${d.image}" id="${imgId}" style="display:none">`;
           результат.appendChild(wrap);
           результат.scrollIntoView({behavior:'smooth', block:'nearest'});
           статус.textContent = '';
+          _imgIncrToday();
         } else {
           статус.textContent = d.error || 'Ошибка генерации';
         }
