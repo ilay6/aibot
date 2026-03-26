@@ -375,26 +375,22 @@
     will-change: scroll-position;
     -webkit-overflow-scrolling: touch;
   }
-  /* Sticky fade — messages blur into bottom bar */
+  /* Sticky fade — subtle gradient at very bottom only */
   .messages-fade {
     position: sticky; bottom: 0;
-    height: 72px; margin-top: -72px;
+    height: 48px; margin-top: -48px;
     flex-shrink: 0; pointer-events: none; z-index: 5;
-    backdrop-filter: blur(10px) saturate(1.4);
-    -webkit-backdrop-filter: blur(10px) saturate(1.4);
     background: linear-gradient(to bottom,
       transparent 0%,
-      rgba(17,17,17,0.7) 60%,
-      rgba(17,17,17,0.97) 100%
+      rgba(17,17,17,0.55) 70%,
+      rgba(17,17,17,0.85) 100%
     );
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 55%);
-    mask-image: linear-gradient(to bottom, transparent 0%, black 55%);
   }
   [data-theme="tiffany"] .messages-fade {
-    background: linear-gradient(to bottom, transparent 0%, rgba(10,10,10,0.7) 60%, rgba(10,10,10,0.97) 100%);
+    background: linear-gradient(to bottom, transparent 0%, rgba(10,10,10,0.55) 70%, rgba(10,10,10,0.85) 100%);
   }
   [data-theme="light"] .messages-fade {
-    background: linear-gradient(to bottom, transparent 0%, rgba(248,248,248,0.7) 60%, rgba(248,248,248,0.97) 100%);
+    background: linear-gradient(to bottom, transparent 0%, rgba(248,248,248,0.55) 70%, rgba(248,248,248,0.85) 100%);
   }
   .msg {
     display: flex; gap: 10px; align-items: flex-start;
