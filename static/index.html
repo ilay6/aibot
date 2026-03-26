@@ -519,10 +519,12 @@
   /* ── INPUT — LIQUID GLASS ── */
   .input-area {
     padding: 4px 16px calc(12px + env(safe-area-inset-bottom, 0px));
-    background: transparent;
+    background: #111111;
     max-width: 680px; width: 100%; margin: 0 auto;
     position: relative;
   }
+  [data-theme="tiffany"] .input-area { background: #0a0a0a; }
+  [data-theme="light"] .input-area { background: #f2f2f2; }
   .input-wrap {
     display: flex; gap: 8px; align-items: flex-end;
     position: relative;
