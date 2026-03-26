@@ -378,19 +378,24 @@
   /* Sticky fade — messages blur into bottom bar */
   .messages-fade {
     position: sticky; bottom: 0;
-    height: 100px; margin-top: -100px;
+    height: 120px; margin-top: -120px;
     flex-shrink: 0; pointer-events: none; z-index: 5;
     background: linear-gradient(to bottom,
       transparent 0%,
-      rgba(var(--bg-rgb, 17,17,17), 0.5) 40%,
-      var(--bg) 100%
+      rgba(17,17,17,0.55) 35%,
+      rgba(17,17,17,0.85) 65%,
+      #111111 100%
     );
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 40%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 40%);
   }
   [data-theme="tiffany"] .messages-fade {
-    background: linear-gradient(to bottom, transparent 0%, rgba(10,10,10,0.6) 40%, #0a0a0a 100%);
+    background: linear-gradient(to bottom, transparent 0%, rgba(10,10,10,0.55) 35%, rgba(10,10,10,0.88) 65%, #0a0a0a 100%);
   }
   [data-theme="light"] .messages-fade {
-    background: linear-gradient(to bottom, transparent 0%, rgba(248,248,248,0.6) 40%, #f8f8f8 100%);
+    background: linear-gradient(to bottom, transparent 0%, rgba(248,248,248,0.55) 35%, rgba(248,248,248,0.88) 65%, #f8f8f8 100%);
   }
   .msg {
     display: flex; gap: 10px; align-items: flex-start;
