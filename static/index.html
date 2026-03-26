@@ -3507,6 +3507,9 @@
     localStorage.setItem('чаты', JSON.stringify(чаты));
     if (id === текущийЧатId) новыйЧат();
     отрисоватьИсторию();
+    // Сразу синхронизируем удаление на сервер
+    clearTimeout(window._syncT);
+    await синхронизироватьНаСервер();
   }
 
   function новаяДата(ts) {
