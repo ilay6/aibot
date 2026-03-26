@@ -469,13 +469,14 @@ async def картинка(данные: ЗапросКартинки):
             pass
 
     prompt_encoded = quote(eng_prompt)
+    key_param = f"&key={POLLINATIONS_API_KEY}" if POLLINATIONS_API_KEY else ""
+    img_headers = {"User-Agent": "Mozilla/5.0 (compatible; AIchatBot/1.0)"}
+    if POLLINATIONS_API_KEY:
+        img_headers["Authorization"] = f"Bearer {POLLINATIONS_API_KEY}"
     seed = данные.seed if данные.seed else int(time.time())
-    hdrs = {"User-Agent": "Mozilla/5.0 (compatible; AIchatBot/1.0)"}
-    # Пробуем несколько моделей без ключа (бесплатный тариф Pollinations)
     urls = [
-        (f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=768&height=768&nologo=true&model=flux-schnell&seed={seed}", hdrs),
-        (f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=768&height=768&nologo=true&model=turbo&seed={seed}", hdrs),
-        (f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=512&height=512&nologo=true&seed={seed}", hdrs),
+        (f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=768&height=768&nologo=true&model=flux&seed={seed}{key_param}", img_headers),
+        (f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=512&height=512&nologo=true&seed={seed}{key_param}", img_headers),
     ]
 
     last_err = ""
@@ -506,8 +507,6 @@ async def картинка(данные: ЗапросКартинки):
                         _, rem = check_img_rate_limit(данные.tg_id, increment=False)
                     return {"image": f"data:{mime};base64,{b64}", "seed": seed, "eng_prompt": eng_prompt, "remaining": rem}
                 last_err = f"HTTP {r.status_code}, ct={ct}, body={r.text[:200]}"
-                if r.status_code in (401, 402, 403):
-                    break  # пробуем следующую модель
                 if r.status_code == 429:
                     await asyncio.sleep(5 * (attempt + 1))
                     continue
