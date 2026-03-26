@@ -470,21 +470,13 @@ async def картинка(данные: ЗапросКартинки):
 
     prompt_encoded = quote(eng_prompt)
     seed = данные.seed if данные.seed else int(time.time())
-    base_headers = {"User-Agent": "Mozilla/5.0 (compatible; AIchatBot/1.0)"}
-    # turbo — бесплатная модель (без ключа), flux — платная (с ключом, если есть баланс)
+    hdrs = {"User-Agent": "Mozilla/5.0 (compatible; AIchatBot/1.0)"}
+    # Пробуем несколько моделей без ключа (бесплатный тариф Pollinations)
     urls = [
-        # turbo без авторизации (бесплатно)
-        (f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=768&height=768&nologo=true&model=turbo&seed={seed}", base_headers),
-        # fallback: без модели и без ключа
-        (f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=512&height=512&nologo=true&seed={seed}", base_headers),
+        (f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=768&height=768&nologo=true&model=flux-schnell&seed={seed}", hdrs),
+        (f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=768&height=768&nologo=true&model=turbo&seed={seed}", hdrs),
+        (f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=512&height=512&nologo=true&seed={seed}", hdrs),
     ]
-    if POLLINATIONS_API_KEY:
-        auth_headers = {**base_headers, "Authorization": f"Bearer {POLLINATIONS_API_KEY}"}
-        # flux с ключом (если баланс есть)
-        urls.insert(0, (
-            f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=768&height=768&nologo=true&model=flux&seed={seed}&key={POLLINATIONS_API_KEY}",
-            auth_headers
-        ))
 
     last_err = ""
     for url, hdrs in urls:
@@ -514,9 +506,8 @@ async def картинка(данные: ЗапросКартинки):
                         _, rem = check_img_rate_limit(данные.tg_id, increment=False)
                     return {"image": f"data:{mime};base64,{b64}", "seed": seed, "eng_prompt": eng_prompt, "remaining": rem}
                 last_err = f"HTTP {r.status_code}, ct={ct}, body={r.text[:200]}"
-                if r.status_code in (429, 402):
-                    # 402 = нет баланса на этой модели, пробуем следующий URL
-                    break
+                if r.status_code in (401, 402, 403):
+                    break  # пробуем следующую модель
                 if r.status_code == 429:
                     await asyncio.sleep(5 * (attempt + 1))
                     continue
