@@ -20,6 +20,7 @@ load_dotenv()
 import httpx
 
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
+HF_TOKEN = os.getenv("HF_TOKEN", "")  # Hugging Face бесплатный токен для генерации картинок
 MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions"
 ADMIN_SECRET = os.getenv("ADMIN_SECRET", "aibot_secret")
 WEBAPP_URL = os.getenv("WEBAPP_URL", "")
@@ -468,52 +469,84 @@ async def картинка(данные: ЗапросКартинки):
         except Exception:
             pass
 
-    prompt_encoded = quote(eng_prompt)
     seed = данные.seed if данные.seed else int(time.time())
-    free_hdrs = {"User-Agent": "Mozilla/5.0 (compatible; AIchatBot/1.0)"}
-    # Сначала пробуем бесплатный режим (без ключа, без nologo)
-    # Если есть ключ и баланс — пробуем с nologo
-    urls = [
-        # Бесплатно: без ключа, без nologo (может быть небольшой вотермарк Pollinations)
-        (f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=768&height=768&model=flux&seed={seed}&enhance=false", free_hdrs),
-        (f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=512&height=512&model=flux&seed={seed}", free_hdrs),
-        (f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=512&height=512&seed={seed}", free_hdrs),
-    ]
+
+    async def _save_history(img_b64: str, mime: str):
+        if данные.tg_id:
+            try:
+                con = db_connect()
+                con.execute(
+                    "INSERT INTO image_history (tg_id, prompt, eng_prompt, seed, created_at) VALUES (?,?,?,?,?)",
+                    (данные.tg_id, данные.запрос, eng_prompt, seed, datetime.now().strftime("%Y-%m-%d %H:%M"))
+                )
+                con.execute("""DELETE FROM image_history WHERE tg_id=? AND id NOT IN (
+                    SELECT id FROM image_history WHERE tg_id=? ORDER BY id DESC LIMIT 50)""",
+                    (данные.tg_id, данные.tg_id))
+                con.commit(); con.close()
+            except Exception: pass
+        rem = 9999
+        if данные.tg_id and not данные.seed:
+            _, rem = check_img_rate_limit(данные.tg_id, increment=False)
+        return {"image": f"data:{mime};base64,{img_b64}", "seed": seed, "eng_prompt": eng_prompt, "remaining": rem}
 
     last_err = ""
-    for url, hdrs in urls:
-        for attempt in range(2):
+
+    # ── Hugging Face (бесплатно, FLUX.1-schnell) ──
+    if HF_TOKEN:
+        hf_models = [
+            "black-forest-labs/FLUX.1-schnell",
+            "stabilityai/stable-diffusion-xl-base-1.0",
+        ]
+        for model in hf_models:
             try:
-                r = await http.get(url, headers=hdrs, timeout=httpx.Timeout(120, connect=15))
+                r = await http.post(
+                    f"https://api-inference.huggingface.co/models/{model}",
+                    headers={"Authorization": f"Bearer {HF_TOKEN}", "Content-Type": "application/json"},
+                    json={"inputs": eng_prompt, "parameters": {"seed": seed % 2147483647, "width": 768, "height": 768}},
+                    timeout=httpx.Timeout(120, connect=15)
+                )
                 ct = r.headers.get("content-type", "")
                 if r.status_code == 200 and "image" in ct:
                     b64 = base64.b64encode(r.content).decode()
-                    mime = ct.split(";")[0].strip()
-                    # Save to history
-                    if данные.tg_id:
-                        try:
-                            con = db_connect()
-                            con.execute(
-                                "INSERT INTO image_history (tg_id, prompt, eng_prompt, seed, created_at) VALUES (?,?,?,?,?)",
-                                (данные.tg_id, данные.запрос, eng_prompt, seed, datetime.now().strftime("%Y-%m-%d %H:%M"))
-                            )
-                            # Keep only last 50 per user
-                            con.execute("""DELETE FROM image_history WHERE tg_id=? AND id NOT IN (
-                                SELECT id FROM image_history WHERE tg_id=? ORDER BY id DESC LIMIT 50)""",
-                                (данные.tg_id, данные.tg_id))
-                            con.commit(); con.close()
-                        except Exception: pass
-                    rem = 9999
-                    if данные.tg_id and not данные.seed:
-                        _, rem = check_img_rate_limit(данные.tg_id, increment=False)
-                    return {"image": f"data:{mime};base64,{b64}", "seed": seed, "eng_prompt": eng_prompt, "remaining": rem}
-                last_err = f"HTTP {r.status_code}, ct={ct}, body={r.text[:200]}"
-                if r.status_code == 429:
-                    await asyncio.sleep(5 * (attempt + 1))
-                    continue
+                    mime = ct.split(";")[0].strip() or "image/jpeg"
+                    return await _save_history(b64, mime)
+                if r.status_code == 503:
+                    # Модель загружается — ждём и пробуем ещё раз
+                    await asyncio.sleep(10)
+                    r2 = await http.post(
+                        f"https://api-inference.huggingface.co/models/{model}",
+                        headers={"Authorization": f"Bearer {HF_TOKEN}", "Content-Type": "application/json"},
+                        json={"inputs": eng_prompt, "parameters": {"seed": seed % 2147483647, "width": 768, "height": 768}},
+                        timeout=httpx.Timeout(120, connect=15)
+                    )
+                    ct2 = r2.headers.get("content-type", "")
+                    if r2.status_code == 200 and "image" in ct2:
+                        b64 = base64.b64encode(r2.content).decode()
+                        mime = ct2.split(";")[0].strip() or "image/jpeg"
+                        return await _save_history(b64, mime)
+                last_err = f"HF {model}: HTTP {r.status_code}, {r.text[:150]}"
             except Exception as e:
-                last_err = str(e)
-            await asyncio.sleep(1)
+                last_err = f"HF {model}: {e}"
+
+    # ── Fallback: Pollinations (бесплатный режим) ──
+    prompt_encoded = quote(eng_prompt)
+    free_hdrs = {"User-Agent": "Mozilla/5.0 (compatible; AIchatBot/1.0)"}
+    poll_urls = [
+        f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=768&height=768&model=flux&seed={seed}",
+        f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=512&height=512&seed={seed}",
+    ]
+    for url in poll_urls:
+        try:
+            r = await http.get(url, headers=free_hdrs, timeout=httpx.Timeout(120, connect=15))
+            ct = r.headers.get("content-type", "")
+            if r.status_code == 200 and "image" in ct:
+                b64 = base64.b64encode(r.content).decode()
+                mime = ct.split(";")[0].strip()
+                return await _save_history(b64, mime)
+            last_err = f"Pollinations: HTTP {r.status_code}, {r.text[:150]}"
+        except Exception as e:
+            last_err = f"Pollinations: {e}"
+        await asyncio.sleep(1)
 
     return {"error": f"Ошибка генерации: {last_err}"}
 
