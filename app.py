@@ -420,6 +420,7 @@ async def картинка(данные: ЗапросКартинки):
         f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=512&height=512&nologo=true&seed={int(time.time())}",
     ]
 
+    last_err = ""
     for url in urls:
         for attempt in range(2):
             try:
@@ -429,14 +430,15 @@ async def картинка(данные: ЗапросКартинки):
                     b64 = base64.b64encode(r.content).decode()
                     mime = ct.split(";")[0].strip()
                     return {"image": f"data:{mime};base64,{b64}"}
+                last_err = f"HTTP {r.status_code}, ct={ct}, body={r.text[:200]}"
                 if r.status_code == 429:
                     await asyncio.sleep(5 * (attempt + 1))
                     continue
-            except Exception:
-                pass
+            except Exception as e:
+                last_err = str(e)
             await asyncio.sleep(2)
 
-    return {"error": "Сервис генерации недоступен. Попробуйте через минуту."}
+    return {"error": f"Ошибка генерации: {last_err}"}
 
 
 @app.post("/api/track")
