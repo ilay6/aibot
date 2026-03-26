@@ -256,8 +256,7 @@ def check_img_rate_limit(tg_id: int, increment: bool = True) -> tuple[bool, int]
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: webhook or polling
-    print(f"[startup] HF_TOKEN={'set ('+os.getenv('HF_TOKEN','')[:8]+')' if os.getenv('HF_TOKEN') else 'NOT SET'}")
-    print(f"[startup] POLLINATIONS_KEY={'set' if os.getenv('POLLINATIONS_API_KEY') else 'not set'}")
+
     try:
         from bot import bot, dp
         if bot and WEBAPP_URL:
@@ -494,7 +493,7 @@ async def картинка(данные: ЗапросКартинки):
 
     errors = []
     _hf_token = os.getenv("HF_TOKEN", "").strip()
-    print(f"[image] HF_TOKEN={'yes ('+_hf_token[:8]+')' if _hf_token else 'NO'}", flush=True)
+
 
     # ── Hugging Face (бесплатно) ──
     if not _hf_token:
