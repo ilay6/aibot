@@ -121,7 +121,7 @@ async def start_cmd(message: types.Message):
             reply_markup=keyboard
         )
     except Exception as e:
-        print(f"Photo send error: {e}, path: {preview_path}, exists: {os.path.exists(preview_path)}")
+        print(f"Photo send error: {e}, url: {preview_url}")
         await message.answer("👋 Привет! Открой ассистента:", reply_markup=keyboard)
 
 
