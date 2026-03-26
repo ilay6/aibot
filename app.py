@@ -492,13 +492,14 @@ async def картинка(данные: ЗапросКартинки):
             _, rem = check_img_rate_limit(данные.tg_id, increment=False)
         return {"image": f"data:{mime};base64,{img_b64}", "seed": seed, "eng_prompt": eng_prompt, "remaining": rem}
 
-    last_err = ""
+    errors = []
     _hf_token = os.getenv("HF_TOKEN", "").strip()
+    print(f"[image] HF_TOKEN={'yes ('+_hf_token[:8]+')' if _hf_token else 'NO'}", flush=True)
 
     # ── Hugging Face (бесплатно) ──
     if not _hf_token:
-        last_err = "HF_TOKEN не задан в переменных Railway"
-    if _hf_token:
+        errors.append("HF_TOKEN не задан")
+    else:
         hf_models = [
             "black-forest-labs/FLUX.1-schnell",
             "black-forest-labs/FLUX.1-dev",
@@ -520,14 +521,13 @@ async def картинка(данные: ЗапросКартинки):
                         mime = ct.split(";")[0].strip() or "image/jpeg"
                         return await _save_history(b64, mime)
                     if r.status_code == 503:
-                        # Модель загружается, ждём
                         wait = int(r.headers.get("X-Wait-For-Model", "20"))
                         await asyncio.sleep(min(wait, 30))
                         continue
-                    last_err = f"HF {model}: HTTP {r.status_code}, {r.text[:200]}"
-                    break  # другая ошибка — пробуем следующую модель
+                    errors.append(f"HF/{model.split('/')[1]}: {r.status_code} {r.text[:100]}")
+                    break
                 except Exception as e:
-                    last_err = f"HF {model}: {e}"
+                    errors.append(f"HF/{model.split('/')[1]}: {e}")
                     break
 
     # ── Fallback: Pollinations (бесплатный режим) ──
@@ -545,12 +545,14 @@ async def картинка(данные: ЗапросКартинки):
                 b64 = base64.b64encode(r.content).decode()
                 mime = ct.split(";")[0].strip()
                 return await _save_history(b64, mime)
-            last_err = f"Pollinations: HTTP {r.status_code}, {r.text[:150]}"
+            errors.append(f"Pollinations: {r.status_code}")
+            if r.status_code == 401:
+                break  # дальше пробовать бесполезно
         except Exception as e:
-            last_err = f"Pollinations: {e}"
+            errors.append(f"Pollinations: {e}")
         await asyncio.sleep(1)
 
-    return {"error": f"Ошибка генерации: {last_err}"}
+    return {"error": f"Ошибка: {' | '.join(errors)}"}
 
 
 @app.get("/api/images/history/{tg_id}")
