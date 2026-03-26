@@ -662,7 +662,7 @@
 
   /* ── IMAGE PANEL ── */
   .image-panel { flex: 1; overflow-y: auto; padding: 20px 16px; display: flex; flex-direction: column; align-items: center; }
-  .img-card { width: 100%; max-width: 400px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .img-card { width: 100%; max-width: 420px; display: flex; flex-direction: column; align-items: stretch; gap: 12px; }
   .img-hero {
     width: 72px; height: 72px; border-radius: 20px;
     background: var(--bg3); border: 1px solid var(--accent-glow);
@@ -679,8 +679,9 @@
     0%,100% { box-shadow: 0 0 20px var(--accent-glow); }
     50%      { box-shadow: 0 0 50px var(--accent-shadow); }
   }
-  .img-title { font-size: 18px; font-weight: 700; text-align: center; }
-  .img-desc { font-size: 13px; color: var(--text2); text-align: center; line-height: 1.5; }
+  .img-title { font-size: 18px; font-weight: 700; text-align: center; align-self: center; }
+  .img-desc { font-size: 13px; color: var(--text2); text-align: center; line-height: 1.5; align-self: center; }
+  .img-hero { align-self: center; }
   .img-input {
     width: 100%;
     background: var(--bg3);
@@ -751,8 +752,9 @@
   .img-hist-cell-date { font-size: 9px; color: var(--text2); padding: 0 6px 6px; opacity: 0.6; }
   /* ── Стили генерации ── */
   .img-styles {
-    display: flex; gap: 6px; overflow-x: auto; margin-bottom: 12px;
-    scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 2px;
+    display: flex; gap: 6px; overflow-x: auto; margin-bottom: 4px;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    padding: 2px 0 4px; align-self: stretch;
   }
   .img-styles::-webkit-scrollbar { display: none; }
   .style-chip {
@@ -2153,13 +2155,14 @@
       <span class="msgs-left" id="msgs-left" style="display:none"></span>
     </div>
     <div class="prompt-chips" id="prompt-chips">
-      <button class="p-chip" onclick="вставитьШаблон('Объясни простыми словами: ')">💡 Объясни</button>
-      <button class="p-chip" onclick="вставитьШаблон('Напиши код на Python для: ')">💻 Код</button>
-      <button class="p-chip" onclick="вставитьШаблон('Переведи на английский: ')">🌍 Перевод</button>
-      <button class="p-chip" onclick="вставитьШаблон('Кратко перескажи: ')">📝 Кратко</button>
-      <button class="p-chip" onclick="вставитьШаблон('Придумай 5 идей для: ')">✨ Идеи</button>
-      <button class="p-chip" onclick="вставитьШаблон('Исправь ошибки в тексте: ')">✏️ Корректура</button>
-      <button class="p-chip" onclick="вставитьШаблон('Составь план по теме: ')">📋 План</button>
+      <button class="p-chip" onclick="вставитьШаблон('Объясни простыми словами: ')">Объясни</button>
+      <button class="p-chip" onclick="вставитьШаблон('Напиши код на Python для: ')">Код</button>
+      <button class="p-chip" onclick="вставитьШаблон('Переведи на английский: ')">Перевод</button>
+      <button class="p-chip" onclick="вставитьШаблон('Кратко перескажи: ')">Кратко</button>
+      <button class="p-chip" onclick="вставитьШаблон('Придумай 5 идей для: ')">Идеи</button>
+      <button class="p-chip" onclick="вставитьШаблон('Исправь ошибки в тексте: ')">Корректура</button>
+      <button class="p-chip" onclick="вставитьШаблон('Составь план по теме: ')">План</button>
+      <button class="p-chip" onclick="вставитьШаблон('Проверь и улучши текст: ')">Улучши</button>
     </div>
     <div class="input-wrap">
       <textarea id="ввод" placeholder="Напиши сообщение..." rows="1"
