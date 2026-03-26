@@ -8,7 +8,7 @@ from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command, CommandStart
 from aiogram.types import (
     InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo, LabeledPrice,
-    FSInputFile, MenuButtonWebApp, BotCommand
+    FSInputFile, MenuButtonWebApp, BotCommand, ReplyKeyboardMarkup, KeyboardButton
 )
 from aiogram.methods import DeleteWebhook
 from dotenv import load_dotenv
@@ -105,6 +105,10 @@ async def start_cmd(message: types.Message):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[
         InlineKeyboardButton(text="🤖 Открыть AI Ассистент", web_app=WebAppInfo(url=webapp_url()))
     ]])
+    reply_keyboard = ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="🤖 Открыть AI", web_app=WebAppInfo(url=WEBAPP_URL))]],
+        resize_keyboard=True
+    )
     preview_url = f"{WEBAPP_URL}/preview.png?v={int(time.time())}" if WEBAPP_URL else ""
     try:
         await message.answer_photo(
@@ -120,9 +124,10 @@ async def start_cmd(message: types.Message):
             ),
             reply_markup=keyboard
         )
+        await message.answer("🤖 Открыть AI", reply_markup=reply_keyboard)
     except Exception as e:
         print(f"Photo send error: {e}, url: {preview_url}")
-        await message.answer("👋 Привет! Открой ассистента:", reply_markup=keyboard)
+        await message.answer("👋 Привет! Открой ассистента:", reply_markup=reply_keyboard)
 
 
 @dp.message(Command("ref"))
