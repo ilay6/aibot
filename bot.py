@@ -2,6 +2,8 @@ import os
 import asyncio
 import time
 import httpx
+
+STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command, CommandStart
 from aiogram.types import (
@@ -103,9 +105,10 @@ async def start_cmd(message: types.Message):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[
         InlineKeyboardButton(text="🤖 Открыть AI Ассистент", web_app=WebAppInfo(url=webapp_url()))
     ]])
+    preview_path = os.path.join(STATIC_DIR, "preview.png")
     try:
         await message.answer_photo(
-            photo=FSInputFile("static/preview.png"),
+            photo=FSInputFile(preview_path),
             caption=(
                 "👋 Привет!\n\n"
                 "Я AI-ассистент с возможностями:\n\n"
@@ -117,7 +120,8 @@ async def start_cmd(message: types.Message):
             ),
             reply_markup=keyboard
         )
-    except Exception:
+    except Exception as e:
+        print(f"Photo send error: {e}, path: {preview_path}, exists: {os.path.exists(preview_path)}")
         await message.answer("👋 Привет! Открой ассистента:", reply_markup=keyboard)
 
 
