@@ -105,10 +105,10 @@ async def start_cmd(message: types.Message):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[
         InlineKeyboardButton(text="🤖 Открыть AI Ассистент", web_app=WebAppInfo(url=webapp_url()))
     ]])
-    preview_path = os.path.join(STATIC_DIR, "preview.png")
+    preview_url = f"{WEBAPP_URL}/preview.png?v={int(time.time())}" if WEBAPP_URL else ""
     try:
         await message.answer_photo(
-            photo=FSInputFile(preview_path),
+            photo=preview_url,
             caption=(
                 "👋 Привет!\n\n"
                 "Я AI-ассистент с возможностями:\n\n"
