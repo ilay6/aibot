@@ -5,7 +5,8 @@ import httpx
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command, CommandStart
 from aiogram.types import (
-    InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo, LabeledPrice
+    InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo, LabeledPrice,
+    FSInputFile, MenuButtonWebApp, BotCommand
 )
 from aiogram.methods import DeleteWebhook
 from dotenv import load_dotenv
@@ -21,6 +22,27 @@ PREMIUM_STARS = int(os.getenv("PREMIUM_STARS", "100"))
 
 bot = Bot(BOT_TOKEN) if BOT_TOKEN else None
 dp = Dispatcher()
+
+
+async def setup_menu_button():
+    if not bot or not WEBAPP_URL:
+        return
+    try:
+        await bot.set_chat_menu_button(
+            menu_button=MenuButtonWebApp(
+                text="🤖 Открыть AI",
+                web_app=WebAppInfo(url=WEBAPP_URL)
+            )
+        )
+        await bot.set_my_commands([
+            BotCommand(command="start", description="Открыть AI ассистент"),
+            BotCommand(command="premium", description="Купить Premium"),
+            BotCommand(command="ref", description="Реферальная ссылка"),
+            BotCommand(command="mystats", description="Моя статистика"),
+        ])
+        print("Menu button set OK")
+    except Exception as e:
+        print(f"Menu button error: {e}")
 
 
 def webapp_url():
@@ -83,7 +105,7 @@ async def start_cmd(message: types.Message):
     ]])
     try:
         await message.answer_photo(
-            photo=f"{WEBAPP_URL}/preview.png?v=2",
+            photo=FSInputFile("static/preview.png"),
             caption=(
                 "👋 Привет!\n\n"
                 "Я AI-ассистент с возможностями:\n\n"
