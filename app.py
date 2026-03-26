@@ -130,6 +130,11 @@ def init_db():
         code TEXT PRIMARY KEY, free_msgs INTEGER DEFAULT 50,
         max_uses INTEGER DEFAULT 100, used_count INTEGER DEFAULT 0,
         created_at TEXT)""")
+    pk = "SERIAL PRIMARY KEY" if IS_PG else "INTEGER PRIMARY KEY AUTOINCREMENT"
+    int_t = "BIGINT" if IS_PG else "INTEGER"
+    con.execute(f"""CREATE TABLE IF NOT EXISTS image_history (
+        id {pk}, tg_id {int_t}, prompt TEXT, eng_prompt TEXT,
+        seed INTEGER, created_at TEXT)""")
     for idx in [
         "CREATE INDEX IF NOT EXISTS idx_msg_tg ON messages(tg_id)",
         "CREATE INDEX IF NOT EXISTS idx_msg_id_desc ON messages(id DESC)",
@@ -257,6 +262,8 @@ class ЗапросЧат(BaseModel):
 
 class ЗапросКартинки(BaseModel):
     запрос: str
+    tg_id: int = 0
+    seed: int = 0  # 0 = random
 
 
 class TrackData(BaseModel):
@@ -418,7 +425,7 @@ async def картинка(данные: ЗапросКартинки):
     img_headers = {"User-Agent": "Mozilla/5.0 (compatible; AIchatBot/1.0)"}
     if POLLINATIONS_API_KEY:
         img_headers["Authorization"] = f"Bearer {POLLINATIONS_API_KEY}"
-    seed = int(time.time())
+    seed = данные.seed if данные.seed else int(time.time())
     urls = [
         f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=768&height=768&nologo=true&model=flux&seed={seed}{key_param}",
         f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=512&height=512&nologo=true&seed={seed}{key_param}",
@@ -433,7 +440,21 @@ async def картинка(данные: ЗапросКартинки):
                 if r.status_code == 200 and "image" in ct:
                     b64 = base64.b64encode(r.content).decode()
                     mime = ct.split(";")[0].strip()
-                    return {"image": f"data:{mime};base64,{b64}"}
+                    # Save to history
+                    if данные.tg_id:
+                        try:
+                            con = db_connect()
+                            con.execute(
+                                "INSERT INTO image_history (tg_id, prompt, eng_prompt, seed, created_at) VALUES (?,?,?,?,?)",
+                                (данные.tg_id, данные.запрос, eng_prompt, seed, datetime.now().strftime("%Y-%m-%d %H:%M"))
+                            )
+                            # Keep only last 50 per user
+                            con.execute("""DELETE FROM image_history WHERE tg_id=? AND id NOT IN (
+                                SELECT id FROM image_history WHERE tg_id=? ORDER BY id DESC LIMIT 50)""",
+                                (данные.tg_id, данные.tg_id))
+                            con.commit(); con.close()
+                        except Exception: pass
+                    return {"image": f"data:{mime};base64,{b64}", "seed": seed, "eng_prompt": eng_prompt}
                 last_err = f"HTTP {r.status_code}, ct={ct}, body={r.text[:200]}"
                 if r.status_code == 429:
                     await asyncio.sleep(5 * (attempt + 1))
@@ -443,6 +464,19 @@ async def картинка(данные: ЗапросКартинки):
             await asyncio.sleep(2)
 
     return {"error": f"Ошибка генерации: {last_err}"}
+
+
+@app.get("/api/images/history/{tg_id}")
+async def images_history(tg_id: int, x_admin_secret: str = Header(None)):
+    if not ADMIN_SECRET or x_admin_secret != ADMIN_SECRET:
+        return {"error": "forbidden"}
+    con = db_connect()
+    rows = con.execute(
+        "SELECT id, prompt, eng_prompt, seed, created_at FROM image_history WHERE tg_id=? ORDER BY id DESC LIMIT 50",
+        (tg_id,)
+    ).fetchall()
+    con.close()
+    return {"history": [{"id": r[0], "prompt": r[1], "eng_prompt": r[2], "seed": r[3], "created_at": r[4]} for r in rows]}
 
 
 @app.post("/api/track")
