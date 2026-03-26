@@ -400,36 +400,43 @@ async def чат_stream(данные: ЗапросЧат):
 async def картинка(данные: ЗапросКартинки):
     eng_prompt = данные.запрос
     http = get_http()
-    try:
-        tr = await http.post(MISTRAL_URL,
-            headers={"Authorization": f"Bearer {MISTRAL_API_KEY}"},
-            json={"model": "mistral-small-latest", "messages": [
-                {"role": "system", "content": "You are an image prompt engineer. Take the user's request and turn it into a detailed English prompt for an image generator (1-2 sentences). Be descriptive. Output ONLY the prompt."},
-                {"role": "user", "content": данные.запрос}
-            ]})
-        eng_prompt = tr.json()["choices"][0]["message"]["content"].strip().strip('"')
-    except Exception:
-        pass
-
-    prompt_encoded = quote(eng_prompt)
-    url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=768&height=768&nologo=true&enhance=true&seed={int(time.time())}"
-
-    for attempt in range(3):
+    # Translate to English for better image quality
+    if MISTRAL_API_KEY:
         try:
-            r = await http.get(url, follow_redirects=True, timeout=httpx.Timeout(90, connect=15))
-            ct = r.headers.get("content-type", "")
-            if r.status_code == 200 and ct.startswith("image/"):
-                b64 = base64.b64encode(r.content).decode()
-                mime = ct.split(";")[0]
-                return {"image": f"data:{mime};base64,{b64}"}
-            if r.status_code == 429:
-                await asyncio.sleep(5 * (attempt + 1))
-                continue
+            tr = await http.post(MISTRAL_URL,
+                headers={"Authorization": f"Bearer {MISTRAL_API_KEY}"},
+                json={"model": "mistral-small-latest", "messages": [
+                    {"role": "system", "content": "Translate to English image generation prompt (1-2 sentences, detailed, descriptive). Output ONLY the prompt, no quotes."},
+                    {"role": "user", "content": данные.запрос}
+                ]}, timeout=httpx.Timeout(20, connect=5))
+            eng_prompt = tr.json()["choices"][0]["message"]["content"].strip().strip('"')
         except Exception:
             pass
-        await asyncio.sleep(3)
 
-    return {"error": "Генерация временно недоступна. Попробуйте через минуту."}
+    prompt_encoded = quote(eng_prompt)
+    img_headers = {"User-Agent": "Mozilla/5.0 (compatible; AIchatBot/1.0)"}
+    urls = [
+        f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=768&height=768&nologo=true&model=flux&seed={int(time.time())}",
+        f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=512&height=512&nologo=true&seed={int(time.time())}",
+    ]
+
+    for url in urls:
+        for attempt in range(2):
+            try:
+                r = await http.get(url, headers=img_headers, timeout=httpx.Timeout(120, connect=15))
+                ct = r.headers.get("content-type", "")
+                if r.status_code == 200 and "image" in ct:
+                    b64 = base64.b64encode(r.content).decode()
+                    mime = ct.split(";")[0].strip()
+                    return {"image": f"data:{mime};base64,{b64}"}
+                if r.status_code == 429:
+                    await asyncio.sleep(5 * (attempt + 1))
+                    continue
+            except Exception:
+                pass
+            await asyncio.sleep(2)
+
+    return {"error": "Сервис генерации недоступен. Попробуйте через минуту."}
 
 
 @app.post("/api/track")
