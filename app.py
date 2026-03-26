@@ -930,6 +930,30 @@ async def redeem_promo(data: PromoRedeemData):
     con.close()
     return {"ok": True, "free_msgs": free_msgs}
 
+@app.get("/api/promo/list")
+async def list_promos(x_admin_secret: str = Header(None)):
+    if not ADMIN_SECRET or x_admin_secret != ADMIN_SECRET:
+        return {"error": "forbidden"}
+    con = db_connect()
+    rows = con.execute(
+        "SELECT code, free_msgs, max_uses, used_count, created_at FROM promo_codes ORDER BY created_at DESC"
+    ).fetchall()
+    con.close()
+    return {"promos": [{"code": r[0], "free_msgs": r[1], "max_uses": r[2], "used_count": r[3], "created_at": r[4]} for r in rows]}
+
+
+@app.post("/api/promo/delete")
+async def delete_promo(data: WhitelistData):
+    if not ADMIN_SECRET or data.secret != ADMIN_SECRET:
+        return {"error": "forbidden"}
+    code = data.username.strip().upper()  # reuse WhitelistData model
+    con = db_connect()
+    con.execute("DELETE FROM promo_codes WHERE code=?", (code,))
+    con.commit()
+    con.close()
+    return {"ok": True}
+
+
 @app.post("/api/promo/create")
 async def create_promo(data: PromoCreateData):
     if not ADMIN_SECRET or data.secret != ADMIN_SECRET:

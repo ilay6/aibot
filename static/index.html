@@ -2140,6 +2140,16 @@
       <div id="admin-whitelist"><div class="admin-empty">Загрузка...</div></div>
     </div>
     <div>
+      <div class="admin-section-title">Промокоды</div>
+      <div class="whitelist-input-row" style="flex-wrap:wrap;gap:6px">
+        <input class="whitelist-input" id="promo-code-input" placeholder="Код (напр. BONUS2025)" maxlength="20" style="flex:1;min-width:100px" oninput="this.value=this.value.toUpperCase()">
+        <input class="whitelist-input" id="promo-msgs-input" placeholder="Сообщений" type="number" min="1" max="9999" value="50" style="width:90px">
+        <input class="whitelist-input" id="promo-uses-input" placeholder="Исп." type="number" min="1" max="9999" value="100" style="width:70px">
+        <button class="whitelist-add-btn" onclick="создатьПромокод()">+ Создать</button>
+      </div>
+      <div style="font-size:11px;color:var(--text2);margin:4px 0 8px;padding:0 2px">Код · Бонусных сообщений · Макс. использований</div>
+      <div id="admin-promos"><div class="admin-empty">Загрузка...</div></div>
+
       <div class="admin-section-title">Последние сообщения</div>
       <div id="admin-messages"><div class="admin-empty">Нажмите «Обновить данные»</div></div>
     </div>
@@ -3572,12 +3582,57 @@
     } catch(e) {}
   }
 
+  async function загрузитьПромокоды() {
+    const el = document.getElementById('admin-promos');
+    if (!el) return;
+    try {
+      const r = await fetch('/api/promo/list', { headers: { 'x-admin-secret': ADMIN_SECRET } });
+      const d = await r.json();
+      if (!d.promos || !d.promos.length) { el.innerHTML = '<div class="admin-empty">Промокодов нет</div>'; return; }
+      el.innerHTML = d.promos.map(p => `
+        <div class="whitelist-row">
+          <div>
+            <div class="whitelist-name" style="font-family:monospace;letter-spacing:1px">${экранировать(p.code)}</div>
+            <div class="whitelist-date">+${p.free_msgs} сообщ. · использовано ${p.used_count}/${p.max_uses}</div>
+          </div>
+          <button class="whitelist-remove" onclick="удалитьПромокод('${экранировать(p.code)}')">Удалить</button>
+        </div>`).join('');
+    } catch { el.innerHTML = '<div class="admin-empty">Ошибка загрузки</div>'; }
+  }
+
+  async function создатьПромокод() {
+    const code = document.getElementById('promo-code-input').value.trim().toUpperCase();
+    const msgs = parseInt(document.getElementById('promo-msgs-input').value) || 50;
+    const uses = parseInt(document.getElementById('promo-uses-input').value) || 100;
+    if (!code) return;
+    try {
+      const r = await fetch('/api/promo/create', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({code, free_msgs: msgs, max_uses: uses, secret: ADMIN_SECRET})
+      });
+      const d = await r.json();
+      if (d.ok) { document.getElementById('promo-code-input').value = ''; загрузитьПромокоды(); }
+      else показатьТост(d.error || 'Ошибка');
+    } catch { показатьТост('Ошибка сети'); }
+  }
+
+  async function удалитьПромокод(code) {
+    try {
+      await fetch('/api/promo/delete', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({code, secret: ADMIN_SECRET})
+      });
+      загрузитьПромокоды();
+    } catch {}
+  }
+
   async function загрузитьАдмин() {
     const errEl = document.getElementById('admin-error');
     errEl.style.display = 'none';
     document.getElementById('admin-users').innerHTML    = '<div class="admin-empty">Загрузка...</div>';
     document.getElementById('admin-messages').innerHTML = '<div class="admin-empty">Загрузка...</div>';
     загрузитьВайтлист();
+    загрузитьПромокоды();
     try {
       const resp = await fetch('/api/admin/stats', {
         headers: { 'x-admin-secret': ADMIN_SECRET }
