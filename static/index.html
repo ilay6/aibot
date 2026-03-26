@@ -786,24 +786,6 @@
   /* ── Количество (центрирование) ── */
   .img-count-row { display: flex; align-items: center; gap: 8px; justify-content: center; margin-bottom: 4px; }
   .img-count-row span { font-size: 12px; color: var(--text2); letter-spacing: 0.03em; }
-  /* ── Шаблоны промптов ── */
-  .prompt-chips {
-    display: flex; gap: 6px; overflow-x: auto; padding: 6px 14px 4px;
-    scrollbar-width: none; -webkit-overflow-scrolling: touch;
-    border-bottom: 1px solid var(--border);
-  }
-  .prompt-chips::-webkit-scrollbar { display: none; }
-  .p-chip {
-    flex-shrink: 0; font-size: 12px; padding: 5px 13px; border-radius: 16px;
-    border: 1px solid var(--border); background: var(--bg2); color: var(--text2);
-    cursor: pointer; transition: all 0.18s; font-family: inherit; white-space: nowrap;
-  }
-  .p-chip:hover { border-color: var(--border2); color: var(--text); }
-  .p-chip:active { background: var(--accent); color: var(--send-btn-color); border-color: var(--accent); }
-  .chip-icon {
-    display: inline-block; margin-right: 5px; font-size: 11px;
-    opacity: 0.7; font-style: normal; line-height: 1;
-  }
   /* ── Закладки ── */
   .bookmark-btn {
     background: none; border: none; cursor: pointer; color: var(--text2);
@@ -2155,16 +2137,6 @@
       </div>
       <span class="char-counter" id="char-counter"></span>
       <span class="msgs-left" id="msgs-left" style="display:none"></span>
-    </div>
-    <div class="prompt-chips" id="prompt-chips">
-      <button class="p-chip" onclick="вставитьШаблон('Объясни простыми словами: ')"><span class="chip-icon">✦</span>Объясни</button>
-      <button class="p-chip" onclick="вставитьШаблон('Напиши код на Python для: ')"><span class="chip-icon">⌥</span>Код</button>
-      <button class="p-chip" onclick="вставитьШаблон('Переведи на английский: ')"><span class="chip-icon">◈</span>Перевод</button>
-      <button class="p-chip" onclick="вставитьШаблон('Кратко перескажи: ')"><span class="chip-icon">◉</span>Кратко</button>
-      <button class="p-chip" onclick="вставитьШаблон('Придумай 5 идей для: ')"><span class="chip-icon">◇</span>Идеи</button>
-      <button class="p-chip" onclick="вставитьШаблон('Исправь ошибки в тексте: ')"><span class="chip-icon">✎</span>Корректура</button>
-      <button class="p-chip" onclick="вставитьШаблон('Составь план по теме: ')"><span class="chip-icon">≡</span>План</button>
-      <button class="p-chip" onclick="вставитьШаблон('Проверь и улучши текст: ')"><span class="chip-icon">↑</span>Улучши</button>
     </div>
     <div class="input-wrap">
       <textarea id="ввод" placeholder="Напиши сообщение..." rows="1"
