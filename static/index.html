@@ -3778,23 +3778,26 @@
     const name = `ai-image-${Date.now()}.jpg`;
     try {
       const blob = await (await fetch(img.src)).blob();
+      // iOS (в т.ч. в Telegram): только share sheet
+      if (_isIOS) {
+        const file = new File([blob], name, {type: blob.type || 'image/jpeg'});
+        if (navigator.share && navigator.canShare && navigator.canShare({files:[file]})) {
+          await navigator.share({files:[file]});
+        } else {
+          показатьТост('Удерживай картинку для сохранения');
+        }
+        return;
+      }
+      // Android / Desktop: прямое скачивание
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = name;
+      a.href = url; a.download = name; a.style.display = 'none';
       document.body.appendChild(a); a.click();
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 3000);
-      if (_isIOS) {
-        показатьТост('Открой «Файлы» → Загрузки');
-      } else {
-        показатьТост('Сохранено в папку Загрузки');
-      }
+      показатьТост('Сохранено в Загрузки');
     } catch {
-      // Fallback: open in new tab, user saves manually
-      const w = window.open('', '_blank');
-      if (w) {
-        w.document.write(`<html><body style="margin:0;background:#000"><img src="${img.src}" style="max-width:100vw;max-height:100vh;object-fit:contain"><br><a download="${name}" href="${img.src}" style="color:#fff;font-size:16px;padding:10px;display:block;text-align:center">Нажми чтобы скачать</a></body></html>`);
-      }
+      показатьТост('Удерживай картинку для сохранения');
     }
   }
 
