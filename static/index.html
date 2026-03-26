@@ -4668,22 +4668,101 @@
 
   // ── MULTILINGUAL ──
   const _i18n = {
-    ru: { send: 'Напиши сообщение...', chat: 'Чат', images: 'Картинки', browser: 'Браузер', newChat: 'Новый чат', copy: 'Копировать', tts: 'Озвучить', search: 'Поиск по чатам...', export: 'Экспорт' },
-    en: { send: 'Type a message...', chat: 'Chat', images: 'Images', browser: 'Browser', newChat: 'New chat', copy: 'Copy', tts: 'Listen', search: 'Search chats...', export: 'Export' }
+    ru: {
+      send: 'Напиши сообщение...', headerSub: 'AI · Онлайн',
+      chat: 'Чат', images: 'Картинки', browser: 'Браузер', profile: 'Профиль', admin: 'Админ',
+      ctxCopy: 'Копировать текст', ctxTts: 'Озвучить', ctxSearch: 'Поиск в Google', ctxDelete: 'Удалить',
+      premiumSub: 'Premium — безлимит на 30 дней', premiumUpgrade: 'Upgrade',
+      attachTitle: 'Прикрепить изображение', voiceTitle: 'Голосовой ввод', scrollTitle: 'Вниз',
+      personaAsst: 'Ассистент', personaDev: 'Программист', personaTr: 'Переводчик',
+      personaCopy: 'Копирайтер', personaTeach: 'Учитель', personaCustom: '+ Свой промпт',
+      imgTitle: 'Генерация изображений', genBtn: 'Сгенерировать',
+      imgPlaceholder: 'Опиши что хочешь сгенерировать...',
+      searchPlaceholder: 'Поиск в интернете...',
+    },
+    en: {
+      send: 'Type a message...', headerSub: 'AI · Online',
+      chat: 'Chat', images: 'Images', browser: 'Browser', profile: 'Profile', admin: 'Admin',
+      ctxCopy: 'Copy text', ctxTts: 'Listen', ctxSearch: 'Search Google', ctxDelete: 'Delete',
+      premiumSub: 'Premium — unlimited for 30 days', premiumUpgrade: 'Upgrade',
+      attachTitle: 'Attach image', voiceTitle: 'Voice input', scrollTitle: 'Scroll down',
+      personaAsst: 'Assistant', personaDev: 'Developer', personaTr: 'Translator',
+      personaCopy: 'Copywriter', personaTeach: 'Teacher', personaCustom: '+ Custom prompt',
+      imgTitle: 'Image Generation', genBtn: 'Generate',
+      imgPlaceholder: 'Describe what you want to generate...',
+      searchPlaceholder: 'Search the web...',
+    }
   };
   var _lang = localStorage.getItem('appLang') || 'ru';
+
+  function применитьЯзык() {
+    const t = _i18n[_lang];
+    // Input
+    const ввод = document.getElementById('ввод');
+    if (ввод) ввод.placeholder = t.send;
+    // Lang button
+    const lb = document.getElementById('lang-btn');
+    if (lb) lb.textContent = _lang.toUpperCase();
+    // Header subtitle
+    const sub = document.querySelector('.header-sub');
+    if (sub) sub.innerHTML = `<div class="online-dot"></div> ${t.headerSub}`;
+    // Tabs — update text node only
+    const tabTexts = [t.chat, t.images, t.browser, t.profile, t.admin];
+    document.querySelectorAll('.tab').forEach((tab, i) => {
+      if (tabTexts[i] === undefined) return;
+      for (let n = tab.childNodes.length - 1; n >= 0; n--) {
+        if (tab.childNodes[n].nodeType === 3) { tab.childNodes[n].textContent = '\n    ' + tabTexts[i] + '\n  '; break; }
+      }
+    });
+    // Context menu
+    const ctx = document.querySelectorAll('.ctx-item');
+    if (ctx[0]) ctx[0].lastChild.textContent = ' ' + t.ctxCopy;
+    if (ctx[1]) ctx[1].lastChild.textContent = ' ' + t.ctxTts;
+    if (ctx[2]) ctx[2].lastChild.textContent = ' ' + t.ctxSearch;
+    if (ctx[3]) ctx[3].lastChild.textContent = ' ' + t.ctxDelete;
+    // Premium banner sub
+    const pSub = document.querySelector('.premium-banner-sub');
+    if (pSub) pSub.textContent = t.premiumSub;
+    const pBtn = document.querySelector('.premium-banner-btn');
+    if (pBtn) pBtn.lastChild.textContent = t.premiumUpgrade;
+    // Buttons tooltips
+    const attachBtn = document.getElementById('attach-btn');
+    if (attachBtn) attachBtn.title = t.attachTitle;
+    const voiceBtn = document.getElementById('voice-btn');
+    if (voiceBtn) voiceBtn.title = t.voiceTitle;
+    const scrollBtn = document.getElementById('scroll-down-btn');
+    if (scrollBtn) scrollBtn.title = t.scrollTitle;
+    // Persona dropdown items
+    const paItems = document.querySelectorAll('.persona-dd-item');
+    const paNames = [t.personaAsst, t.personaDev, t.personaTr, t.personaCopy, t.personaTeach];
+    paItems.forEach((item, i) => {
+      if (i < paNames.length) {
+        const em = item.querySelector('.persona-emoji');
+        if (em) item.childNodes[item.childNodes.length - 1].textContent = ' ' + paNames[i];
+      } else if (i === paNames.length) {
+        item.lastChild.textContent = ' ' + t.personaCustom;
+      }
+    });
+    // Image panel
+    const imgTitleEl = document.querySelector('.img-title');
+    if (imgTitleEl) imgTitleEl.textContent = t.imgTitle;
+    const imgInput = document.querySelector('.img-input');
+    if (imgInput) imgInput.placeholder = t.imgPlaceholder;
+    const genBtnEl = document.getElementById('gen-btn');
+    if (genBtnEl) { const sv = genBtnEl.querySelector('svg'); genBtnEl.innerHTML = (sv ? sv.outerHTML : '') + ' ' + t.genBtn; }
+    // Browser
+    const browserUrl = document.getElementById('browser-url');
+    if (browserUrl) browserUrl.placeholder = t.searchPlaceholder;
+  }
+
   function сменитьЯзык() {
     _lang = _lang === 'ru' ? 'en' : 'ru';
     localStorage.setItem('appLang', _lang);
-    const t = _i18n[_lang];
-    document.getElementById('ввод').placeholder = t.send;
-    const tabs = document.querySelectorAll('.tab');
-    tabs[0].innerHTML = tabs[0].querySelector('svg').outerHTML + ' ' + t.chat;
-    tabs[1].innerHTML = tabs[1].querySelector('svg').outerHTML + ' ' + t.images;
-    tabs[2].innerHTML = tabs[2].querySelector('svg').outerHTML + ' ' + t.browser;
-    document.getElementById('lang-btn').textContent = _lang.toUpperCase();
+    применитьЯзык();
     показатьТост(_lang === 'ru' ? 'Язык: Русский' : 'Language: English');
   }
+  // Apply on load
+  if (_lang === 'en') применитьЯзык();
 
   // ── COMMAND ROUTER (special commands in chat) ──
   const _origSend = отправить;
