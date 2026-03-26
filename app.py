@@ -27,6 +27,12 @@ BOT_USERNAME = os.getenv("BOT_USERNAME", "AIgptchatII_bot")
 PREMIUM_STARS = int(os.getenv("PREMIUM_STARS", "100"))
 FREE_MESSAGES = int(os.getenv("FREE_MESSAGES", "7"))   # free messages per day
 DB = os.getenv("DB_PATH", "data.db")
+
+def db_connect():
+    con = sqlite3.connect(DB)
+    con.execute("PRAGMA journal_mode=WAL")
+    con.execute("PRAGMA synchronous=NORMAL")
+    return con
 DATABASE_URL = os.getenv("DATABASE_URL", "")  # Railway PostgreSQL
 IS_PG = bool(DATABASE_URL)
 
