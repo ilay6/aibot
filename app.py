@@ -510,7 +510,7 @@ async def картинка(данные: ЗапросКартинки):
             for attempt in range(3):
                 try:
                     r = await http.post(
-                        f"https://api-inference.huggingface.co/models/{model}",
+                        f"https://router.huggingface.co/hf-inference/models/{model}",
                         headers=hf_hdrs,
                         json={"inputs": eng_prompt},
                         timeout=httpx.Timeout(120, connect=15)
