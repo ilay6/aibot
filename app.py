@@ -414,10 +414,14 @@ async def картинка(данные: ЗапросКартинки):
             pass
 
     prompt_encoded = quote(eng_prompt)
+    key_param = f"&key={POLLINATIONS_API_KEY}" if POLLINATIONS_API_KEY else ""
     img_headers = {"User-Agent": "Mozilla/5.0 (compatible; AIchatBot/1.0)"}
+    if POLLINATIONS_API_KEY:
+        img_headers["Authorization"] = f"Bearer {POLLINATIONS_API_KEY}"
+    seed = int(time.time())
     urls = [
-        f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=768&height=768&nologo=true&model=flux&seed={int(time.time())}",
-        f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=512&height=512&nologo=true&seed={int(time.time())}",
+        f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=768&height=768&nologo=true&model=flux&seed={seed}{key_param}",
+        f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=512&height=512&nologo=true&seed={seed}{key_param}",
     ]
 
     last_err = ""
