@@ -469,21 +469,28 @@ async def картинка(данные: ЗапросКартинки):
             pass
 
     prompt_encoded = quote(eng_prompt)
-    key_param = f"&key={POLLINATIONS_API_KEY}" if POLLINATIONS_API_KEY else ""
-    img_headers = {"User-Agent": "Mozilla/5.0 (compatible; AIchatBot/1.0)"}
-    if POLLINATIONS_API_KEY:
-        img_headers["Authorization"] = f"Bearer {POLLINATIONS_API_KEY}"
     seed = данные.seed if данные.seed else int(time.time())
+    base_headers = {"User-Agent": "Mozilla/5.0 (compatible; AIchatBot/1.0)"}
+    # turbo — бесплатная модель (без ключа), flux — платная (с ключом, если есть баланс)
     urls = [
-        f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=768&height=768&nologo=true&model=flux&seed={seed}{key_param}",
-        f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=512&height=512&nologo=true&seed={seed}{key_param}",
+        # turbo без авторизации (бесплатно)
+        (f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=768&height=768&nologo=true&model=turbo&seed={seed}", base_headers),
+        # fallback: без модели и без ключа
+        (f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=512&height=512&nologo=true&seed={seed}", base_headers),
     ]
+    if POLLINATIONS_API_KEY:
+        auth_headers = {**base_headers, "Authorization": f"Bearer {POLLINATIONS_API_KEY}"}
+        # flux с ключом (если баланс есть)
+        urls.insert(0, (
+            f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=768&height=768&nologo=true&model=flux&seed={seed}&key={POLLINATIONS_API_KEY}",
+            auth_headers
+        ))
 
     last_err = ""
-    for url in urls:
+    for url, hdrs in urls:
         for attempt in range(2):
             try:
-                r = await http.get(url, headers=img_headers, timeout=httpx.Timeout(120, connect=15))
+                r = await http.get(url, headers=hdrs, timeout=httpx.Timeout(120, connect=15))
                 ct = r.headers.get("content-type", "")
                 if r.status_code == 200 and "image" in ct:
                     b64 = base64.b64encode(r.content).decode()
@@ -507,12 +514,15 @@ async def картинка(данные: ЗапросКартинки):
                         _, rem = check_img_rate_limit(данные.tg_id, increment=False)
                     return {"image": f"data:{mime};base64,{b64}", "seed": seed, "eng_prompt": eng_prompt, "remaining": rem}
                 last_err = f"HTTP {r.status_code}, ct={ct}, body={r.text[:200]}"
+                if r.status_code in (429, 402):
+                    # 402 = нет баланса на этой модели, пробуем следующий URL
+                    break
                 if r.status_code == 429:
                     await asyncio.sleep(5 * (attempt + 1))
                     continue
             except Exception as e:
                 last_err = str(e)
-            await asyncio.sleep(2)
+            await asyncio.sleep(1)
 
     return {"error": f"Ошибка генерации: {last_err}"}
 
