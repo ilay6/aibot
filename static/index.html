@@ -378,10 +378,19 @@
   /* Sticky fade — messages blur into bottom bar */
   .messages-fade {
     position: sticky; bottom: 0;
-    height: 64px; margin-top: -64px;
-    flex-shrink: 0; align-self: stretch;
-    background: linear-gradient(to bottom, transparent, var(--bg) 92%);
-    pointer-events: none; z-index: 5;
+    height: 100px; margin-top: -100px;
+    flex-shrink: 0; pointer-events: none; z-index: 5;
+    background: linear-gradient(to bottom,
+      transparent 0%,
+      rgba(var(--bg-rgb, 17,17,17), 0.5) 40%,
+      var(--bg) 100%
+    );
+  }
+  [data-theme="tiffany"] .messages-fade {
+    background: linear-gradient(to bottom, transparent 0%, rgba(10,10,10,0.6) 40%, #0a0a0a 100%);
+  }
+  [data-theme="light"] .messages-fade {
+    background: linear-gradient(to bottom, transparent 0%, rgba(248,248,248,0.6) 40%, #f8f8f8 100%);
   }
   .msg {
     display: flex; gap: 10px; align-items: flex-start;
@@ -509,10 +518,11 @@
 
   /* ── INPUT — LIQUID GLASS ── */
   .input-area {
-    padding: 10px 12px 16px;
+    padding: 6px 12px 16px;
     background: transparent;
     flex-shrink: 0;
     max-width: 820px; width: 100%; margin: 0 auto;
+    position: relative;
   }
   .input-wrap {
     display: flex; gap: 8px; align-items: flex-end;
