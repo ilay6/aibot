@@ -2376,10 +2376,16 @@
   const MAX_CHARS = 2000;
 
   const tgUser = tg?.initDataUnsafe?.user || (() => {
+    try {
+      const params = new URLSearchParams(tg?.initData || '');
+      const u = params.get('user');
+      return u ? JSON.parse(u) : null;
+    } catch { return null; }
+  })() || (() => {
     try { return JSON.parse(localStorage.getItem('tgUser') || 'null'); } catch { return null; }
   })();
-  if (tg?.initDataUnsafe?.user) {
-    try { localStorage.setItem('tgUser', JSON.stringify(tg.initDataUnsafe.user)); } catch {}
+  if (tgUser) {
+    try { localStorage.setItem('tgUser', JSON.stringify(tgUser)); } catch {}
   }
 
   // Ежедневный бонус (с задержкой чтобы не мешал загрузке)
