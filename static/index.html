@@ -518,7 +518,7 @@
 
   /* ── INPUT — LIQUID GLASS ── */
   .input-area {
-    padding: 4px 16px 12px;
+    padding: 4px 16px calc(12px + env(safe-area-inset-bottom, 0px));
     background: transparent;
     max-width: 680px; width: 100%; margin: 0 auto;
     position: relative;
@@ -1364,7 +1364,7 @@
     position: relative; display: flex; align-items: center; gap: 4px;
     background: var(--bg3); border: 1px solid var(--border); border-radius: 10px;
     color: var(--text2); font-size: 11px; font-weight: 600;
-    padding: 4px 9px; cursor: pointer; user-select: none; white-space: nowrap;
+    padding: 4px 9px; cursor: pointer; user-select: none; white-space: nowrap; flex-shrink: 0;
     transition: border-color 0.22s, color 0.22s;
   }
   .model-dd:hover { border-color: var(--accent); color: var(--text); }
