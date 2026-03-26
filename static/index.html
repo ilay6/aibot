@@ -724,8 +724,16 @@
   .img-hist-thumb {
     width: 100%; aspect-ratio: 1; background: var(--bg3);
     display: flex; align-items: center; justify-content: center; overflow: hidden;
+    position: relative;
   }
-  .img-hist-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .img-hist-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .img-hist-shimmer {
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%);
+    background-size: 200% 100%;
+    animation: shimmerSlide 1.4s ease-in-out infinite;
+  }
+  @keyframes shimmerSlide { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
   .img-hist-cell-label {
     font-size: 10px; color: var(--text2); padding: 5px 6px 2px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3;
@@ -2847,17 +2855,23 @@
     if (id === 'картинки') обновитьИнфоКартинок();
   }
 
-  function обновитьИнфоКартинок() {
+  async function обновитьИнфоКартинок() {
+    const el = document.getElementById('img-limit-info');
+    if (el) el.innerHTML = 'Загрузка...';
+    await _fetchImgRemaining();
+    _обновитьДисплейКартинок();
+    загрузитьИсториюКартинок();
+  }
+
+  function _обновитьДисплейКартинок() {
     const el = document.getElementById('img-limit-info');
     if (!el) return;
-    if (_isPremiumUser) {
+    if (_isPremiumUser || _imgRemaining === 9999) {
       el.innerHTML = 'Безлимитная генерация изображений. <b>Premium активен.</b>';
     } else {
-      const used = _imgUsedToday();
-      const left = Math.max(0, IMG_FREE_LIMIT - used);
-      el.innerHTML = `Осталось сегодня: <b>${left} из ${IMG_FREE_LIMIT}</b> изображений. <span style="color:var(--accent);cursor:pointer" onclick="купитьПремиум()">Premium — безлимит</span>`;
+      const left = _imgRemaining ?? '...';
+      el.innerHTML = `Осталось сегодня: <b>${left} из ${_imgLimit}</b> изображений. <span style="color:var(--accent);cursor:pointer" onclick="купитьПремиум()">Premium — безлимит</span>`;
     }
-    загрузитьИсториюКартинок();
   }
 
   async function загрузитьИсториюКартинок() {
@@ -2869,37 +2883,85 @@
       const d = await r.json();
       if (!d.history || !d.history.length) { section.style.display = 'none'; return; }
       section.style.display = '';
-      list.innerHTML = `<div class="img-hist-grid">${d.history.map(h => `
-        <div class="img-hist-cell" id="hcell-${h.id}" onclick="раскрытьКартинкуИстории(${h.id},'${encodeURIComponent(h.eng_prompt)}',${h.seed},'${экранировать(h.prompt)}')">
-          <div class="img-hist-thumb" id="hthumb-${h.id}">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-          </div>
-          <div class="img-hist-cell-label">${экранировать(h.prompt.slice(0,40))}${h.prompt.length>40?'…':''}</div>
-          <div class="img-hist-cell-date">${(h.created_at||'').slice(0,10)}</div>
-        </div>`).join('')}
-      </div>`;
+
+      // Build grid — check localStorage cache first for instant display
+      const grid = document.createElement('div');
+      grid.className = 'img-hist-grid';
+
+      const toLoad = []; // items that need background loading
+
+      d.history.forEach(h => {
+        const cell = document.createElement('div');
+        cell.className = 'img-hist-cell';
+        cell.id = `hcell-${h.id}`;
+
+        const thumb = document.createElement('div');
+        thumb.className = 'img-hist-thumb';
+        thumb.id = `hthumb-${h.id}`;
+
+        const cached = h.seed ? localStorage.getItem('imgcache_' + h.seed) : null;
+        if (cached) {
+          // Instant display from cache
+          const imgId = `himg-${h.id}`;
+          thumb.innerHTML = `<img src="${cached}"><img src="${cached}" id="${imgId}" style="display:none">`;
+          thumb.dataset.loaded = '1';
+          cell.onclick = () => показатьКартинкуПолностью(imgId, h.prompt);
+        } else {
+          // Shimmer placeholder
+          thumb.innerHTML = `<div class="img-hist-shimmer"></div>`;
+          cell.onclick = () => {}; // disabled until loaded
+          toLoad.push({h, thumb, cell});
+        }
+
+        const label = document.createElement('div');
+        label.className = 'img-hist-cell-label';
+        label.textContent = h.prompt.slice(0, 40) + (h.prompt.length > 40 ? '…' : '');
+
+        const date = document.createElement('div');
+        date.className = 'img-hist-cell-date';
+        date.textContent = (h.created_at || '').slice(0, 10);
+
+        cell.appendChild(thumb);
+        cell.appendChild(label);
+        cell.appendChild(date);
+        grid.appendChild(cell);
+      });
+
+      list.innerHTML = '';
+      list.appendChild(grid);
+
+      // Background load uncached images (max 3 concurrent)
+      if (toLoad.length > 0) {
+        _загрузитьОчередь(toLoad, 3);
+      }
     } catch {}
   }
 
-  async function раскрытьКартинкуИстории(id, engPrompt, seed, prompt) {
-    const thumb = document.getElementById(`hthumb-${id}`);
-    if (!thumb || thumb.dataset.loaded) return;
-    thumb.dataset.loaded = '1';
-    thumb.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.2-8.55"/></svg></div>`;
-    try {
-      const r = await fetch('/api/image', {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({запрос: decodeURIComponent(engPrompt), tg_id: 0, seed})
-      });
-      const d = await r.json();
-      if (d.image) {
-        const imgId = `himg-${id}`;
-        thumb.innerHTML = `<img src="${d.image}" style="width:100%;height:100%;object-fit:cover"><img src="${d.image}" id="${imgId}" style="display:none">`;
-        // Show overlay with full image + download
-        const cell = document.getElementById(`hcell-${id}`);
-        if (cell) cell.onclick = () => показатьКартинкуПолностью(imgId, prompt);
-      } else { thumb.dataset.loaded = ''; }
-    } catch { thumb.dataset.loaded = ''; }
+  async function _загрузитьОчередь(items, concurrency) {
+    let idx = 0;
+    async function worker() {
+      while (idx < items.length) {
+        const {h, thumb, cell} = items[idx++];
+        try {
+          const r = await fetch('/api/image', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({запрос: h.eng_prompt, tg_id: 0, seed: h.seed})
+          });
+          const d = await r.json();
+          if (d.image) {
+            // Cache for next time
+            if (h.seed) { try { localStorage.setItem('imgcache_' + h.seed, d.image); } catch(e) {} }
+            const imgId = `himg-${h.id}`;
+            thumb.innerHTML = `<img src="${d.image}"><img src="${d.image}" id="${imgId}" style="display:none">`;
+            thumb.dataset.loaded = '1';
+            cell.onclick = () => показатьКартинкуПолностью(imgId, h.prompt);
+          }
+        } catch {}
+      }
+    }
+    const workers = [];
+    for (let i = 0; i < Math.min(concurrency, items.length); i++) workers.push(worker());
+    await Promise.all(workers);
   }
 
   function показатьКартинкуПолностью(imgId, prompt) {
@@ -3824,19 +3886,19 @@
     document.body.appendChild(overlay);
   }
 
-  // Image generation daily limit
-  const IMG_FREE_LIMIT = 3;
-  function _imgUsedToday() {
-    const today = new Date().toDateString();
-    const saved = JSON.parse(localStorage.getItem('imgUsage') || '{"date":"","count":0}');
-    if (saved.date !== today) return 0;
-    return saved.count;
-  }
-  function _imgIncrToday() {
-    const today = new Date().toDateString();
-    const saved = JSON.parse(localStorage.getItem('imgUsage') || '{"date":"","count":0}');
-    const count = saved.date === today ? saved.count + 1 : 1;
-    localStorage.setItem('imgUsage', JSON.stringify({date: today, count}));
+  // Image generation daily limit — server-side tracking
+  let _imgRemaining = null;  // null = not loaded yet
+  let _imgLimit = 3;
+
+  async function _fetchImgRemaining() {
+    if (!tgUser) return;
+    try {
+      const r = await fetch(`/api/image/remaining/${tgUser.id}`);
+      const d = await r.json();
+      _imgRemaining = d.remaining;
+      _imgLimit = d.limit;
+      if (d.is_premium) _imgRemaining = 9999;
+    } catch {}
   }
 
   let _imgCount = 1;
@@ -3855,17 +3917,15 @@
     const прогресс = document.getElementById('progress-wrap');
 
     // Limit: 3 images/day for free users
-    if (!_isPremiumUser) {
-      const used = _imgUsedToday();
-      const total = used + _imgCount;
-      if (used >= IMG_FREE_LIMIT) {
-        статус.textContent = `Лимит ${IMG_FREE_LIMIT} изображений в день исчерпан. Нужен Premium.`;
+    // Check server-side limit
+    if (!_isPremiumUser && _imgRemaining !== null && _imgRemaining !== 9999) {
+      if (_imgRemaining <= 0) {
+        статус.textContent = `Лимит ${_imgLimit} изображений в день исчерпан. Нужен Premium.`;
         статус.style.color = '#e74c3c';
         return;
       }
-      if (total > IMG_FREE_LIMIT) {
-        const allowed = IMG_FREE_LIMIT - used;
-        статус.textContent = `Можно ещё ${allowed} из ${IMG_FREE_LIMIT}. Уменьши количество или купи Premium.`;
+      if (_imgCount > _imgRemaining) {
+        статус.textContent = `Можно ещё ${_imgRemaining} из ${_imgLimit}. Уменьши количество или купи Premium.`;
         статус.style.color = '#e67e22';
         return;
       }
@@ -3886,8 +3946,22 @@
           body: JSON.stringify({запрос, tg_id: tgUser?.id || 0})
         });
         const d = await r.json();
+        if (d.paywall) {
+          статус.textContent = `Лимит ${_imgLimit} изображений в день исчерпан. Нужен Premium.`;
+          статус.style.color = '#e74c3c';
+          break;
+        }
         if (d.image) {
           успех++;
+          // Update server-returned remaining count
+          if (d.remaining !== undefined) {
+            _imgRemaining = d.remaining;
+            _обновитьДисплейКартинок();
+          }
+          // Cache image in localStorage by seed for instant history display
+          if (d.seed) {
+            try { localStorage.setItem('imgcache_' + d.seed, d.image); } catch(e) {}
+          }
           const imgId = `gen-img-${Date.now()}-${i}`;
           const wrap = document.createElement('div');
           wrap.className = 'gen-img-card';
@@ -3907,7 +3981,6 @@
           результат.appendChild(wrap);
           результат.scrollIntoView({behavior:'smooth', block:'nearest'});
           статус.textContent = '';
-          _imgIncrToday();
         } else {
           статус.textContent = d.error || 'Ошибка генерации';
         }

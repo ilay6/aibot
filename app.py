@@ -26,6 +26,7 @@ WEBAPP_URL = os.getenv("WEBAPP_URL", "")
 BOT_USERNAME = os.getenv("BOT_USERNAME", "AIgptchatII_bot")
 PREMIUM_STARS = int(os.getenv("PREMIUM_STARS", "100"))
 FREE_MESSAGES = int(os.getenv("FREE_MESSAGES", "7"))   # free messages per day
+FREE_IMAGES   = int(os.getenv("FREE_IMAGES",   "3"))   # free images per day
 DB = os.getenv("DB_PATH", "data.db")
 
 DATABASE_URL = os.getenv("DATABASE_URL", "")  # Railway PostgreSQL
@@ -120,6 +121,8 @@ def init_db():
     con.execute(f"""CREATE TABLE IF NOT EXISTS chats (
         tg_id {int_t} PRIMARY KEY, data TEXT DEFAULT '[]', updated_at TEXT)""")
     con.execute(f"""CREATE TABLE IF NOT EXISTS rate_limits (
+        tg_id {int_t} PRIMARY KEY, count INTEGER DEFAULT 0, window_start TEXT)""")
+    con.execute(f"""CREATE TABLE IF NOT EXISTS img_rate_limits (
         tg_id {int_t} PRIMARY KEY, count INTEGER DEFAULT 0, window_start TEXT)""")
     con.execute(f"""CREATE TABLE IF NOT EXISTS referrals (
         id {pk}, referrer_tg_id {int_t},
@@ -219,6 +222,34 @@ def check_rate_limit(tg_id: int) -> tuple[bool, int]:
     con.commit()
     con.close()
     return True, max(0, daily_limit - used - 1)
+
+def check_img_rate_limit(tg_id: int, increment: bool = True) -> tuple[bool, int]:
+    """Returns (allowed, remaining) for image generation. Daily window."""
+    if not tg_id:
+        return True, 9999
+    if _is_premium(tg_id):
+        return True, 9999
+    if _is_whitelisted(tg_id):
+        return True, 9999
+    today = datetime.now().strftime("%Y-%m-%d")
+    con = db_connect()
+    row = con.execute("SELECT count, window_start FROM img_rate_limits WHERE tg_id=?", (tg_id,)).fetchone()
+    used = row[0] if (row and row[1] and str(row[1])[:10] == today) else 0
+    if used >= FREE_IMAGES:
+        con.close()
+        return False, 0
+    if increment:
+        if row and row[1] and str(row[1])[:10] == today:
+            con.execute("UPDATE img_rate_limits SET count=count+1 WHERE tg_id=?", (tg_id,))
+        else:
+            con.execute(
+                """INSERT INTO img_rate_limits (tg_id, count, window_start) VALUES (?,1,?)
+                   ON CONFLICT (tg_id) DO UPDATE SET count=1, window_start=EXCLUDED.window_start""",
+                (tg_id, datetime.now().isoformat())
+            )
+        con.commit()
+    con.close()
+    return True, max(0, FREE_IMAGES - used - (1 if increment else 0))
 
 # ── LIFESPAN ──
 @asynccontextmanager
@@ -403,8 +434,25 @@ async def чат_stream(данные: ЗапросЧат):
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
+@app.get("/api/image/remaining/{tg_id}")
+async def img_remaining(tg_id: int):
+    if _is_premium(tg_id) or _is_whitelisted(tg_id):
+        return {"remaining": 9999, "limit": FREE_IMAGES, "is_premium": True}
+    today = datetime.now().strftime("%Y-%m-%d")
+    con = db_connect()
+    row = con.execute("SELECT count, window_start FROM img_rate_limits WHERE tg_id=?", (tg_id,)).fetchone()
+    con.close()
+    used = row[0] if (row and row[1] and str(row[1])[:10] == today) else 0
+    return {"remaining": max(0, FREE_IMAGES - used), "limit": FREE_IMAGES, "is_premium": False}
+
+
 @app.post("/api/image")
 async def картинка(данные: ЗапросКартинки):
+    # Rate limit check (only for real generation, not seed replay)
+    if данные.tg_id and not данные.seed:
+        allowed, remaining = check_img_rate_limit(данные.tg_id, increment=True)
+        if not allowed:
+            return {"error": "paywall", "paywall": True}
     eng_prompt = данные.запрос
     http = get_http()
     # Translate to English for better image quality
@@ -454,7 +502,10 @@ async def картинка(данные: ЗапросКартинки):
                                 (данные.tg_id, данные.tg_id))
                             con.commit(); con.close()
                         except Exception: pass
-                    return {"image": f"data:{mime};base64,{b64}", "seed": seed, "eng_prompt": eng_prompt}
+                    rem = 9999
+                    if данные.tg_id and not данные.seed:
+                        _, rem = check_img_rate_limit(данные.tg_id, increment=False)
+                    return {"image": f"data:{mime};base64,{b64}", "seed": seed, "eng_prompt": eng_prompt, "remaining": rem}
                 last_err = f"HTTP {r.status_code}, ct={ct}, body={r.text[:200]}"
                 if r.status_code == 429:
                     await asyncio.sleep(5 * (attempt + 1))
