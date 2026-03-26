@@ -2050,7 +2050,7 @@
       </div>
       <button class="gen-btn" id="gen-btn" onclick="сгенерировать()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
-        Сгенерировать в чат
+        Сгенерировать
       </button>
       <div class="progress-wrap" id="progress-wrap"><div class="progress-bar"></div></div>
       <div class="img-status" id="img-статус"></div>
@@ -3592,19 +3592,45 @@
   async function сгенерировать() {
     const запрос = document.getElementById('img-ввод').value.trim();
     if (!запрос) return;
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.getElementById('чат').classList.add('active');
-    document.querySelector('.tab').classList.add('active');
-    document.getElementById('img-ввод').value = '';
-    if (_imgCount <= 1) {
-      document.getElementById('ввод').value = '/img ' + запрос;
-      отправить();
-    } else {
-      for (let i = 0; i < _imgCount; i++) {
-        await генерацияВЧат(запрос);
-      }
+    const btn = document.getElementById('gen-btn');
+    const статус = document.getElementById('img-статус');
+    const результат = document.getElementById('img-результат');
+    const прогресс = document.getElementById('progress-wrap');
+
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    результат.innerHTML = '';
+    статус.textContent = 'Генерируем...';
+    прогресс.style.display = '';
+
+    let успех = 0;
+    for (let i = 0; i < _imgCount; i++) {
+      if (_imgCount > 1) статус.textContent = `Генерируем ${i+1} из ${_imgCount}...`;
+      try {
+        const r = await fetch('/api/image', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({запрос})
+        });
+        const d = await r.json();
+        if (d.image) {
+          успех++;
+          const wrap = document.createElement('div');
+          wrap.style.cssText = 'position:relative;margin-bottom:12px';
+          wrap.innerHTML = `<img src="${d.image}" style="width:100%;border-radius:14px;display:block">
+            <a href="${d.image}" download="ai-image-${Date.now()}.jpg" style="position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,0.6);color:#fff;border-radius:8px;padding:5px 10px;font-size:12px;text-decoration:none;backdrop-filter:blur(4px)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Скачать</a>`;
+          результат.appendChild(wrap);
+          результат.scrollIntoView({behavior:'smooth', block:'nearest'});
+        } else {
+          статус.textContent = d.error || 'Ошибка генерации';
+        }
+      } catch { статус.textContent = 'Ошибка сети'; }
     }
+
+    прогресс.style.display = 'none';
+    статус.textContent = успех > 0 ? (успех === _imgCount ? '' : `Готово (${успех} из ${_imgCount})`) : 'Не удалось сгенерировать';
+    btn.disabled = false;
+    btn.style.opacity = '';
   }
 
   async function генерацияВЧат(запрос) {
