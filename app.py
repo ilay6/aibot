@@ -264,6 +264,23 @@ async def lifespan(app: FastAPI):
         if bot and WEBAPP_URL:
             await bot.set_webhook(f"{WEBAPP_URL}/webhook", drop_pending_updates=True)
             print(f"Webhook set: {WEBAPP_URL}/webhook")
+            # Persistent menu button — opens WebApp directly from chat
+            try:
+                from aiogram.types import MenuButtonWebApp, WebAppInfo, BotCommand
+                await bot.set_chat_menu_button(
+                    menu_button=MenuButtonWebApp(
+                        text="🤖 Открыть AI",
+                        web_app=WebAppInfo(url=f"{WEBAPP_URL}?v={int(time.time())}")
+                    )
+                )
+                await bot.set_my_commands([
+                    BotCommand(command="start", description="Открыть AI ассистент"),
+                    BotCommand(command="premium", description="Купить Premium"),
+                    BotCommand(command="ref", description="Реферальная ссылка"),
+                    BotCommand(command="mystats", description="Моя статистика"),
+                ])
+            except Exception as me:
+                print(f"Menu button warning: {me}")
         elif bot:
             from aiogram.methods import DeleteWebhook
             await bot(DeleteWebhook(drop_pending_updates=True))

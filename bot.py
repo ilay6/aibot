@@ -83,7 +83,7 @@ async def start_cmd(message: types.Message):
     ]])
     try:
         await message.answer_photo(
-            photo=f"{WEBAPP_URL}/preview.png",
+            photo=f"{WEBAPP_URL}/preview.png?v=2",
             caption=(
                 "👋 Привет!\n\n"
                 "Я AI-ассистент с возможностями:\n\n"
