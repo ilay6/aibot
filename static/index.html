@@ -2118,15 +2118,15 @@
         </div>
       </div>
       <div class="persona-dd" id="persona-dd" onclick="togglePersonaDd(event)">
-        <span id="persona-icon" class="persona-emoji">AI</span>
+        <span id="persona-icon" class="persona-emoji">🤖</span>
         <span id="persona-label">Ассистент</span>
         <div class="persona-dd-list">
-          <div class="persona-dd-item pa-active" onclick="выбратьПерсону(event,0,this)"><span class="persona-emoji">AI</span> Ассистент</div>
-          <div class="persona-dd-item" onclick="выбратьПерсону(event,1,this)"><span class="persona-emoji">&lt;/&gt;</span> Программист</div>
-          <div class="persona-dd-item" onclick="выбратьПерсону(event,2,this)"><span class="persona-emoji">Aa</span> Переводчик</div>
-          <div class="persona-dd-item" onclick="выбратьПерсону(event,3,this)"><span class="persona-emoji">T</span> Копирайтер</div>
-          <div class="persona-dd-item" onclick="выбратьПерсону(event,4,this)"><span class="persona-emoji">U</span> Учитель</div>
-          <div class="persona-dd-item" onclick="открытьПромптМодал(event)" style="border-top:1px solid var(--border);color:var(--accent)"><span class="persona-emoji" style="font-size:16px">+</span> Свой промпт</div>
+          <div class="persona-dd-item pa-active" onclick="выбратьПерсону(event,0,this)"><span class="persona-emoji">🤖</span> Ассистент</div>
+          <div class="persona-dd-item" onclick="выбратьПерсону(event,1,this)"><span class="persona-emoji">💻</span> Программист</div>
+          <div class="persona-dd-item" onclick="выбратьПерсону(event,2,this)"><span class="persona-emoji">🌐</span> Переводчик</div>
+          <div class="persona-dd-item" onclick="выбратьПерсону(event,3,this)"><span class="persona-emoji">✍️</span> Копирайтер</div>
+          <div class="persona-dd-item" onclick="выбратьПерсону(event,4,this)"><span class="persona-emoji">📚</span> Учитель</div>
+          <div class="persona-dd-item" onclick="открытьПромптМодал(event)" style="border-top:1px solid var(--border);color:var(--accent)"><span class="persona-emoji">➕</span> Свой промпт</div>
         </div>
       </div>
       <span class="char-counter" id="char-counter"></span>
@@ -2493,7 +2493,7 @@
   }
 
   // ── PERSONAS (needed before chat history init) ──
-  const _pIcons = ['AI', '&lt;/&gt;', 'Aa', 'T', 'U'];
+  const _pIcons = ['🤖', '💻', '🌐', '✍️', '📚'];
   const ПЕРСОНЫ = [
     { icon: _pIcons[0], name: 'Ассистент', prompt: 'Ты полезный AI-ассистент. Отвечай кратко и по делу. Код оформляй в блоки.' },
     { icon: _pIcons[1], name: 'Программист', prompt: 'Ты опытный программист-эксперт. Пиши чистый, оптимальный код. Объясняй решения. Используй лучшие практики. Код оформляй в блоки с указанием языка.' },
@@ -3606,7 +3606,7 @@
       div.innerHTML = `<div class="avatar">${getUserAvatarContent()}</div><div class="bubble">${content}<div class="bubble-footer"><span class="msg-time">${время}</span></div></div>`;
     } else {
       const strТекст = Array.isArray(текст) ? (текст.find(c => c.type === 'text')?.text || '') : текст;
-      div.innerHTML = `<div class="avatar">${botIcon}</div><div class="bubble">${форматировать(strТекст)}<div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button><button class="tts-btn" onclick="озвучить(this)">${ttsIconSvg} Озвучить</button><button class="bookmark-btn" onclick="закладка(this)" title="В избранное">☆</button><span class="reaction-btns"><button class="react-btn" onclick="реакция(this,'up')">${likeIconSvg}</button><button class="react-btn" onclick="реакция(this,'down')">${dislikeIconSvg}</button></span></div><div class="quick-actions"><button class="quick-action-btn" onclick="быстрыйЗапрос('Расскажи подробнее')">Подробнее</button><button class="quick-action-btn" onclick="быстрыйЗапрос('Дай другой вариант')">Другой вариант</button></div></div>`;
+      div.innerHTML = `<div class="avatar">${botIcon}</div><div class="bubble">${форматировать(strТекст)}<div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button><button class="tts-btn" onclick="озвучить(this)">${ttsIconSvg} Озвучить</button><button class="bookmark-btn" onclick="закладка(this)" title="В избранное">☆</button><span class="reaction-btns"><button class="react-btn" onclick="реакция(this,'up')">${likeIconSvg}</button><button class="react-btn" onclick="реакция(this,'down')">${dislikeIconSvg}</button></span></div><div class="quick-actions"><button class="quick-action-btn" onclick="быстрыйЗапрос('Расскажи подробнее')">📖 Подробнее</button><button class="quick-action-btn" onclick="быстрыйЗапрос('Дай другой вариант')">🔄 Другой вариант</button></div></div>`;
     }
     блок.appendChild(div);
     блок.scrollTop = блок.scrollHeight;
@@ -4694,7 +4694,7 @@
   const _i18n = {
     ru: {
       send: 'Напиши сообщение...', headerSub: 'AI · Онлайн',
-      chat: 'Чат', images: 'Картинки', browser: 'Браузер', profile: 'Профиль', admin: 'Админ',
+      chat: 'Чат', images: 'Картинки', profile: 'Профиль', admin: 'Админ',
       ctxCopy: 'Копировать текст', ctxTts: 'Озвучить', ctxSearch: 'Поиск в Google', ctxDelete: 'Удалить',
       premiumSub: 'Premium — безлимит на 30 дней', premiumUpgrade: 'Upgrade',
       attachTitle: 'Прикрепить изображение', voiceTitle: 'Голосовой ввод', scrollTitle: 'Вниз',
@@ -4702,11 +4702,10 @@
       personaCopy: 'Копирайтер', personaTeach: 'Учитель', personaCustom: '+ Свой промпт',
       imgTitle: 'Генерация изображений', genBtn: 'Сгенерировать',
       imgPlaceholder: 'Опиши что хочешь сгенерировать...',
-      searchPlaceholder: 'Поиск в интернете...',
     },
     en: {
       send: 'Type a message...', headerSub: 'AI · Online',
-      chat: 'Chat', images: 'Images', browser: 'Browser', profile: 'Profile', admin: 'Admin',
+      chat: 'Chat', images: 'Images', profile: 'Profile', admin: 'Admin',
       ctxCopy: 'Copy text', ctxTts: 'Listen', ctxSearch: 'Search Google', ctxDelete: 'Delete',
       premiumSub: 'Premium — unlimited for 30 days', premiumUpgrade: 'Upgrade',
       attachTitle: 'Attach image', voiceTitle: 'Voice input', scrollTitle: 'Scroll down',
@@ -4714,7 +4713,6 @@
       personaCopy: 'Copywriter', personaTeach: 'Teacher', personaCustom: '+ Custom prompt',
       imgTitle: 'Image Generation', genBtn: 'Generate',
       imgPlaceholder: 'Describe what you want to generate...',
-      searchPlaceholder: 'Search the web...',
     }
   };
   var _lang = localStorage.getItem('appLang') || 'ru';
@@ -4731,7 +4729,7 @@
     const sub = document.querySelector('.header-sub');
     if (sub) sub.innerHTML = `<div class="online-dot"></div> ${t.headerSub}`;
     // Tabs — update text node only
-    const tabTexts = [t.chat, t.images, t.browser, t.profile, t.admin];
+    const tabTexts = [t.chat, t.images, t.profile, t.admin];
     document.querySelectorAll('.tab').forEach((tab, i) => {
       if (tabTexts[i] === undefined) return;
       for (let n = tab.childNodes.length - 1; n >= 0; n--) {
@@ -4774,9 +4772,6 @@
     if (imgInput) imgInput.placeholder = t.imgPlaceholder;
     const genBtnEl = document.getElementById('gen-btn');
     if (genBtnEl) { const sv = genBtnEl.querySelector('svg'); genBtnEl.innerHTML = (sv ? sv.outerHTML : '') + ' ' + t.genBtn; }
-    // Browser
-    const browserUrl = document.getElementById('browser-url');
-    if (browserUrl) browserUrl.placeholder = t.searchPlaceholder;
   }
 
   function сменитьЯзык() {
