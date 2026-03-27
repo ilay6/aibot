@@ -793,11 +793,11 @@
   /* ── Быстрые действия ── */
   .quick-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
   .quick-action-btn {
-    background: var(--surface2); border: 1px solid var(--border); border-radius: 12px;
+    background: transparent; border: 1px solid var(--border); border-radius: 12px;
     color: var(--text2); font-size: 11px; padding: 4px 10px; cursor: pointer;
     transition: all 0.15s;
   }
-  .quick-action-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .quick-action-btn:hover { background: var(--bg3); color: var(--text); border-color: var(--text2); }
   /* ── Стрик ── */
   .streak-row { display: flex; align-items: center; gap: 8px; }
   .streak-badge { background: linear-gradient(135deg,#ff6b35,#f7931e); color: #fff; border-radius: 12px; padding: 3px 10px; font-size: 12px; font-weight: 600; }
