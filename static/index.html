@@ -2118,15 +2118,15 @@
         </div>
       </div>
       <div class="persona-dd" id="persona-dd" onclick="togglePersonaDd(event)">
-        <span id="persona-icon" class="persona-emoji">🤖</span>
+        <span id="persona-icon" class="persona-emoji"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="11" width="14" height="10" rx="2"/><rect x="9" y="7" width="6" height="5" rx="1"/><circle cx="9" cy="16" r="1.2"/><circle cx="15" cy="16" r="1.2"/><line x1="12" y1="7" x2="12" y2="4" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="3" r="1.2"/></svg></span>
         <span id="persona-label">Ассистент</span>
         <div class="persona-dd-list">
-          <div class="persona-dd-item pa-active" onclick="выбратьПерсону(event,0,this)"><span class="persona-emoji">🤖</span> Ассистент</div>
-          <div class="persona-dd-item" onclick="выбратьПерсону(event,1,this)"><span class="persona-emoji">💻</span> Программист</div>
-          <div class="persona-dd-item" onclick="выбратьПерсону(event,2,this)"><span class="persona-emoji">🌐</span> Переводчик</div>
-          <div class="persona-dd-item" onclick="выбратьПерсону(event,3,this)"><span class="persona-emoji">✍️</span> Копирайтер</div>
-          <div class="persona-dd-item" onclick="выбратьПерсону(event,4,this)"><span class="persona-emoji">📚</span> Учитель</div>
-          <div class="persona-dd-item" onclick="открытьПромптМодал(event)" style="border-top:1px solid var(--border);color:var(--accent)"><span class="persona-emoji">➕</span> Свой промпт</div>
+          <div class="persona-dd-item pa-active" onclick="выбратьПерсону(event,0,this)"><span class="persona-emoji"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="11" width="14" height="10" rx="2"/><rect x="9" y="7" width="6" height="5" rx="1"/><circle cx="9" cy="16" r="1.2"/><circle cx="15" cy="16" r="1.2"/><line x1="12" y1="7" x2="12" y2="4" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="3" r="1.2"/></svg></span> Ассистент</div>
+          <div class="persona-dd-item" onclick="выбратьПерсону(event,1,this)"><span class="persona-emoji"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span> Программист</div>
+          <div class="persona-dd-item" onclick="выбратьПерсону(event,2,this)"><span class="persona-emoji"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span> Переводчик</div>
+          <div class="persona-dd-item" onclick="выбратьПерсону(event,3,this)"><span class="persona-emoji"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span> Копирайтер</div>
+          <div class="persona-dd-item" onclick="выбратьПерсону(event,4,this)"><span class="persona-emoji"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span> Учитель</div>
+          <div class="persona-dd-item" onclick="открытьПромптМодал(event)" style="border-top:1px solid var(--border);color:var(--accent)"><span class="persona-emoji"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span> Свой промпт</div>
         </div>
       </div>
       <span class="char-counter" id="char-counter"></span>
@@ -2493,7 +2493,13 @@
   }
 
   // ── PERSONAS (needed before chat history init) ──
-  const _pIcons = ['🤖', '💻', '🌐', '✍️', '📚'];
+  const _pIcons = [
+    `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="11" width="14" height="10" rx="2"/><rect x="9" y="7" width="6" height="5" rx="1"/><circle cx="9" cy="16" r="1.2"/><circle cx="15" cy="16" r="1.2"/><line x1="12" y1="7" x2="12" y2="4" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="3" r="1.2"/></svg>`,
+    `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`,
+    `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`,
+    `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`,
+    `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>`
+  ];
   const ПЕРСОНЫ = [
     { icon: _pIcons[0], name: 'Ассистент', prompt: 'Ты полезный AI-ассистент. Отвечай кратко и по делу. Код оформляй в блоки.' },
     { icon: _pIcons[1], name: 'Программист', prompt: 'Ты опытный программист-эксперт. Пиши чистый, оптимальный код. Объясняй решения. Используй лучшие практики. Код оформляй в блоки с указанием языка.' },
@@ -3213,7 +3219,7 @@
           </div>` : ''}
           <div class="profile-row">
             <div class="profile-row-left">
-              <div class="profile-row-icon">🔥</div>
+              <div class="profile-row-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c0 0-4 4-4 8a4 4 0 0 0 8 0c0-1.5-.5-3-1-4 0 0-1 2-2 2s-1-1-1-1c0 0 0-3 0-5z"/><path d="M9 18c0 1.66 1.34 3 3 3s3-1.34 3-3"/></svg></div>
               <div class="profile-row-label">Стрик</div>
             </div>
             <div class="profile-row-val streak-row"><span class="streak-badge">${получитьСтрик()} дн.</span></div>
@@ -3606,7 +3612,7 @@
       div.innerHTML = `<div class="avatar">${getUserAvatarContent()}</div><div class="bubble">${content}<div class="bubble-footer"><span class="msg-time">${время}</span></div></div>`;
     } else {
       const strТекст = Array.isArray(текст) ? (текст.find(c => c.type === 'text')?.text || '') : текст;
-      div.innerHTML = `<div class="avatar">${botIcon}</div><div class="bubble">${форматировать(strТекст)}<div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button><button class="tts-btn" onclick="озвучить(this)">${ttsIconSvg} Озвучить</button><button class="bookmark-btn" onclick="закладка(this)" title="В избранное">☆</button><span class="reaction-btns"><button class="react-btn" onclick="реакция(this,'up')">${likeIconSvg}</button><button class="react-btn" onclick="реакция(this,'down')">${dislikeIconSvg}</button></span></div><div class="quick-actions"><button class="quick-action-btn" onclick="быстрыйЗапрос('Расскажи подробнее')">📖 Подробнее</button><button class="quick-action-btn" onclick="быстрыйЗапрос('Дай другой вариант')">🔄 Другой вариант</button></div></div>`;
+      div.innerHTML = `<div class="avatar">${botIcon}</div><div class="bubble">${форматировать(strТекст)}<div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button><button class="tts-btn" onclick="озвучить(this)">${ttsIconSvg} Озвучить</button><button class="bookmark-btn" onclick="закладка(this)" title="В избранное">☆</button><span class="reaction-btns"><button class="react-btn" onclick="реакция(this,'up')">${likeIconSvg}</button><button class="react-btn" onclick="реакция(this,'down')">${dislikeIconSvg}</button></span></div><div class="quick-actions"><button class="quick-action-btn" onclick="быстрыйЗапрос('Расскажи подробнее')">Подробнее</button><button class="quick-action-btn" onclick="быстрыйЗапрос('Дай другой вариант')">Другой вариант</button></div></div>`;
     }
     блок.appendChild(div);
     блок.scrollTop = блок.scrollHeight;
