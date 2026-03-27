@@ -225,6 +225,39 @@ async def all_messages(message: types.Message):
     await track(message.from_user, message.text or "")
 
 
+async def отправитьУведомления():
+    """Ежедневно напоминает неактивным пользователям."""
+    while True:
+        await asyncio.sleep(24 * 3600)
+        if not bot or not WEBAPP_URL:
+            continue
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                r = await client.get(f"{WEBAPP_URL}/api/inactive-users?secret={ADMIN_SECRET}")
+                users = r.json().get("users", [])
+            keyboard = InlineKeyboardMarkup(inline_keyboard=[[
+                InlineKeyboardButton(text="🤖 Открыть AI", web_app=WebAppInfo(url=WEBAPP_URL))
+            ]])
+            messages = [
+                "👋 Привет! Соскучился по тебе — возвращайся, у нас новые функции!",
+                "🤖 Давно не виделись! Зайди пообщаться с AI 😊",
+                "💬 Ты давно не заходил. Спроси что-нибудь — я всегда готов помочь!",
+            ]
+            import random
+            for u in users:
+                try:
+                    await bot.send_message(
+                        u["tg_id"],
+                        random.choice(messages),
+                        reply_markup=keyboard
+                    )
+                    await asyncio.sleep(0.1)
+                except Exception:
+                    pass
+        except Exception as e:
+            print(f"Notification error: {e}")
+
+
 # For standalone polling (fallback / dev mode)
 async def run_polling():
     if not bot:

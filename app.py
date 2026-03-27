@@ -264,8 +264,9 @@ async def lifespan(app: FastAPI):
         if bot and WEBAPP_URL:
             await bot.set_webhook(f"{WEBAPP_URL}/webhook", drop_pending_updates=True)
             print(f"Webhook set: {WEBAPP_URL}/webhook")
-            from bot import setup_menu_button
+            from bot import setup_menu_button, отправитьУведомления
             await setup_menu_button()
+            asyncio.create_task(отправитьУведомления())
         elif bot:
             from aiogram.methods import DeleteWebhook
             await bot(DeleteWebhook(drop_pending_updates=True))
@@ -758,6 +759,23 @@ async def setup_menu(secret: str = ""):
         return {"ok": True}
     except Exception as e:
         return {"error": str(e)}
+
+# ── INACTIVE USERS ──
+@app.get("/api/inactive-users")
+async def get_inactive_users(secret: str = ""):
+    if secret != ADMIN_SECRET:
+        return {"error": "forbidden"}
+    con = get_db()
+    two_days_ago = (datetime.utcnow() - timedelta(days=2)).strftime("%Y-%m-%dT%H:%M:%S")
+    rows = con.execute("""
+        SELECT u.tg_id, u.first_name FROM users u
+        WHERE u.premium_until IS NULL OR u.premium_until < datetime('now')
+        AND u.tg_id NOT IN (
+            SELECT DISTINCT tg_id FROM messages WHERE ts > ?
+        )
+        LIMIT 50
+    """, (two_days_ago,)).fetchall()
+    return {"users": [{"tg_id": r[0], "first_name": r[1]} for r in rows]}
 
 # ── WEBHOOK ──
 @app.post("/webhook")

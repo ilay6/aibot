@@ -790,6 +790,17 @@
   }
   .bookmark-btn:hover { color: #f0c040; }
   .bookmark-btn.saved { color: #f0c040; }
+  /* ── Быстрые действия ── */
+  .quick-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .quick-action-btn {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 12px;
+    color: var(--text2); font-size: 11px; padding: 4px 10px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .quick-action-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+  /* ── Стрик ── */
+  .streak-row { display: flex; align-items: center; gap: 8px; }
+  .streak-badge { background: linear-gradient(135deg,#ff6b35,#f7931e); color: #fff; border-radius: 12px; padding: 3px 10px; font-size: 12px; font-weight: 600; }
   /* ── Ежедневный бонус ── */
   .bonus-toast {
     position: fixed; bottom: 100px; left: 50%;
@@ -2053,21 +2064,6 @@
           <span class="cmd-card-title">Картинка</span>
           <span class="cmd-card-desc">Генерация по описанию</span>
         </div>
-        <div class="cmd-card" onclick="быстрыйЗапрос('/викторина')">
-          <span class="cmd-card-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg></span>
-          <span class="cmd-card-title">Викторина</span>
-          <span class="cmd-card-desc">Тест на эрудицию</span>
-        </div>
-        <div class="cmd-card" onclick="быстрыйЗапрос('/дебаты AI заменит программистов')">
-          <span class="cmd-card-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M21 6h-2v9H6v2c0 .55.45 1 1 1h11l4 4V7c0-.55-.45-1-1-1zm-4 6V3c0-.55-.45-1-1-1H3c-.55 0-1 .45-1 1v14l4-4h10c.55 0 1-.45 1-1z"/></svg></span>
-          <span class="cmd-card-title">Дебаты</span>
-          <span class="cmd-card-desc">Два AI спорят на тему</span>
-        </div>
-        <div class="cmd-card" onclick="быстрыйЗапрос('/игра')">
-          <span class="cmd-card-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg></span>
-          <span class="cmd-card-title">Угадай слово</span>
-          <span class="cmd-card-desc">Отгадай по подсказкам</span>
-        </div>
         <div class="cmd-card" onclick="быстрыйЗапрос('/stats')">
           <span class="cmd-card-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/><circle cx="12" cy="11" r="3" fill="currentColor"/></svg></span>
           <span class="cmd-card-title">Статистика</span>
@@ -2287,12 +2283,6 @@
     </div>
     Картинки
   </div>
-  <div class="tab" onclick="переключить('браузер', this)">
-    <div class="tab-icon-wrap">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-    </div>
-    Браузер
-  </div>
   <div class="tab" onclick="переключить('профиль', this)">
     <div class="tab-icon-wrap">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
@@ -2389,6 +2379,7 @@
   }
 
   // Ежедневный бонус (с задержкой чтобы не мешал загрузке)
+  обновитьСтрик();
   setTimeout(проверитьБонус, 2000);
 
   // Track app open
@@ -3222,6 +3213,13 @@
           </div>` : ''}
           <div class="profile-row">
             <div class="profile-row-left">
+              <div class="profile-row-icon">🔥</div>
+              <div class="profile-row-label">Стрик</div>
+            </div>
+            <div class="profile-row-val streak-row"><span class="streak-badge">${получитьСтрик()} дн.</span></div>
+          </div>
+          <div class="profile-row">
+            <div class="profile-row-left">
               <div class="profile-row-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
               <div class="profile-row-label">Приглашено друзей</div>
             </div>
@@ -3608,7 +3606,7 @@
       div.innerHTML = `<div class="avatar">${getUserAvatarContent()}</div><div class="bubble">${content}<div class="bubble-footer"><span class="msg-time">${время}</span></div></div>`;
     } else {
       const strТекст = Array.isArray(текст) ? (текст.find(c => c.type === 'text')?.text || '') : текст;
-      div.innerHTML = `<div class="avatar">${botIcon}</div><div class="bubble">${форматировать(strТекст)}<div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button><button class="tts-btn" onclick="озвучить(this)">${ttsIconSvg} Озвучить</button><button class="bookmark-btn" onclick="закладка(this)" title="В избранное">☆</button><span class="reaction-btns"><button class="react-btn" onclick="реакция(this,'up')">${likeIconSvg}</button><button class="react-btn" onclick="реакция(this,'down')">${dislikeIconSvg}</button></span></div></div>`;
+      div.innerHTML = `<div class="avatar">${botIcon}</div><div class="bubble">${форматировать(strТекст)}<div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button><button class="tts-btn" onclick="озвучить(this)">${ttsIconSvg} Озвучить</button><button class="bookmark-btn" onclick="закладка(this)" title="В избранное">☆</button><span class="reaction-btns"><button class="react-btn" onclick="реакция(this,'up')">${likeIconSvg}</button><button class="react-btn" onclick="реакция(this,'down')">${dislikeIconSvg}</button></span></div><div class="quick-actions"><button class="quick-action-btn" onclick="быстрыйЗапрос('Расскажи подробнее')">Подробнее</button><button class="quick-action-btn" onclick="быстрыйЗапрос('Дай другой вариант')">Другой вариант</button></div></div>`;
     }
     блок.appendChild(div);
     блок.scrollTop = блок.scrollHeight;
@@ -4048,6 +4046,20 @@
       показатьТост('Добавлено в избранное ★');
     }
     localStorage.setItem(key, JSON.stringify(list));
+  }
+
+  // ── Стрик ──
+  function получитьСтрик() {
+    return parseInt(localStorage.getItem('streak') || '1');
+  }
+  function обновитьСтрик() {
+    const today = new Date().toDateString();
+    const lastDate = localStorage.getItem('streakDate');
+    if (lastDate === today) return;
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    const streak = lastDate === yesterday ? получитьСтрик() + 1 : 1;
+    localStorage.setItem('streak', streak);
+    localStorage.setItem('streakDate', today);
   }
 
   // ── Ежедневный бонус ──
