@@ -1835,38 +1835,17 @@
     text-transform: uppercase; letter-spacing: 0.1em;
     padding: 0 4px;
   }
-  /* ── GRADIENT BORDER (все карточки) ── */
-  .profile-card,
-  .msg.user .bubble,
-  .msg.bot .bubble,
-  .cmd-card,
-  .stat-card,
-  .whitelist-row {
-    position: relative;
+  .profile-card {
+    background: var(--bg2); border-radius: 18px;
+    overflow: hidden; position: relative;
   }
-  .profile-card::after,
-  .msg.user .bubble::after,
-  .msg.bot .bubble::after,
-  .cmd-card::after,
-  .stat-card::after,
-  .whitelist-row::after {
-    content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 10;
+  .profile-card::after {
+    content: ''; position: absolute; inset: 0; border-radius: 18px; pointer-events: none; z-index: 10;
     background:
       linear-gradient(90deg, transparent 0%, var(--border2) 20%, var(--border2) 80%, transparent 100%) top    / 100% 1px no-repeat,
       linear-gradient(90deg, transparent 0%, var(--border2) 20%, var(--border2) 80%, transparent 100%) bottom / 100% 1px no-repeat,
       linear-gradient(180deg, transparent 0%, var(--border2) 20%, var(--border2) 80%, transparent 100%) left  / 1px 100% no-repeat,
       linear-gradient(180deg, transparent 0%, var(--border2) 20%, var(--border2) 80%, transparent 100%) right / 1px 100% no-repeat;
-  }
-  /* Убираем старые solid border с этих элементов */
-  .msg.user .bubble { border-color: transparent; }
-  .msg.bot .bubble { border-color: transparent; }
-  .cmd-card { border-color: transparent; }
-  .stat-card { border-color: transparent; }
-  .whitelist-row { border-color: transparent; }
-
-  .profile-card {
-    background: var(--bg2); border-radius: 18px;
-    overflow: hidden;
   }
   .profile-row {
     display: flex; align-items: center; justify-content: space-between;
