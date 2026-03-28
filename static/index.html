@@ -2369,6 +2369,16 @@
   </div>
 </div>
 
+<!-- РАСПИСАНИЕ -->
+<div class="panel" id="расписание">
+  <div class="profile-panel">
+    <div style="padding: 16px 16px 6px; font-size: 15px; font-weight: 600; color: var(--text);">Расписание недели</div>
+    <div class="profile-card" style="margin: 0 12px 16px;">
+      <div id="schedule-week"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ПРОФИЛЬ -->
 <div class="panel" id="профиль">
   <div class="profile-panel" id="profile-content">
@@ -2426,6 +2436,12 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
     </div>
     Картинки
+  </div>
+  <div class="tab" onclick="переключить('расписание', this)">
+    <div class="tab-icon-wrap">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="8" y1="18" x2="10" y2="18"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="14" y1="18" x2="16" y2="18"/></svg>
+    </div>
+    План
   </div>
   <div class="tab" onclick="переключить('профиль', this)">
     <div class="tab-icon-wrap">
@@ -3104,10 +3120,11 @@
     if (id === 'админ') загрузитьАдмин();
     if (id === 'профиль') загрузитьПрофиль();
     if (id === 'картинки') обновитьИнфоКартинок();
+    if (id === 'расписание') renderSchedule();
   }
 
   function открытьВкладку(tab) {
-    const panelId = tab === 'chat' ? 'чат' : tab === 'profile' ? 'профиль' : tab === 'images' ? 'картинки' : tab;
+    const panelId = tab === 'chat' ? 'чат' : tab === 'profile' ? 'профиль' : tab === 'images' ? 'картинки' : tab === 'schedule' ? 'расписание' : tab;
     const tabs = document.querySelectorAll('.tab');
     const panels = document.querySelectorAll('.panel');
     panels.forEach(p => p.classList.remove('active'));
@@ -3454,11 +3471,6 @@
           </div>
         </div>
 
-        <div class="profile-section-title">Расписание недели</div>
-        <div class="profile-card" id="schedule-card">
-          <div id="schedule-week"></div>
-        </div>
-
         <div class="profile-section-title">Избранное</div>
         <div class="profile-card" id="bookmarks-card">
           <div id="bookmarks-list"></div>
@@ -3493,7 +3505,6 @@
       document.getElementById('profile-stats-loading').textContent = 'Не удалось загрузить данные';
     }
     renderBookmarksInProfile();
-    renderSchedule();
   }
 
   function скопироватьРефку(текст) {
