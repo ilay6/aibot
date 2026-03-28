@@ -835,13 +835,22 @@
     position: fixed; bottom: 100px; left: 50%;
     transform: translateX(-50%) translateY(16px) scale(0.95);
     background: var(--bg2); border: 1px solid rgba(255,255,255,0.12);
-    color: var(--text); padding: 12px 22px; border-radius: 24px;
-    font-size: 14px; font-weight: 500; font-family: inherit;
+    color: var(--text); padding: 10px 16px 10px 10px; border-radius: 20px;
+    font-size: 13px; font-weight: 500; font-family: inherit;
     z-index: 9999; opacity: 0; transition: all 0.35s cubic-bezier(0.16,1,0.3,1);
     pointer-events: none; white-space: nowrap;
     box-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.06);
     backdrop-filter: blur(12px);
+    display: flex; align-items: center; gap: 10px;
   }
+  .bonus-toast-icon {
+    width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0;
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .bonus-toast-body { display: flex; flex-direction: column; gap: 1px; }
+  .bonus-toast-title { font-size: 13px; font-weight: 600; color: var(--text); }
+  .bonus-toast-sub { font-size: 11px; color: var(--text2); }
   .bonus-toast.show { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
   [data-theme="light"] .bonus-toast {
     background: #fff; border-color: rgba(0,0,0,0.1);
@@ -4190,10 +4199,11 @@
       const d = await r.json();
       if (d.ok) {
         загрузитьСтатусПользователя();
-        const el = document.getElementById('bonus-toast');
-        el.textContent = 'Premium активирован на 24 часа — пробный период!';
-        el.classList.add('show');
-        setTimeout(() => el.classList.remove('show'), 4000);
+        показатьБонусТост(
+          `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
+          'Пробный период активирован',
+          'Premium на 24 часа — бесплатно'
+        );
       }
     } catch {}
   }
@@ -4249,6 +4259,19 @@
     localStorage.setItem('streakDate', today);
   }
 
+  function показатьБонусТост(iconSvg, title, sub, duration = 3800) {
+    const el = document.getElementById('bonus-toast');
+    el.innerHTML = `
+      <div class="bonus-toast-icon">${iconSvg}</div>
+      <div class="bonus-toast-body">
+        <div class="bonus-toast-title">${title}</div>
+        <div class="bonus-toast-sub">${sub}</div>
+      </div>`;
+    el.classList.add('show');
+    clearTimeout(el._hideT);
+    el._hideT = setTimeout(() => el.classList.remove('show'), duration);
+  }
+
   // ── Ежедневный бонус ──
   async function проверитьБонус() {
     if (!tgUser) return;
@@ -4259,10 +4282,11 @@
       const d = await r.json();
       if (d.ok) {
         localStorage.setItem('bonusDate', today);
-        const el = document.getElementById('bonus-toast');
-        el.textContent = `🎁 Ежедневный бонус: +${d.bonus} сообщения!`;
-        el.classList.add('show');
-        setTimeout(() => el.classList.remove('show'), 3500);
+        показатьБонусТост(
+          `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>`,
+          'Ежедневный бонус',
+          `+${d.bonus} сообщения получено`
+        );
       } else if (d.already_claimed) {
         localStorage.setItem('bonusDate', today);
       }
