@@ -141,6 +141,8 @@ def init_db():
         seed INTEGER, created_at TEXT)""")
     con.execute(f"""CREATE TABLE IF NOT EXISTS daily_bonus (
         tg_id {int_t} PRIMARY KEY, last_claimed TEXT)""")
+    con.execute(f"""CREATE TABLE IF NOT EXISTS trials (
+        tg_id {int_t} PRIMARY KEY, activated_at TEXT)""")
     for idx in [
         "CREATE INDEX IF NOT EXISTS idx_msg_tg ON messages(tg_id)",
         "CREATE INDEX IF NOT EXISTS idx_msg_id_desc ON messages(id DESC)",
@@ -760,21 +762,51 @@ async def setup_menu(secret: str = ""):
     except Exception as e:
         return {"error": str(e)}
 
+# ── TRIAL PREMIUM ──
+class TrialReq(BaseModel):
+    tg_id: int
+
+@app.post("/api/trial/activate")
+async def activate_trial(data: TrialReq):
+    if not data.tg_id:
+        return {"ok": False}
+    con = db_connect()
+    # Проверяем не использовался ли пробный период
+    row = con.execute("SELECT activated_at FROM trials WHERE tg_id=?", (data.tg_id,)).fetchone()
+    if row:
+        con.close()
+        return {"ok": False, "reason": "already_used"}
+    # Не давать если уже есть активный Premium
+    prow = con.execute("SELECT premium_until FROM users WHERE tg_id=?", (data.tg_id,)).fetchone()
+    if prow and prow[0] and datetime.now() < datetime.fromisoformat(prow[0]):
+        con.close()
+        return {"ok": False, "reason": "already_premium"}
+    # Активируем 24ч пробный период
+    trial_until = (datetime.now() + timedelta(hours=24)).isoformat()
+    con.execute("UPDATE users SET premium_until=? WHERE tg_id=?", (trial_until, data.tg_id))
+    con.execute(
+        "INSERT INTO trials (tg_id, activated_at) VALUES (?,?)",
+        (data.tg_id, datetime.now().isoformat())
+    )
+    con.commit(); con.close()
+    return {"ok": True, "trial_until": trial_until}
+
 # ── INACTIVE USERS ──
 @app.get("/api/inactive-users")
 async def get_inactive_users(secret: str = ""):
     if secret != ADMIN_SECRET:
         return {"error": "forbidden"}
-    con = get_db()
+    con = db_connect()
     two_days_ago = (datetime.utcnow() - timedelta(days=2)).strftime("%Y-%m-%dT%H:%M:%S")
     rows = con.execute("""
         SELECT u.tg_id, u.first_name FROM users u
-        WHERE u.premium_until IS NULL OR u.premium_until < datetime('now')
+        WHERE (u.premium_until IS NULL OR u.premium_until < datetime('now'))
         AND u.tg_id NOT IN (
             SELECT DISTINCT tg_id FROM messages WHERE ts > ?
         )
         LIMIT 50
     """, (two_days_ago,)).fetchall()
+    con.close()
     return {"users": [{"tg_id": r[0], "first_name": r[1]} for r in rows]}
 
 # ── WEBHOOK ──
@@ -822,7 +854,17 @@ async def user_status(data: InvoiceRequest):
     used = row[0] if (row and row[1] and str(row[1])[:10] == today) else 0
     unlimited = is_prem or is_wl
     remaining = 9999 if unlimited else max(0, limit - used)
-    return {"is_premium": is_prem or is_wl, "used": used, "limit": limit, "remaining": remaining, "referrals": ref_count}
+    con2 = db_connect()
+    trial_row = con2.execute("SELECT activated_at FROM trials WHERE tg_id=?", (data.tg_id,)).fetchone()
+    prow = con2.execute("SELECT premium_until FROM users WHERE tg_id=?", (data.tg_id,)).fetchone()
+    con2.close()
+    trial_used = bool(trial_row)
+    premium_until = prow[0] if prow else None
+    return {
+        "is_premium": is_prem or is_wl, "used": used, "limit": limit,
+        "remaining": remaining, "referrals": ref_count,
+        "trial_used": trial_used, "premium_until": premium_until
+    }
 
 
 @app.post("/api/premium/invoice")
@@ -901,6 +943,21 @@ async def add_referral(data: ReferralData):
         )
         con.execute("UPDATE users SET ref_count = ref_count + 1 WHERE tg_id=?", (data.referrer_tg_id,))
         con.commit()
+        # Авто-Premium за 10 рефералов → +7 дней
+        ref_count = _get_ref_count(data.referrer_tg_id)
+        if ref_count > 0 and ref_count % 10 == 0:
+            prow = con.execute("SELECT premium_until FROM users WHERE tg_id=?", (data.referrer_tg_id,)).fetchone()
+            base = datetime.now()
+            if prow and prow[0]:
+                try:
+                    existing = datetime.fromisoformat(prow[0])
+                    if existing > base:
+                        base = existing
+                except Exception:
+                    pass
+            new_until = (base + timedelta(days=7)).isoformat()
+            con.execute("UPDATE users SET premium_until=? WHERE tg_id=?", (new_until, data.referrer_tg_id))
+            con.commit()
     except Exception:
         pass
     con.close()

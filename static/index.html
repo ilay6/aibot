@@ -801,6 +801,35 @@
   /* ── Стрик ── */
   .streak-row { display: flex; align-items: center; gap: 8px; }
   .streak-badge { background: linear-gradient(135deg,#ff6b35,#f7931e); color: #fff; border-radius: 12px; padding: 3px 10px; font-size: 12px; font-weight: 600; }
+  /* ── Пробный период ── */
+  .trial-banner {
+    background: linear-gradient(135deg,rgba(255,107,53,0.12),rgba(247,147,30,0.08));
+    border: 1px solid rgba(255,107,53,0.3); border-radius: 14px;
+    padding: 12px 14px; display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+    animation: fadeIn 0.4s ease;
+  }
+  .trial-banner-icon { width: 32px; height: 32px; border-radius: 10px; background: linear-gradient(135deg,#ff6b35,#f7931e); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .trial-banner-text { flex: 1; }
+  .trial-banner-title { font-size: 13px; font-weight: 600; color: var(--text); }
+  .trial-banner-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  /* ── Реферальный прогресс ── */
+  .ref-progress-wrap { width: 100%; background: var(--bg3); border-radius: 6px; height: 6px; overflow: hidden; margin-top: 6px; }
+  .ref-progress-bar { height: 100%; border-radius: 6px; background: linear-gradient(90deg,#ff6b35,#f7931e); transition: width 0.5s ease; }
+  .ref-progress-label { font-size: 11px; color: var(--text2); margin-top: 4px; }
+  /* ── Сохранённые промпты ── */
+  .saved-prompts-wrap { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 12px 4px; }
+  .saved-prompt-chip {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 12px;
+    color: var(--text2); font-size: 11px; padding: 4px 10px; cursor: pointer;
+    display: flex; align-items: center; gap: 5px; transition: all 0.15s; max-width: 160px;
+  }
+  .saved-prompt-chip:hover { border-color: var(--text2); color: var(--text); }
+  .saved-prompt-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .saved-prompt-chip .del-chip { opacity: 0.4; flex-shrink: 0; }
+  .saved-prompt-chip .del-chip:hover { opacity: 1; color: #e55; }
+  .save-prompt-btn { background: none; border: none; cursor: pointer; color: var(--text2); padding: 0 4px; transition: color 0.15s; }
+  .save-prompt-btn:hover { color: var(--text); }
+  .save-prompt-btn.saved-active { color: #f7931e; }
   /* ── Ежедневный бонус ── */
   .bonus-toast {
     position: fixed; bottom: 100px; left: 50%;
@@ -2105,6 +2134,7 @@
     </button>
   </div>
 
+  <div id="saved-prompts-bar" style="display:none"></div>
   <div class="input-area">
     <div class="input-top">
       <div class="model-dd" id="model-dd" onclick="toggleModelDd(event)">
@@ -2140,6 +2170,9 @@
         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M21.58 11.4l-9.17 9.17c-2.34 2.34-6.14 2.34-8.49 0-2.34-2.34-2.34-6.14 0-8.49l9.17-9.17c1.56-1.56 4.1-1.56 5.66 0 1.56 1.56 1.56 4.1 0 5.66l-9.17 9.17c-.78.78-2.05.78-2.83 0-.78-.78-.78-2.05 0-2.83l7.07-7.07 1.41 1.41-7.07 7.07 9.17-9.17c.78-.78.78-2.05 0-2.83-.78-.78-2.05-.78-2.83 0l-9.17 9.17c-1.56 1.56-1.56 4.1 0 5.66 1.56 1.56 4.1 1.56 5.66 0l9.17-9.17 1.41 1.42z"/></svg>
       </button>
       <input type="file" id="file-input" accept="image/*" style="display:none" onchange="прикрепитьИзображение(event)">
+      <button class="save-prompt-btn" id="save-prompt-btn" onclick="сохранитьПромпт()" title="Сохранить промпт">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      </button>
       <button class="voice-btn" id="voice-btn" onclick="голосовойВвод()" title="Голосовой ввод">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1 1.93c-3.94-.49-7-3.85-7-7.93H2c0 4.56 3.17 8.35 7.5 8.92V20H8v2h8v-2h-1.5v-2.15c4.33-.57 7.5-4.36 7.5-8.85h-2c0 4.08-3.06 7.44-7 7.93V16z"/></svg>
       </button>
@@ -2381,6 +2414,8 @@
   // Ежедневный бонус (с задержкой чтобы не мешал загрузке)
   обновитьСтрик();
   setTimeout(проверитьБонус, 2000);
+  setTimeout(активироватьПробныйПериод, 3000);
+  отрисоватьСохранённыеПромпты();
 
   // Track app open
   if (tgUser) {
@@ -3144,8 +3179,15 @@
       const imgSvg   = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>`;
       const boltSvg  = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`;
 
+      // Определяем пробный период
+      const isTrial = isPremium && d.trial_used && d.premium_until
+        && (new Date(d.premium_until) - new Date()) < 25 * 3600 * 1000;
+      const trialHoursLeft = isTrial
+        ? Math.max(0, Math.ceil((new Date(d.premium_until) - new Date()) / 3600000))
+        : 0;
+
       const badge = isPremium
-        ? `<div class="profile-badge">${starSvg} Premium</div>`
+        ? `<div class="profile-badge">${isTrial ? '⏳ Пробный' : starSvg + ' Premium'}</div>`
         : `<div class="profile-badge free">Бесплатный</div>`;
 
       const subscriptionBlock = isPremium ? `
@@ -3195,6 +3237,17 @@
           ${badge}
         </div>
 
+        ${isTrial ? `
+        <div class="trial-banner">
+          <div class="trial-banner-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="trial-banner-text">
+            <div class="trial-banner-title">Пробный период активен</div>
+            <div class="trial-banner-sub">Осталось ${trialHoursLeft} ч. · Оформи Premium чтобы не потерять доступ</div>
+          </div>
+        </div>` : ''}
+
         <div class="profile-section-title">Статистика</div>
         <div class="profile-card">
           <div class="profile-row">
@@ -3224,12 +3277,21 @@
             </div>
             <div class="profile-row-val streak-row"><span class="streak-badge">${получитьСтрик()} дн.</span></div>
           </div>
-          <div class="profile-row">
-            <div class="profile-row-left">
-              <div class="profile-row-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-              <div class="profile-row-label">Приглашено друзей</div>
+          <div class="profile-row" style="flex-direction:column;align-items:flex-start;gap:6px">
+            <div style="display:flex;justify-content:space-between;width:100%">
+              <div class="profile-row-left">
+                <div class="profile-row-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+                <div class="profile-row-label">Приглашено друзей</div>
+              </div>
+              <div class="profile-row-val">${d.referrals ?? 0} / 10</div>
             </div>
-            <div class="profile-row-val">${d.referrals ?? 0}</div>
+            ${!isPremium ? `
+            <div class="ref-progress-wrap"><div class="ref-progress-bar" style="width:${Math.min(100, ((d.referrals ?? 0) / 10) * 100)}%"></div></div>
+            <div class="ref-progress-label">
+              ${(d.referrals ?? 0) >= 10
+                ? 'Premium за рефералов активирован!'
+                : `Ещё ${10 - (d.referrals ?? 0)} ${[,'друг','друга','друга','друга','друзей','друзей','друзей','друзей','друзей','друзей'][Math.min(10-(d.referrals??0),10)]} → +7 дней Premium`}
+            </div>` : ''}
           </div>
         </div>
 
@@ -4052,6 +4114,65 @@
       показатьТост('Добавлено в избранное ★');
     }
     localStorage.setItem(key, JSON.stringify(list));
+  }
+
+  // ── Пробный период ──
+  async function активироватьПробныйПериод() {
+    if (!tgUser) return;
+    if (localStorage.getItem('trialChecked')) return;
+    localStorage.setItem('trialChecked', '1');
+    try {
+      const r = await fetch('/api/trial/activate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({tg_id: tgUser.id})
+      });
+      const d = await r.json();
+      if (d.ok) {
+        загрузитьСтатусПользователя();
+        const el = document.getElementById('bonus-toast');
+        el.textContent = 'Premium активирован на 24 часа — пробный период!';
+        el.classList.add('show');
+        setTimeout(() => el.classList.remove('show'), 4000);
+      }
+    } catch {}
+  }
+
+  // ── Сохранённые промпты ──
+  function получитьСохранённыеПромпты() {
+    try { return JSON.parse(localStorage.getItem('savedPrompts') || '[]'); } catch { return []; }
+  }
+  function сохранитьПромпт() {
+    const текст = document.getElementById('ввод').value.trim();
+    if (!текст || текст.length < 3) { показатьТост('Введи текст для сохранения'); return; }
+    const prompts = получитьСохранённыеПромпты();
+    if (prompts.includes(текст)) { показатьТост('Уже сохранён'); return; }
+    if (prompts.length >= 8) prompts.pop();
+    prompts.unshift(текст);
+    localStorage.setItem('savedPrompts', JSON.stringify(prompts));
+    отрисоватьСохранённыеПромпты();
+    показатьТост('Промпт сохранён');
+  }
+  function удалитьПромпт(idx) {
+    const prompts = получитьСохранённыеПромпты();
+    prompts.splice(idx, 1);
+    localStorage.setItem('savedPrompts', JSON.stringify(prompts));
+    отрисоватьСохранённыеПромпты();
+  }
+  function отрисоватьСохранённыеПромпты() {
+    const bar = document.getElementById('saved-prompts-bar');
+    if (!bar) return;
+    const prompts = получитьСохранённыеПромпты();
+    if (prompts.length === 0) { bar.style.display = 'none'; return; }
+    bar.style.display = '';
+    bar.innerHTML = `<div class="saved-prompts-wrap">${prompts.map((p, i) => `
+      <div class="saved-prompt-chip" onclick="быстрыйЗапрос(${JSON.stringify(p)})">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+        <span>${p.length > 22 ? p.slice(0,22)+'…' : p}</span>
+        <span class="del-chip" onclick="event.stopPropagation();удалитьПромпт(${i})">
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </span>
+      </div>`).join('')}</div>`;
   }
 
   // ── Стрик ──
