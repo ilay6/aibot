@@ -1418,6 +1418,65 @@
   .bookmarks-empty-title { font-size: 14px; color: var(--text2); }
   .bookmarks-empty-sub { font-size: 12px; color: var(--text2); opacity: 0.6; text-align: center; }
 
+  /* ── РАСПИСАНИЕ НЕДЕЛИ ── */
+  .schedule-week { padding: 4px 0; }
+  .schedule-day {
+    border-bottom: 1px solid var(--border);
+  }
+  .schedule-day:last-child { border-bottom: none; }
+  .schedule-day-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; cursor: pointer; user-select: none;
+    transition: background 0.15s;
+  }
+  .schedule-day-header:hover { background: var(--bg3); }
+  .schedule-day-name {
+    font-size: 13px; font-weight: 600; color: var(--text);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .schedule-day-name .today-dot {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+    display: inline-block;
+  }
+  .schedule-day-preview {
+    font-size: 11px; color: var(--text2); flex: 1; margin-left: 10px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px;
+  }
+  .schedule-day-chevron {
+    color: var(--text2); transition: transform 0.2s; flex-shrink: 0;
+  }
+  .schedule-day.open .schedule-day-chevron { transform: rotate(90deg); }
+  .schedule-day-body {
+    display: none; padding: 4px 16px 12px;
+  }
+  .schedule-day.open .schedule-day-body { display: block; }
+  .schedule-slot {
+    display: flex; align-items: flex-start; gap: 10px; margin-bottom: 6px;
+  }
+  .schedule-slot:last-child { margin-bottom: 0; }
+  .schedule-slot-time {
+    font-size: 11px; color: var(--text2); width: 44px; flex-shrink: 0;
+    padding-top: 7px; text-align: right;
+  }
+  .schedule-slot-input {
+    flex: 1; background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 10px; color: var(--text);
+    font-size: 12px; font-family: inherit; resize: none; outline: none;
+    line-height: 1.45; min-height: 32px;
+    transition: border-color 0.15s;
+  }
+  .schedule-slot-input:focus { border-color: var(--border2); }
+  .schedule-slot-input::placeholder { color: var(--text2); opacity: 0.5; }
+  .schedule-save-btn {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    margin-top: 10px; width: 100%; padding: 8px;
+    background: none; border: 1px solid var(--border); border-radius: 9px;
+    color: var(--text2); font-size: 12px; font-family: inherit; cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+  .schedule-save-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+  .schedule-save-btn.saved { color: #5c9; border-color: #5c9; background: rgba(85,204,153,0.06); }
+
   /* ── CHAR COUNTER ── */
   .input-top {
     display: flex; justify-content: space-between; align-items: center;
@@ -3395,6 +3454,11 @@
           </div>
         </div>
 
+        <div class="profile-section-title">Расписание недели</div>
+        <div class="profile-card" id="schedule-card">
+          <div id="schedule-week"></div>
+        </div>
+
         <div class="profile-section-title">Избранное</div>
         <div class="profile-card" id="bookmarks-card">
           <div id="bookmarks-list"></div>
@@ -3429,6 +3493,7 @@
       document.getElementById('profile-stats-loading').textContent = 'Не удалось загрузить данные';
     }
     renderBookmarksInProfile();
+    renderSchedule();
   }
 
   function скопироватьРефку(текст) {
@@ -4251,6 +4316,85 @@
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>`).join('');
+  }
+
+  // ── Расписание недели ──
+  const SCHEDULE_DAYS = ['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
+  const SCHEDULE_SLOTS = ['07:00','09:00','12:00','15:00','18:00','21:00'];
+  const SCHEDULE_PLACEHOLDERS = ['Подъём, зарядка','Работа / учёба','Обед','Работа / дела','Свободное время','Вечер, отдых'];
+
+  function renderSchedule() {
+    const el = document.getElementById('schedule-week');
+    if (!el) return;
+    const data = JSON.parse(localStorage.getItem('weekSchedule') || '{}');
+    const todayIdx = (new Date().getDay() + 6) % 7; // 0=пн
+    el.innerHTML = SCHEDULE_DAYS.map((day, di) => {
+      const isToday = di === todayIdx;
+      const dayData = data[di] || {};
+      const preview = SCHEDULE_SLOTS.map(t => dayData[t] || '').filter(Boolean).join(', ');
+      return `<div class="schedule-day${isToday ? ' open' : ''}" id="sday-${di}">
+        <div class="schedule-day-header${isToday ? ' today' : ''}" onclick="toggleScheduleDay(${di})">
+          <div class="schedule-day-name">
+            ${isToday ? '<span class="today-dot"></span>' : ''}${day}
+          </div>
+          <div class="schedule-day-preview">${экранировать(preview)}</div>
+          <svg class="schedule-day-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div class="schedule-day-body">
+          ${SCHEDULE_SLOTS.map((t, si) => `
+          <div class="schedule-slot">
+            <div class="schedule-slot-time">${t}</div>
+            <textarea class="schedule-slot-input" id="ss-${di}-${si}" rows="1"
+              placeholder="${SCHEDULE_PLACEHOLDERS[si]}"
+              oninput="autoResizeSchedule(this)"
+              onfocus="this.select()"
+            >${экранировать(dayData[t] || '')}</textarea>
+          </div>`).join('')}
+          <button class="schedule-save-btn" id="sbtn-${di}" onclick="saveScheduleDay(${di})">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Сохранить
+          </button>
+        </div>
+      </div>`;
+    }).join('');
+    // авто-высота для уже заполненных textarea
+    el.querySelectorAll('.schedule-slot-input').forEach(autoResizeSchedule);
+  }
+
+  function toggleScheduleDay(di) {
+    const el = document.getElementById('sday-' + di);
+    if (!el) return;
+    el.classList.toggle('open');
+  }
+
+  function autoResizeSchedule(ta) {
+    ta.style.height = 'auto';
+    ta.style.height = Math.max(32, ta.scrollHeight) + 'px';
+  }
+
+  function saveScheduleDay(di) {
+    const data = JSON.parse(localStorage.getItem('weekSchedule') || '{}');
+    const dayData = {};
+    SCHEDULE_SLOTS.forEach((t, si) => {
+      const val = (document.getElementById(`ss-${di}-${si}`)?.value || '').trim();
+      if (val) dayData[t] = val;
+    });
+    data[di] = dayData;
+    localStorage.setItem('weekSchedule', JSON.stringify(data));
+    // обновить preview
+    const preview = SCHEDULE_SLOTS.map(t => dayData[t] || '').filter(Boolean).join(', ');
+    const prev = document.querySelector(`#sday-${di} .schedule-day-preview`);
+    if (prev) prev.textContent = preview;
+    // анимация кнопки
+    const btn = document.getElementById('sbtn-' + di);
+    if (btn) {
+      btn.classList.add('saved');
+      btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Сохранено';
+      setTimeout(() => {
+        btn.classList.remove('saved');
+        btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Сохранить';
+      }, 2000);
+    }
   }
 
   function перейтиКЗакладке(idx) {
