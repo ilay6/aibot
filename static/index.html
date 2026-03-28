@@ -4305,10 +4305,14 @@
 
   function закладка(btn) {
     const bubble = btn.closest('.bubble');
-    const текст = bubble?.querySelector('p,div')?.textContent || bubble?.textContent || '';
+    // Клонируем и удаляем футер и быстрые кнопки — берём только текст сообщения
+    const clone = bubble.cloneNode(true);
+    clone.querySelector('.bubble-footer')?.remove();
+    clone.querySelector('.quick-actions')?.remove();
+    const текст = clone.textContent.trim();
     const key = 'bookmarks';
     const list = JSON.parse(localStorage.getItem(key) || '[]');
-    const trimmed = текст.trim().slice(0, 500);
+    const trimmed = текст.slice(0, 500);
     const idx = list.findIndex(b => b.text === trimmed);
     const svgEmpty = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`;
     const svgFill  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`;
