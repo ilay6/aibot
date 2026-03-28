@@ -3020,7 +3020,7 @@
     document.getElementById(id).classList.add('active');
     кнопка.classList.add('active');
     if (id === 'админ') загрузитьАдмин();
-    if (id === 'профиль') { загрузитьПрофиль(); renderBookmarksInProfile(); }
+    if (id === 'профиль') загрузитьПрофиль();
     if (id === 'картинки') обновитьИнфоКартинок();
   }
 
@@ -3405,6 +3405,7 @@
     } catch {
       document.getElementById('profile-stats-loading').textContent = 'Не удалось загрузить данные';
     }
+    renderBookmarksInProfile();
   }
 
   function скопироватьРефку(текст) {
