@@ -1388,6 +1388,40 @@
   .voice-btn.recording { border-color: #ff5555; color: #ff5555; background: rgba(255,85,85,0.1); animation: voicePulse 1.2s ease infinite; }
   @keyframes voicePulse { 0%,100%{box-shadow:0 0 0 0 rgba(255,85,85,0.4)} 60%{box-shadow:0 0 0 7px rgba(255,85,85,0)} }
 
+  /* ── ПАНЕЛЬ ИЗБРАННОГО ── */
+  .favorites-panel {
+    position: absolute; bottom: calc(100% + 8px); left: 0; right: 0;
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3); z-index: 200;
+    max-height: 340px; overflow-y: auto; display: none;
+    animation: fadeSlideUp 0.2s cubic-bezier(0.16,1,0.3,1);
+  }
+  .favorites-panel.open { display: block; }
+  @keyframes fadeSlideUp { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }
+  .favorites-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px 8px; border-bottom: 1px solid var(--border);
+    font-size: 13px; font-weight: 600; color: var(--text); position: sticky; top: 0;
+    background: var(--bg2); border-radius: 16px 16px 0 0;
+  }
+  .favorites-clear { background: none; border: none; cursor: pointer; color: var(--text2); font-size: 11px; font-family: inherit; padding: 2px 6px; border-radius: 6px; }
+  .favorites-clear:hover { color: #e55; background: rgba(229,85,85,0.08); }
+  .favorites-empty { padding: 24px; text-align: center; color: var(--text2); font-size: 13px; }
+  .favorites-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 14px; border-bottom: 1px solid var(--border); cursor: pointer;
+    transition: background 0.12s;
+  }
+  .favorites-item:last-child { border-bottom: none; }
+  .favorites-item:hover { background: var(--bg3); }
+  .favorites-item-icon { flex-shrink: 0; margin-top: 1px; color: var(--text2); }
+  .favorites-item-body { flex: 1; min-width: 0; }
+  .favorites-item-text { font-size: 12px; color: var(--text); line-height: 1.45; word-break: break-word; }
+  .favorites-item-date { font-size: 10px; color: var(--text2); margin-top: 3px; }
+  .favorites-item-del { flex-shrink: 0; background: none; border: none; cursor: pointer; color: var(--text2); padding: 2px; opacity: 0.5; transition: opacity 0.15s, color 0.15s; }
+  .favorites-item-del:hover { opacity: 1; color: #e55; }
+  .fav-btn.has-items { color: var(--text); border-color: var(--border2); }
+
   /* ── CHAR COUNTER ── */
   .input-top {
     display: flex; justify-content: space-between; align-items: center;
@@ -2179,10 +2213,14 @@
       <span class="char-counter" id="char-counter"></span>
       <span class="msgs-left" id="msgs-left" style="display:none"></span>
     </div>
+    <div id="favorites-panel" class="favorites-panel"></div>
     <div class="input-wrap">
       <textarea id="ввод" placeholder="Напиши сообщение..." rows="1"
         onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();отправить()}"
         oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';обновитьСчетчик(this.value.length);clearTimeout(window._draftT);window._draftT=setTimeout(()=>localStorage.setItem('черновик',this.value),500)"></textarea>
+      <button class="voice-btn fav-btn" id="fav-btn" onclick="toggleFavorites()" title="Избранное">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      </button>
       <button class="voice-btn" id="attach-btn" onclick="document.getElementById('file-input').click()" title="Прикрепить изображение">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M21.58 11.4l-9.17 9.17c-2.34 2.34-6.14 2.34-8.49 0-2.34-2.34-2.34-6.14 0-8.49l9.17-9.17c1.56-1.56 4.1-1.56 5.66 0 1.56 1.56 1.56 4.1 0 5.66l-9.17 9.17c-.78.78-2.05.78-2.83 0-.78-.78-.78-2.05 0-2.83l7.07-7.07 1.41 1.41-7.07 7.07 9.17-9.17c.78-.78.78-2.05 0-2.83-.78-.78-2.05-.78-2.83 0l-9.17 9.17c-1.56 1.56-1.56 4.1 0 5.66 1.56 1.56 4.1 1.56 5.66 0l9.17-9.17 1.41 1.42z"/></svg>
       </button>
@@ -2429,6 +2467,12 @@
   }
 
   // Ежедневный бонус (с задержкой чтобы не мешал загрузке)
+  // Подсветить кнопку избранного если есть сохранённые
+  try {
+    const bm = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+    if (bm.length) document.getElementById('fav-btn')?.classList.add('has-items');
+  } catch {}
+
   обновитьСтрик();
   setTimeout(проверитьБонус, 800);
   setTimeout(активироватьПробныйПериод, 1200);
@@ -4179,6 +4223,89 @@
   }
 
   // ── Закладки ──
+  // ── ПАНЕЛЬ ИЗБРАННОГО ──
+  function toggleFavorites() {
+    const panel = document.getElementById('favorites-panel');
+    if (panel.classList.contains('open')) {
+      panel.classList.remove('open');
+    } else {
+      renderFavorites();
+      panel.classList.add('open');
+    }
+  }
+
+  function renderFavorites() {
+    const panel = document.getElementById('favorites-panel');
+    const list = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+    const btn = document.getElementById('fav-btn');
+    btn.classList.toggle('has-items', list.length > 0);
+
+    if (!list.length) {
+      panel.innerHTML = `
+        <div class="favorites-header">
+          <span>Избранное</span>
+        </div>
+        <div class="favorites-empty">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:8px;opacity:0.3"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          <div>Нет сохранённых сообщений</div>
+          <div style="font-size:11px;margin-top:4px;opacity:0.6">Нажми ☆ под ответом AI</div>
+        </div>`;
+      return;
+    }
+
+    panel.innerHTML = `
+      <div class="favorites-header">
+        <span>Избранное · ${list.length}</span>
+        <button class="favorites-clear" onclick="clearFavorites()">Очистить всё</button>
+      </div>
+      ${list.map((b, i) => `
+        <div class="favorites-item" onclick="вставитьИзИзбранного(${i})">
+          <div class="favorites-item-icon">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <div class="favorites-item-body">
+            <div class="favorites-item-text">${экранировать(b.text.slice(0, 140))}${b.text.length > 140 ? '…' : ''}</div>
+            <div class="favorites-item-date">${b.date}</div>
+          </div>
+          <button class="favorites-item-del" onclick="event.stopPropagation();deleteFromFavorites(${i})" title="Удалить">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>`).join('')}`;
+  }
+
+  function вставитьИзИзбранного(idx) {
+    const list = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+    if (!list[idx]) return;
+    navigator.clipboard?.writeText(list[idx].text)
+      .then(() => показатьТост('Скопировано в буфер'))
+      .catch(() => {});
+    document.getElementById('favorites-panel').classList.remove('open');
+  }
+
+  function deleteFromFavorites(idx) {
+    const list = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+    list.splice(idx, 1);
+    localStorage.setItem('bookmarks', JSON.stringify(list));
+    renderFavorites();
+  }
+
+  function clearFavorites() {
+    localStorage.removeItem('bookmarks');
+    renderFavorites();
+    // Обновить все кнопки закладок в чате
+    document.querySelectorAll('.bookmark-btn.saved').forEach(btn => {
+      btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`;
+      btn.classList.remove('saved');
+    });
+  }
+
+  // Закрыть панель при клике вне
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#favorites-panel') && !e.target.closest('#fav-btn')) {
+      document.getElementById('favorites-panel')?.classList.remove('open');
+    }
+  });
+
   function закладка(btn) {
     const bubble = btn.closest('.bubble');
     const текст = bubble?.querySelector('p,div')?.textContent || bubble?.textContent || '';
