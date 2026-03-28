@@ -1498,19 +1498,6 @@
   .schedule-save-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
   .schedule-save-btn.saved { color: #5c9; border-color: #5c9; background: rgba(85,204,153,0.06); }
 
-  /* ── SUPPORT FAB ── */
-  .support-fab {
-    position: fixed; bottom: 72px; right: 14px; z-index: 200;
-    width: 44px; height: 44px; border-radius: 50%;
-    background: var(--bg2); border: 1px solid var(--border2);
-    box-shadow: 0 4px 18px rgba(0,0,0,0.35);
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; color: var(--text2);
-    transition: background 0.2s, color 0.2s, transform 0.18s, box-shadow 0.2s;
-  }
-  .support-fab:hover { background: var(--bg3); color: var(--accent); box-shadow: 0 6px 22px rgba(0,0,0,0.45); }
-  .support-fab:active { transform: scale(0.92); }
-
   /* ── SUPPORT MODAL ── */
   .support-overlay {
     display: none; position: fixed; inset: 0; z-index: 500;
@@ -2203,6 +2190,9 @@
         </button>
       </div>
       <div class="header-btn-row">
+        <button class="hdr-btn" onclick="openSupport()" title="Поддержка / Баг / Идея">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </button>
         <button class="hdr-btn hdr-btn-label" id="lang-btn" onclick="сменитьЯзык()" title="Сменить язык">RU</button>
         <button class="hdr-btn" id="theme-btn" onclick="переключитьТему()" title="Сменить тему">
           <svg class="theme-icon-dark" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>
@@ -2518,6 +2508,9 @@
       <div style="font-size:11px;color:var(--text2);margin:4px 0 8px;padding:0 2px">Код · Бонусных сообщений · Макс. использований</div>
       <div id="admin-promos"><div class="admin-empty">Загрузка...</div></div>
 
+      <div class="admin-section-title">Обращения пользователей</div>
+      <div id="admin-feedback"><div class="admin-empty">Нажмите «Обновить данные»</div></div>
+
       <div class="admin-section-title">Последние сообщения</div>
       <div id="admin-messages"><div class="admin-empty">Нажмите «Обновить данные»</div></div>
     </div>
@@ -2557,11 +2550,6 @@
   </div>
 </div>
 </div><!-- /main-wrap -->
-
-<!-- SUPPORT FAB -->
-<button class="support-fab" onclick="openSupport()" title="Поддержка">
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-</button>
 
 <!-- SUPPORT MODAL -->
 <div class="support-overlay" id="support-overlay" onclick="closeSupportIfOutside(event)">
@@ -4347,8 +4335,10 @@
     errEl.style.display = 'none';
     document.getElementById('admin-users').innerHTML    = '<div class="admin-empty">Загрузка...</div>';
     document.getElementById('admin-messages').innerHTML = '<div class="admin-empty">Загрузка...</div>';
+    document.getElementById('admin-feedback').innerHTML = '<div class="admin-empty">Загрузка...</div>';
     загрузитьВайтлист();
     загрузитьПромокоды();
+    загрузитьОбращения();
     try {
       const resp = await fetch('/api/admin/stats', {
         headers: { 'x-admin-secret': ADMIN_SECRET }
@@ -4394,6 +4384,40 @@
   }
 
   const _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+  async function загрузитьОбращения() {
+    const el = document.getElementById('admin-feedback');
+    if (!el) return;
+    try {
+      const resp = await fetch('/api/admin/feedback', { headers: { 'x-admin-secret': ADMIN_SECRET } });
+      const d = await resp.json();
+      if (!d.feedback || !d.feedback.length) {
+        el.innerHTML = '<div class="admin-empty">Обращений пока нет</div>';
+        return;
+      }
+      const typeColors = { '💬': '#5599ff', '🐛': '#ff7755', '💡': '#f0c040' };
+      el.innerHTML = d.feedback.map((f, i) => {
+        const text = f.text || '';
+        // вытащить тип из метки [💬 Поддержка] / [🐛 Баг] / [💡 Идея]
+        const match = text.match(/^\[([^\]]+)\]\s*/);
+        const tag = match ? match[1] : '';
+        const body = match ? text.slice(match[0].length) : text;
+        const emoji = tag.split(' ')[0] || '💬';
+        const tagColor = typeColors[emoji] || 'var(--text2)';
+        const author = экранировать(f.name || '?') + (f.username ? ` <span style="color:var(--text2)">@${экранировать(f.username)}</span>` : '');
+        return `<div class="admin-msg" style="animation-delay:${i*0.02}s;border-left:2px solid ${tagColor}">
+          <div class="admin-msg-author" style="display:flex;align-items:center;gap:6px">
+            ${author}
+            ${tag ? `<span style="font-size:10px;padding:1px 7px;border-radius:8px;background:${tagColor}22;color:${tagColor};font-weight:600">${экранировать(tag)}</span>` : ''}
+          </div>
+          <div class="admin-msg-text">${экранировать(body)}</div>
+          <div class="admin-msg-time">${f.ts || ''}</div>
+        </div>`;
+      }).join('');
+    } catch(e) {
+      el.innerHTML = `<div class="admin-empty">Ошибка: ${e.message}</div>`;
+    }
+  }
 
   async function скачатьКартинку(id) {
     const img = document.getElementById(id);

@@ -654,6 +654,21 @@ async def admin_stats(x_admin_secret: str = Header(None)):
     }
 
 
+@app.get("/api/admin/feedback")
+async def admin_feedback(x_admin_secret: str = Header(None)):
+    if not ADMIN_SECRET or x_admin_secret != ADMIN_SECRET:
+        return {"error": "forbidden"}
+    con = db_connect()
+    rows = con.execute("""
+        SELECT u.first_name, u.username, m.tg_id, m.text, m.ts
+        FROM messages m LEFT JOIN users u ON m.tg_id = u.tg_id
+        WHERE m.role = 'feedback'
+        ORDER BY m.id DESC LIMIT 200
+    """).fetchall()
+    con.close()
+    return {"feedback": [{"name": r[0] or "?", "username": r[1] or "", "tg_id": r[2], "text": r[3], "ts": r[4]} for r in rows]}
+
+
 class SyncData(BaseModel):
     tg_id: int
     secret: str = ""
