@@ -11,9 +11,17 @@
 <meta name="apple-mobile-web-app-title" content="AIchat">
 <link rel="apple-touch-icon" href="/logo.svg">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  @font-face {
+    font-family: 'Playfair Display';
+    font-style: normal; font-weight: 700; font-display: swap;
+    src: local('Georgia'), local('Times New Roman');
+  }
+</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Lora:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Lora:wght@400;500&display=swap" rel="stylesheet"></noscript>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
@@ -2363,7 +2371,7 @@
         показатьТост('Premium активирован', 5000);
         добавитьСообщение('**Premium активирован**\n\n— 30 дней безлимитного чата\n— Все модели без ограничений\n— Приоритетная обработка', 'bot');
         закрытьПэйволл();
-        setTimeout(загрузитьСтатусПользователя, 1000);
+        загрузитьСтатусПользователя();
       }
     });
   }
@@ -2422,8 +2430,8 @@
 
   // Ежедневный бонус (с задержкой чтобы не мешал загрузке)
   обновитьСтрик();
-  setTimeout(проверитьБонус, 2000);
-  setTimeout(активироватьПробныйПериод, 3000);
+  setTimeout(проверитьБонус, 800);
+  setTimeout(активироватьПробныйПериод, 1200);
   отрисоватьСохранённыеПромпты();
 
   // Track app open
@@ -2579,11 +2587,11 @@
   восстановитьИзМассива(JSON.parse(localStorage.getItem('чаты') || '[]'));
   отрисоватьИсторию();
 
-  // Затем подгружаем с сервера (синхронизация между устройствами)
-  загрузитьЧатыССервера();
-
-  // ── LOAD USER STATUS (messages remaining, premium) ──
-  загрузитьСтатусПользователя();
+  // Параллельный старт всех API вызовов
+  Promise.all([
+    загрузитьЧатыССервера(),
+    загрузитьСтатусПользователя(),
+  ]);
 
   // ── USER MEMORY: load and inject into system prompt ──
   if (tgUser) {
@@ -2675,8 +2683,14 @@
     }
   }
 
+  let _statusCache = null, _statusCacheTs = 0;
   async function загрузитьСтатусПользователя() {
     if (!tgUser) return;
+    // Кэш на 30 секунд
+    if (_statusCache && Date.now() - _statusCacheTs < 30000) {
+      обновитьСчетчикСообщений(_statusCache.remaining, _statusCache.is_premium);
+      return _statusCache;
+    }
     try {
       const r = await fetch('/api/user/status', {
         method: 'POST',
@@ -2684,9 +2698,12 @@
         body: JSON.stringify({tg_id: tgUser.id, secret: ADMIN_SECRET})
       });
       const d = await r.json();
+      _statusCache = d; _statusCacheTs = Date.now();
       обновитьСчетчикСообщений(d.remaining, d.is_premium);
+      return d;
     } catch {}
   }
+  function сброситьКэшСтатуса() { _statusCache = null; }
 
   function сохранитьПамять(text) {
     if (!tgUser) { показатьТост('Память доступна только в Telegram'); return; }
@@ -3776,6 +3793,7 @@
     поле.value = ''; поле.style.height = 'auto';
     localStorage.removeItem('черновик');
     обновитьСчетчик(0);
+    сброситьКэшСтатуса();
     const кнопка = document.getElementById('кнопка');
     кнопка.disabled = true; кнопка.classList.add('loading');
 
@@ -5118,6 +5136,11 @@
 
   // Init lang button label
   document.getElementById('lang-btn').textContent = _lang.toUpperCase();
+
+  // Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
 </script>
 </body>
 </html>
