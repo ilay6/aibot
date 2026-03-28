@@ -1451,26 +1451,46 @@
     display: none; padding: 4px 16px 12px;
   }
   .schedule-day.open .schedule-day-body { display: block; }
+  .schedule-slots-wrap { display: flex; flex-direction: column; gap: 6px; }
   .schedule-slot {
-    display: flex; align-items: flex-start; gap: 10px; margin-bottom: 6px;
+    display: flex; align-items: center; gap: 6px;
   }
-  .schedule-slot:last-child { margin-bottom: 0; }
-  .schedule-slot-time {
-    font-size: 11px; color: var(--text2); width: 44px; flex-shrink: 0;
-    padding-top: 7px; text-align: right;
+  .schedule-slot-time-input {
+    width: 70px; flex-shrink: 0;
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+    padding: 6px 6px; color: var(--text2); font-size: 12px; font-family: inherit;
+    outline: none; text-align: center; cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+    -webkit-appearance: none; appearance: none;
   }
-  .schedule-slot-input {
+  .schedule-slot-time-input:focus { border-color: var(--border2); color: var(--text); }
+  .schedule-slot-time-input::-webkit-calendar-picker-indicator { display: none; }
+  .schedule-slot-text {
     flex: 1; background: var(--bg3); border: 1px solid var(--border);
     border-radius: 8px; padding: 6px 10px; color: var(--text);
     font-size: 12px; font-family: inherit; resize: none; outline: none;
     line-height: 1.45; min-height: 32px;
     transition: border-color 0.15s;
   }
-  .schedule-slot-input:focus { border-color: var(--border2); }
-  .schedule-slot-input::placeholder { color: var(--text2); opacity: 0.5; }
+  .schedule-slot-text:focus { border-color: var(--border2); }
+  .schedule-slot-text::placeholder { color: var(--text2); opacity: 0.5; }
+  .schedule-slot-del {
+    flex-shrink: 0; background: none; border: none; cursor: pointer;
+    color: var(--text2); padding: 4px; opacity: 0.3;
+    transition: opacity 0.15s, color 0.15s; border-radius: 6px; line-height: 0;
+  }
+  .schedule-slot-del:hover { opacity: 1; color: #e55; }
+  .schedule-add-slot-btn {
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+    margin-top: 8px; width: 100%; padding: 7px;
+    background: none; border: 1px dashed var(--border); border-radius: 9px;
+    color: var(--text2); font-size: 12px; font-family: inherit; cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+  .schedule-add-slot-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
   .schedule-save-btn {
     display: flex; align-items: center; justify-content: center; gap: 6px;
-    margin-top: 10px; width: 100%; padding: 8px;
+    margin-top: 6px; width: 100%; padding: 8px;
     background: none; border: 1px solid var(--border); border-radius: 9px;
     color: var(--text2); font-size: 12px; font-family: inherit; cursor: pointer;
     transition: border-color 0.15s, color 0.15s, background 0.15s;
@@ -4334,36 +4354,33 @@
 
   // ── Расписание недели ──
   const SCHEDULE_DAYS = ['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
-  const SCHEDULE_SLOTS = ['07:00','09:00','12:00','15:00','18:00','21:00'];
-  const SCHEDULE_PLACEHOLDERS = ['Подъём, зарядка','Работа / учёба','Обед','Работа / дела','Свободное время','Вечер, отдых'];
+
+  function scheduleLoad() { return JSON.parse(localStorage.getItem('weekSchedule2') || '{}'); }
+  function scheduleSave(data) { localStorage.setItem('weekSchedule2', JSON.stringify(data)); }
 
   function renderSchedule() {
     const el = document.getElementById('schedule-week');
     if (!el) return;
-    const data = JSON.parse(localStorage.getItem('weekSchedule') || '{}');
-    const todayIdx = (new Date().getDay() + 6) % 7; // 0=пн
+    const data = scheduleLoad();
+    const todayIdx = (new Date().getDay() + 6) % 7;
     el.innerHTML = SCHEDULE_DAYS.map((day, di) => {
       const isToday = di === todayIdx;
-      const dayData = data[di] || {};
-      const preview = SCHEDULE_SLOTS.map(t => dayData[t] || '').filter(Boolean).join(', ');
+      const slots = data[di] || [];
+      const preview = slots.map(s => s.text).filter(Boolean).join(', ');
       return `<div class="schedule-day${isToday ? ' open' : ''}" id="sday-${di}">
-        <div class="schedule-day-header${isToday ? ' today' : ''}" onclick="toggleScheduleDay(${di})">
-          <div class="schedule-day-name">
-            ${isToday ? '<span class="today-dot"></span>' : ''}${day}
-          </div>
+        <div class="schedule-day-header" onclick="toggleScheduleDay(${di})">
+          <div class="schedule-day-name">${isToday ? '<span class="today-dot"></span>' : ''}${day}</div>
           <div class="schedule-day-preview">${экранировать(preview)}</div>
           <svg class="schedule-day-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
         <div class="schedule-day-body">
-          ${SCHEDULE_SLOTS.map((t, si) => `
-          <div class="schedule-slot">
-            <div class="schedule-slot-time">${t}</div>
-            <textarea class="schedule-slot-input" id="ss-${di}-${si}" rows="1"
-              placeholder="${SCHEDULE_PLACEHOLDERS[si]}"
-              oninput="autoResizeSchedule(this)"
-              onfocus="this.select()"
-            >${экранировать(dayData[t] || '')}</textarea>
-          </div>`).join('')}
+          <div class="schedule-slots-wrap" id="slots-${di}">
+            ${slots.map((s, si) => renderSlotHTML(di, si, s.time, s.text)).join('')}
+          </div>
+          <button class="schedule-add-slot-btn" onclick="addScheduleSlot(${di})">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Добавить
+          </button>
           <button class="schedule-save-btn" id="sbtn-${di}" onclick="saveScheduleDay(${di})">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
             Сохранить
@@ -4371,14 +4388,24 @@
         </div>
       </div>`;
     }).join('');
-    // авто-высота для уже заполненных textarea
-    el.querySelectorAll('.schedule-slot-input').forEach(autoResizeSchedule);
+    el.querySelectorAll('.schedule-slot-text').forEach(autoResizeSchedule);
+  }
+
+  function renderSlotHTML(di, si, time, text) {
+    return `<div class="schedule-slot" id="slot-${di}-${si}">
+      <input type="time" class="schedule-slot-time-input" id="st-${di}-${si}" value="${time || ''}">
+      <textarea class="schedule-slot-text" id="ss-${di}-${si}" rows="1"
+        placeholder="Что планируешь..."
+        oninput="autoResizeSchedule(this)"
+      >${экранировать(text || '')}</textarea>
+      <button class="schedule-slot-del" onclick="deleteScheduleSlot(${di},${si})" title="Удалить">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>`;
   }
 
   function toggleScheduleDay(di) {
-    const el = document.getElementById('sday-' + di);
-    if (!el) return;
-    el.classList.toggle('open');
+    document.getElementById('sday-' + di)?.classList.toggle('open');
   }
 
   function autoResizeSchedule(ta) {
@@ -4386,20 +4413,55 @@
     ta.style.height = Math.max(32, ta.scrollHeight) + 'px';
   }
 
+  function addScheduleSlot(di) {
+    const data = scheduleLoad();
+    if (!data[di]) data[di] = [];
+    const last = data[di].length ? data[di][data[di].length - 1].time : '07:00';
+    const [h] = (last || '07:00').split(':').map(Number);
+    const nextTime = `${String(Math.min(h + 2, 23)).padStart(2,'0')}:00`;
+    data[di].push({ time: nextTime, text: '' });
+    scheduleSave(data);
+    const wrap = document.getElementById('slots-' + di);
+    if (wrap) {
+      const si = data[di].length - 1;
+      wrap.insertAdjacentHTML('beforeend', renderSlotHTML(di, si, nextTime, ''));
+      const ta = document.getElementById(`ss-${di}-${si}`);
+      if (ta) { autoResizeSchedule(ta); ta.focus(); }
+    }
+  }
+
+  function deleteScheduleSlot(di, si) {
+    const data = scheduleLoad();
+    if (!data[di]) return;
+    data[di].splice(si, 1);
+    scheduleSave(data);
+    const wrap = document.getElementById('slots-' + di);
+    if (wrap) {
+      wrap.innerHTML = data[di].map((s, i) => renderSlotHTML(di, i, s.time, s.text)).join('');
+      wrap.querySelectorAll('.schedule-slot-text').forEach(autoResizeSchedule);
+    }
+    _scheduleUpdatePreview(di, data[di]);
+  }
+
   function saveScheduleDay(di) {
-    const data = JSON.parse(localStorage.getItem('weekSchedule') || '{}');
-    const dayData = {};
-    SCHEDULE_SLOTS.forEach((t, si) => {
-      const val = (document.getElementById(`ss-${di}-${si}`)?.value || '').trim();
-      if (val) dayData[t] = val;
-    });
-    data[di] = dayData;
-    localStorage.setItem('weekSchedule', JSON.stringify(data));
-    // обновить preview
-    const preview = SCHEDULE_SLOTS.map(t => dayData[t] || '').filter(Boolean).join(', ');
-    const prev = document.querySelector(`#sday-${di} .schedule-day-preview`);
-    if (prev) prev.textContent = preview;
-    // анимация кнопки
+    const data = scheduleLoad();
+    const slots = [];
+    let si = 0;
+    while (document.getElementById(`slot-${di}-${si}`)) {
+      const time = document.getElementById(`st-${di}-${si}`)?.value || '';
+      const text = (document.getElementById(`ss-${di}-${si}`)?.value || '').trim();
+      if (time || text) slots.push({ time, text });
+      si++;
+    }
+    slots.sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
+    data[di] = slots;
+    scheduleSave(data);
+    const wrap = document.getElementById('slots-' + di);
+    if (wrap) {
+      wrap.innerHTML = slots.map((s, i) => renderSlotHTML(di, i, s.time, s.text)).join('');
+      wrap.querySelectorAll('.schedule-slot-text').forEach(autoResizeSchedule);
+    }
+    _scheduleUpdatePreview(di, slots);
     const btn = document.getElementById('sbtn-' + di);
     if (btn) {
       btn.classList.add('saved');
@@ -4409,6 +4471,12 @@
         btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Сохранить';
       }, 2000);
     }
+  }
+
+  function _scheduleUpdatePreview(di, slots) {
+    const preview = (slots || []).map(s => s.text).filter(Boolean).join(', ');
+    const prev = document.querySelector(`#sday-${di} .schedule-day-preview`);
+    if (prev) prev.textContent = preview;
   }
 
   function перейтиКЗакладке(idx) {
