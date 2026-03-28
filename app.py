@@ -604,6 +604,8 @@ async def track(data: TrackData):
     if not ADMIN_SECRET or data.secret != ADMIN_SECRET:
         return {"ok": False}
     con = db_connect()
+    existing = con.execute("SELECT tg_id FROM users WHERE tg_id=?", (data.tg_id,)).fetchone()
+    is_new = existing is None
     con.execute(
         """INSERT INTO users (tg_id, username, first_name, joined_at) VALUES (?,?,?,?)
            ON CONFLICT(tg_id) DO UPDATE SET username=excluded.username, first_name=excluded.first_name""",
@@ -616,7 +618,7 @@ async def track(data: TrackData):
         )
     con.commit()
     con.close()
-    return {"ok": True}
+    return {"ok": True, "is_new": is_new}
 
 
 @app.get("/api/admin/stats")

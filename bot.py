@@ -101,7 +101,26 @@ async def start_cmd(message: types.Message):
         except Exception:
             pass
 
-    await track(message.from_user)
+    result = await _post("/api/track", {
+        "tg_id": message.from_user.id,
+        "username": message.from_user.username or "",
+        "first_name": message.from_user.first_name or "",
+        "text": "", "secret": ADMIN_SECRET, "role": "user"
+    })
+    # Уведомить админа о новом пользователе
+    if result and result.get("is_new") and ADMIN_ID and bot:
+        name = message.from_user.first_name or "—"
+        username = f"@{message.from_user.username}" if message.from_user.username else "без username"
+        try:
+            await bot.send_message(
+                ADMIN_ID,
+                f"👤 Новый пользователь!\n"
+                f"Имя: {name}\n"
+                f"Username: {username}\n"
+                f"ID: {message.from_user.id}"
+            )
+        except Exception:
+            pass
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[
         InlineKeyboardButton(text="🤖 Открыть AI Ассистент", web_app=WebAppInfo(url=webapp_url()))
     ]])

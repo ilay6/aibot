@@ -3319,6 +3319,33 @@
           </div>
         </div>
 
+        <div class="profile-section-title">Избранное</div>
+        <div class="profile-card" id="bookmarks-card">
+          ${(() => {
+            try {
+              const bm = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+              if (!bm.length) return '<div class="profile-row"><div class="profile-row-left"><div class="profile-row-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></div><div class="profile-row-label" style="color:var(--text2)">Нет сохранённых сообщений</div></div></div>';
+              return bm.slice(0,5).map((b,i) => `<div class="profile-row" style="flex-direction:column;align-items:flex-start;gap:4px;padding-bottom:10px;border-bottom:1px solid var(--border);margin-bottom:${i<Math.min(bm.length,5)-1?'4px':'0'}">
+                <div style="font-size:12px;color:var(--text2)">${b.date}</div>
+                <div style="font-size:13px;color:var(--text);line-height:1.4">${b.text.slice(0,120)}${b.text.length>120?'…':''}</div>
+                <button onclick="navigator.clipboard?.writeText(${JSON.stringify(b.text)}).then(()=>показатьТост('Скопировано'))" style="background:none;border:none;cursor:pointer;color:var(--text2);font-size:11px;padding:0;display:flex;align-items:center;gap:4px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Копировать</button>
+              </div>`).join('') + (bm.length > 5 ? `<div style="font-size:12px;color:var(--text2);padding-top:6px">и ещё ${bm.length-5} сообщений...</div>` : '');
+            } catch { return ''; }
+          })()}
+        </div>
+
+        ${refLink ? `
+        <div class="profile-section-title">Поделиться ботом</div>
+        <div class="profile-card">
+          <div class="profile-row" style="flex-direction:column;align-items:flex-start;gap:10px">
+            <div class="profile-row-left"><div class="profile-row-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div><div class="profile-row-label">Поделись с друзьями и получи бонусы</div></div>
+            <button class="profile-btn" onclick="поделитьсяБотом('${refLink}')" style="display:flex;align-items:center;gap:7px;width:100%;justify-content:center">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.018 9.51c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.881.71z"/></svg>
+              Поделиться в Telegram
+            </button>
+          </div>
+        </div>` : ''}
+
         ${isPremium ? `
         <div class="profile-section-title">Подарить Premium</div>
         <div class="profile-card">
@@ -3341,6 +3368,39 @@
     navigator.clipboard?.writeText(текст).then(() => показатьТост('Ссылка скопирована!')).catch(() => показатьТост(текст));
   }
 
+  function поделитьсяБотом(refLink) {
+    const text = encodeURIComponent('🤖 Попробуй AIchat — умный AI-ассистент в Telegram!\n\nМожно задавать любые вопросы, генерировать картинки, переводить тексты и многое другое.');
+    const url = encodeURIComponent(refLink);
+    window.open(`https://t.me/share/url?url=${url}&text=${text}`, '_blank');
+  }
+
+  // Авто-активация промокода из URL (?promo=CODE)
+  (function() {
+    const params = new URLSearchParams(window.location.search);
+    const promoFromUrl = params.get('promo');
+    if (promoFromUrl) {
+      localStorage.setItem('pendingPromo', promoFromUrl.toUpperCase());
+    }
+    const pending = localStorage.getItem('pendingPromo');
+    if (pending && tgUser) {
+      localStorage.removeItem('pendingPromo');
+      setTimeout(async () => {
+        try {
+          const r = await fetch('/api/promo/redeem', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({tg_id: tgUser.id, code: pending, secret: ADMIN_SECRET})
+          });
+          const d = await r.json();
+          if (d.ok) {
+            показатьТост(`Промокод ${pending} активирован! +${d.free_msgs} сообщений`);
+            загрузитьСтатусПользователя();
+          }
+        } catch {}
+      }, 4000);
+    }
+  })();
+
   function новыйЧат() {
     сохранитьЧат();
     история = [{ role: "system", content: ПЕРСОНЫ[_currentPersona].prompt }];
@@ -3355,10 +3415,8 @@
       <div class="cmd-grid">
         <div class="cmd-card" onclick="быстрыйЗапрос('/search последние новости AI')"><span class="cmd-card-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></span><span class="cmd-card-title">Веб-поиск</span><span class="cmd-card-desc">Поиск с AI-ответом</span></div>
         <div class="cmd-card" onclick="быстрыйЗапрос('/img красивый закат')"><span class="cmd-card-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg></span><span class="cmd-card-title">Картинка</span><span class="cmd-card-desc">Генерация по описанию</span></div>
-        <div class="cmd-card" onclick="быстрыйЗапрос('/викторина')"><span class="cmd-card-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg></span><span class="cmd-card-title">Викторина</span><span class="cmd-card-desc">Тест на эрудицию</span></div>
-        <div class="cmd-card" onclick="быстрыйЗапрос('/дебаты AI заменит программистов')"><span class="cmd-card-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M21 6h-2v9H6v2c0 .55.45 1 1 1h11l4 4V7c0-.55-.45-1-1-1zm-4 6V3c0-.55-.45-1-1-1H3c-.55 0-1 .45-1 1v14l4-4h10c.55 0 1-.45 1-1z"/></svg></span><span class="cmd-card-title">Дебаты</span><span class="cmd-card-desc">Два AI спорят</span></div>
-        <div class="cmd-card" onclick="быстрыйЗапрос('/игра')"><span class="cmd-card-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg></span><span class="cmd-card-title">Угадай слово</span><span class="cmd-card-desc">Отгадай по подсказкам</span></div>
-        <div class="cmd-card" onclick="быстрыйЗапрос('/stats')"><span class="cmd-card-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/><circle cx="12" cy="11" r="3" fill="currentColor"/></svg></span><span class="cmd-card-title">Статистика</span><span class="cmd-card-desc">Ваши чаты</span></div>
+        <div class="cmd-card" onclick="быстрыйЗапрос('/stats')"><span class="cmd-card-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span><span class="cmd-card-title">Статистика</span><span class="cmd-card-desc">Ваши чаты и сообщения</span></div>
+        <div class="cmd-card cmd-card-premium" onclick="купитьПремиум()"><span class="cmd-card-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span><span class="cmd-card-title">Premium</span><span class="cmd-card-desc">Безлимитный AI на 30 дней</span></div>
       </div>
       <div class="welcome-chips" style="margin-top:10px">
         <span class="chip" onclick="быстрыйЗапрос('Объясни код')">Объясни код</span>
@@ -3674,7 +3732,7 @@
       div.innerHTML = `<div class="avatar">${getUserAvatarContent()}</div><div class="bubble">${content}<div class="bubble-footer"><span class="msg-time">${время}</span></div></div>`;
     } else {
       const strТекст = Array.isArray(текст) ? (текст.find(c => c.type === 'text')?.text || '') : текст;
-      div.innerHTML = `<div class="avatar">${botIcon}</div><div class="bubble">${форматировать(strТекст)}<div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button><button class="tts-btn" onclick="озвучить(this)">${ttsIconSvg} Озвучить</button><button class="bookmark-btn" onclick="закладка(this)" title="В избранное">☆</button><span class="reaction-btns"><button class="react-btn" onclick="реакция(this,'up')">${likeIconSvg}</button><button class="react-btn" onclick="реакция(this,'down')">${dislikeIconSvg}</button></span></div><div class="quick-actions"><button class="quick-action-btn" onclick="быстрыйЗапрос('Расскажи подробнее')">Подробнее</button><button class="quick-action-btn" onclick="быстрыйЗапрос('Дай другой вариант')">Другой вариант</button></div></div>`;
+      div.innerHTML = `<div class="avatar">${botIcon}</div><div class="bubble">${форматировать(strТекст)}<div class="bubble-footer"><span class="msg-time">${время}</span><button class="copy-btn" onclick="скопировать(this)">${copyIconSvg} Копировать</button><button class="tts-btn" onclick="озвучить(this)">${ttsIconSvg} Озвучить</button><button class="bookmark-btn" onclick="закладка(this)" title="В избранное"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></button><span class="reaction-btns"><button class="react-btn" onclick="реакция(this,'up')">${likeIconSvg}</button><button class="react-btn" onclick="реакция(this,'down')">${dislikeIconSvg}</button></span></div><div class="quick-actions"><button class="quick-action-btn" onclick="быстрыйЗапрос('Расскажи подробнее')">Подробнее</button><button class="quick-action-btn" onclick="быстрыйЗапрос('Дай другой вариант')">Другой вариант</button></div></div>`;
     }
     блок.appendChild(div);
     блок.scrollTop = блок.scrollHeight;
@@ -4101,17 +4159,19 @@
     const list = JSON.parse(localStorage.getItem(key) || '[]');
     const trimmed = текст.trim().slice(0, 500);
     const idx = list.findIndex(b => b.text === trimmed);
+    const svgEmpty = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`;
+    const svgFill  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`;
     if (idx >= 0) {
       list.splice(idx, 1);
-      btn.textContent = '☆';
+      btn.innerHTML = svgEmpty;
       btn.classList.remove('saved');
       показатьТост('Убрано из избранного');
     } else {
       list.unshift({ text: trimmed, date: new Date().toLocaleDateString('ru') });
       if (list.length > 50) list.pop();
-      btn.textContent = '★';
+      btn.innerHTML = svgFill;
       btn.classList.add('saved');
-      показатьТост('Добавлено в избранное ★');
+      показатьТост('Добавлено в избранное');
     }
     localStorage.setItem(key, JSON.stringify(list));
   }
