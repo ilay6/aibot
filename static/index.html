@@ -1821,8 +1821,16 @@
     padding: 0 4px;
   }
   .profile-card {
-    background: var(--bg2); border: 1px solid var(--border2); border-radius: 18px;
-    overflow: hidden;
+    background: var(--bg2); border-radius: 18px;
+    overflow: hidden; position: relative;
+  }
+  .profile-card::before {
+    content: ''; position: absolute; inset: 0; border-radius: 18px; pointer-events: none;
+    background:
+      linear-gradient(90deg, transparent 0%, var(--border2) 18%, var(--border2) 82%, transparent 100%) top    / 100% 1px no-repeat,
+      linear-gradient(90deg, transparent 0%, var(--border2) 18%, var(--border2) 82%, transparent 100%) bottom / 100% 1px no-repeat,
+      linear-gradient(180deg, var(--border2) 0%, transparent 22%, transparent 78%, var(--border2) 100%) left  / 1px 100% no-repeat,
+      linear-gradient(180deg, var(--border2) 0%, transparent 22%, transparent 78%, var(--border2) 100%) right / 1px 100% no-repeat;
   }
   .profile-row {
     display: flex; align-items: center; justify-content: space-between;
